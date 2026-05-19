@@ -13,13 +13,11 @@ class WorkspaceController extends Controller
      */
     public function index()
     {
-        $data['host'] = request()->getHost();
-        $data['subdomain'] = explode('.', request()->getHost())[0];
-
-        $data['workspaces'] = Auth::user()->workspaces()->orderBy('created_at', 'desc')->paginate();
-
-        // get workspace where subdomain matches the current request host
-        $data['currentWorkspace'] = Workspace::where('subdomain', $data['subdomain'])->first();
+        $data['subdomain'] = $subdomain = explode('.', request()->getHost())[0];
+        $workspace = Auth::user()->workspaces()->orderBy('created_at', 'desc');
+        $data['workspaces'] = $workspace->paginate(10);
+        $data['currentWorkspace'] = Workspace::where('subdomain', $subdomain)->first();
+        $data['activeWorkSpaces'] = $workspace->whereNotNull('subdomain')->where('workspaces.is_active', true)->get();
 
         return view('workspace.index', $data);
     }
@@ -110,8 +108,8 @@ class WorkspaceController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,'.$workspace->id],
-            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,'.$workspace->id],
+            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,' . $workspace->id],
+            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,' . $workspace->id],
             'metadata' => ['nullable', 'json'],
             'is_active' => ['required', 'boolean'],
         ]);

@@ -10,12 +10,13 @@
                     <i class="bi bi-diagram-3-fill me-2"></i> Workspaces <br>
                 </h2>
 
-                Current workspace: <span class="badge bg-info">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span>
+                Current workspace: <span
+                    class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span>
                 total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span>
 
             </div>
-               
-              
+
+
             <p class="text-muted small mb-0">Manage and view all workspaces in the system.</p>
 
             {{-- Create class button with plus icon--}}
@@ -29,9 +30,9 @@
 
                 <option value="">Switch Workspace</option>
 
-                @foreach ($workspaces as $workspace)
-                    <option value="{{ route('workspace.switch', ['subdomain' => $workspace->subdomain]) }}">
-                        {{ $workspace->name }}
+                @foreach ($activeWorkSpaces as $activeWorkSpace)
+                    <option value="{{ route('workspace.switch', ['subdomain' => $activeWorkSpace->subdomain]) }}">
+                        {{ $activeWorkSpace->name }}
                     </option>
                 @endforeach
 
@@ -78,29 +79,17 @@
                                     <th scope="row" class="px-4 py-3">{{ $key + 1 }}</th>
                                     <td class="px-4 py-3">
                                         {{ $workspace->name }}
-                                        @if ($workspace->subdomain)
-                                            <br>
-                                            <span class="text-muted small">Switch</span>
-                                            <a
-                                                href="{{ route('workspace.switch', ['subdomain' => $workspace->subdomain]) }}">
-                                                {{ $workspace->name }}
-                                            </a>
-                                        @endif
                                     </td>
                                     <td class="px-4 py-3">{{ $workspace->subdomain }}</td>
                                     <td class="px-4 py-3">
-                                        @if ($workspace->is_active)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        @endif
+                                        <span
+                                            class="badge rounded-pill {{ $workspace->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">
+
+                                            {{ $workspace->is_active ? 'Active' : 'Inactive' }}
+
+                                        </span>
                                     </td>
                                     <td class="px-4 py-3">
-                                        {{-- switch to workspace--}}
-                                        {{-- <a href="{{ route('workspace.switch', $workspace->id) }}"
-                                            class="btn btn-sm btn-primary me-1">
-                                            <i class="bi bi-box-arrow-in-right"></i> Switch to
-                                        </a> --}}
                                         <a href="{{ route('workspace.show', $workspace->id) }}"
                                             class="btn btn-sm btn-secondary me-1">
                                             <i class="bi bi-eye"></i> View

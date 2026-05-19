@@ -35,7 +35,6 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <a href="{{ route('password.request') }}">Forgot your password?</a>
-            <button type="submit" class="btn btn-primary">Login</button>
         </div>
 
         <div class="mt-3 text-center">
