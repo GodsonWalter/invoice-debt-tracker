@@ -1,0 +1,13 @@
+🚀 Building Invoice & Debt Tracker (IDT) SaaS (In Progress)
+
+Completed:
+
+Multi-tenant architecture
+Workspace management & switching
+
+Still building — next phase:
+🔹 User invitation/acceptance to workspace
+🔹 Invoices
+
+
+Open to: Remote • Contract • Full-time

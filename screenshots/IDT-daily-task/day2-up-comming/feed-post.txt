@@ -1,0 +1,18 @@
+🚀 Day 2 Building My SaaS Project — Invoice and Debt Tracker (IDT)
+
+🚀 Progress update: IDT SaaS (Invoice & Debt Tracker)
+
+Just completed the multi-tenant workspace system:
+
+✔️ Users can belong to multiple workspaces
+✔️ Workspace CRUD
+✔️ Seamless workspace switching
+✔️ Scalable DB design
+
+Still building — next phase:
+🔹 User invitation/acceptance to workspace
+🔹 Invoices
+
+Open to remote, contract & full-time roles.
+
+#SaaS #Laravel #BuildInPublic #OpenToWork

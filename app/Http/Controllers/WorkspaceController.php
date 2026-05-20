@@ -13,12 +13,12 @@ class WorkspaceController extends Controller
      */
     public function index()
     {
+
         $data['subdomain'] = $subdomain = explode('.', request()->getHost())[0];
         $workspace = Auth::user()->workspaces()->orderBy('created_at', 'desc');
         $data['workspaces'] = $workspace->paginate(10);
         $data['currentWorkspace'] = Workspace::where('subdomain', $subdomain)->first();
         $data['activeWorkSpaces'] = $workspace->whereNotNull('subdomain')->where('workspaces.is_active', true)->get();
-
         return view('workspace.index', $data);
     }
 
@@ -67,27 +67,6 @@ class WorkspaceController extends Controller
         return view('workspace.show', ['workspace' => $workspace]);
     }
 
-    public function switch(string $subdomain)
-    {
-        $workspace = Workspace::where('subdomain', $subdomain)->firstOrFail();
-
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
-
-        // redirect to the workspace subdomain
-        return redirect()->route('workspace.index')->with('success', 'Switched to workspace: ' . $workspace->name);
-    }
-
-    /**
-     * Show the workspace by its subdomain.
-     */
-    public function showBySubdomain(string $subdomain)
-    {
-        $workspace = Workspace::where('subdomain', $subdomain)->firstOrFail();
-
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
-
-        return view('workspace.show', ['workspace' => $workspace]);
-    }
 
     /**
      * Show the form for editing the specified resource.
@@ -135,5 +114,18 @@ class WorkspaceController extends Controller
         $workspace->delete();
 
         return redirect()->route('workspace.index')->with('success', 'Workspace deleted successfully');
+    }
+
+    /**
+     * Switch to the specified workspace.
+     */
+    public function switch(string $workspace)
+    {
+        $workspace = Workspace::where('subdomain', $workspace)->firstOrFail();
+
+        abort_unless(Auth::id() === $workspace->owner_id, 403);
+
+        // redirect to the workspace subdomain
+        return redirect()->route('workspace.index')->with('success', 'Switched to workspace: ' . $workspace->name);
     }
 }

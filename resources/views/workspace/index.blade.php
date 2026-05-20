@@ -31,7 +31,7 @@
                 <option value="">Switch Workspace</option>
 
                 @foreach ($activeWorkSpaces as $activeWorkSpace)
-                    <option value="{{ route('workspace.switch', ['subdomain' => $activeWorkSpace->subdomain]) }}">
+                    <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
                         {{ $activeWorkSpace->name }}
                     </option>
                 @endforeach

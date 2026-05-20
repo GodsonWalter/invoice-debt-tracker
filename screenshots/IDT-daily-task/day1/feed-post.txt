@@ -22,6 +22,7 @@ Tech Stack:
 ⚡ PHP
 ⚡ MySQL
 ⚡ Blade
+⚡ JavaScript
 ⚡ Bootstrap CSS
 
 I’ll be documenting my progress publicly as I continue building.

@@ -7,7 +7,7 @@ A Laravel SaaS application built to help businesses:
 ✅ Automate reminders
 
 Current Stack:
-Laravel • PHP • MySQL • Tailwind CSS
+Laravel • PHP • MySQL • Bootstrap CSS
 
 Currently building in public and documenting the development journey.
 
