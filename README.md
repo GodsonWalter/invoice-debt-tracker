@@ -46,13 +46,14 @@ Invoice and Debt Tracker (IDT) is a Laravel-based SaaS application designed to h
 ## 📂 Project Structure
 
 ```bash
-screenshots/
+
 app/
 bootstrap/
 config/
 database/
 public/
 resources/
+screenshots/
 routes/
 storage/
 ```
@@ -64,7 +65,7 @@ storage/
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/invoice-debt-tracker.git
+git clone https://github.com/GodsonWalter/invoice-debt-tracker.git
 ```
 
 Move into the project directory:
