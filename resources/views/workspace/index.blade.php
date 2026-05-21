@@ -43,7 +43,7 @@
             <div
                 class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0 fs-6">Workspace List</h5>
-                <input type="text" id="workspaceSearch" class="form-control form-control-sm w-auto"
+                <input type="text" id="search-box" class="form-control form-control-sm w-auto"
                     placeholder="Search workspaces..." style="max-width: 300px;">
             </div>
             <div class="card-body p-0">
@@ -51,7 +51,8 @@
                     <table class="table table-hover mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th scope="col" class="px-4 py-3">SN</th>
+                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="sn" style="cursor: pointer;">SN
+                                    <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i></th>
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="name"
                                     style="cursor: pointer;">
                                     Name <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
@@ -59,6 +60,10 @@
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="subdomain"
                                     style="cursor: pointer;">
                                     Subdomain <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
+                                </th>
+                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="role"
+                                    style="cursor: pointer;">
+                                    Role <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
                                 </th>
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="status"
                                     style="cursor:pointer">
@@ -70,7 +75,7 @@
                         <tbody>
                             @if ($workspaces->isEmpty())
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">No workspaces found. Create a new workspace to get
+                                    <td colspan="6" class="text-center py-4">No workspaces found. Create a new workspace to get
                                         started.</td>
                                 </tr>
                             @endif
@@ -81,6 +86,9 @@
                                         {{ $workspace->name }}
                                     </td>
                                     <td class="px-4 py-3">{{ $workspace->subdomain }}</td>
+                                    <td class="px-4 py-3">
+                                        {{ $workspace->pivot->role ?? 'Member' }}
+                                    </td>
                                     <td class="px-4 py-3">
                                         <span
                                             class="badge rounded-pill {{ $workspace->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">
@@ -126,7 +134,7 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                setupTableSearch('workspaceSearch', 'table');
+                setupTableSearch('search-box', 'table');
                 setupTableSorting('table');
             });
 

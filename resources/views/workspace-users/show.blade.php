@@ -16,15 +16,13 @@
             <a href="{{ route('workspace.users.edit', [$workspace, $user]) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil-square"></i> Edit User
             </a>
-            @can('delete', [$workspace, $user])
-                <form action="{{ route('workspace.users.destroy', [$workspace, $user]) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Remove this user from workspace?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="bi bi-trash"></i> Remove
-                    </button>
-                </form>
-            @endcan
+            <form action="{{ route('workspace.users.destroy', [$workspace, $user]) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Remove this user from workspace?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Remove
+                </button>
+            </form>
         </div>
     </div>
 

@@ -131,7 +131,7 @@ class WorkspaceController extends Controller
 
         abort_unless(Auth::id() === $workspace->owner_id, 403);
 
-        // redirect to the workspace subdomain
-        return redirect()->route('workspace.index')->with('success', 'Switched to workspace: ' . $workspace->name);
-    }
+        return redirect()->route('dashboard')->with('success', 'Switched to workspace: ' . $workspace->name);
+       
+        }
 }

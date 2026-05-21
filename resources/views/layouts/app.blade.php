@@ -309,6 +309,31 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <h6 class="dropdown-header px-4 py-2 mb-0">Switch Workspace</h6>
+                                </li>
+                                @php
+                                    $switchableWorkspaces = Auth::user()->workspaces()
+                                        ->whereNotNull('subdomain')
+                                        ->where('workspaces.is_active', true)
+                                        ->get();
+                                @endphp
+                                @forelse ($switchableWorkspaces as $switchWorkspace)
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center py-2 px-4"
+                                            href="{{ route('workspace.switch', ['workspace' => $switchWorkspace->subdomain]) }}">
+                                            <i class="fa-solid fa-arrow-right-to-bracket fa-fw text-success me-3 fs-5"></i>
+                                            {{ $switchWorkspace->name }}
+                                        </a>
+                                    </li>
+                                @empty
+                                    <li>
+                                        <span class="dropdown-item text-muted py-2 px-4">No active workspaces available</span>
+                                    </li>
+                                @endforelse
+                                <li>
+                                    <div class="dropdown-divider mx-3"></div>
+                                </li>
+                                <li>
                                     <a class="dropdown-item d-flex align-items-center py-2 px-4" href="#">
                                         <i class="fa-solid fa-gear fa-fw text-secondary me-3 fs-5"></i> Settings
                                     </a>

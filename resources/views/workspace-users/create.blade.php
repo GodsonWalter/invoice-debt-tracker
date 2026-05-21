@@ -7,7 +7,7 @@
     <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
         <div>
             <h2 class="fs-4 fw-bold text-dark mb-1">Invite User to {{ $workspace->name }}</h2>
-            <p class="text-muted small mb-0">Enter the user email to auto-fill profile details or create a new account.</p>
+            <p class="text-muted small mb-0">Enter the user email to auto-fill profile details or create a new account. An invitation email will be sent to the user.</p>
         </div>
         <a href="{{ route('workspace.users.index', $workspace) }}" class="btn btn-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Back to Users
@@ -64,7 +64,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Add user to workspace</button>
+                    <button type="submit" class="btn btn-primary">Send Invitation</button>
                 </div>
             </form>
         </div>
@@ -117,7 +117,7 @@
 
                     if (data.exists) {
                         nameInput.value = data.user.name || '';
-                        nameInput.disabled = true;
+                        // nameInput.disabled = true;
                         document.querySelector('#nameHint').textContent = 'Existing user profile cannot be modified.';
                         updateStatus('Existing user found. Profile details were populated.', 'text-success');
                     } else {

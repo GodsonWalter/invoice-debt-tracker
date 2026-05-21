@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WorkspaceUserInvitation;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class WorkspaceUserController extends Controller
@@ -19,7 +21,7 @@ class WorkspaceUserController extends Controller
     {
         $this->authorizeWorkspace($workspace);
 
-        $users = $workspace->users()->orderBy('name')->paginate(12);
+        $users = $workspace->users()->orderBy('name')->paginate(10);
 
         return view('workspace-users.index', compact('workspace', 'users'));
     }
@@ -68,9 +70,12 @@ class WorkspaceUserController extends Controller
             ]);
         }
 
+        // Send workspace invitation email
+        Mail::to($user->email)->send(new WorkspaceUserInvitation($workspace, $user, $validated['role']));
+
         $message = $isNewUser
-            ? 'User created successfully. Verification email has been sent to ' . $user->email
-            : 'User added to workspace successfully.';
+            ? 'User created successfully. Verification and invitation emails have been sent to ' . $user->email
+            : 'User invited to workspace successfully. Invitation email has been sent to ' . $user->email;
 
         return redirect()->route('workspace.users.index', $workspace)
             ->with('success', $message);
@@ -104,8 +109,13 @@ class WorkspaceUserController extends Controller
     {
         $this->authorizeWorkspace($workspace);
 
+        if ($user->id === $workspace->owner_id) {
+            return back()->with('error', 'The workspace owner cannot be modified.');
+        }
+
         abort_unless($workspace->users()->where('user_id', $user->id)->exists(), 404);
 
+        
         $validated = $request->validate([            
             'role' => ['required', 'in:owner,admin,member,viewer'],
             'is_active' => ['required', 'boolean'],
@@ -122,7 +132,11 @@ class WorkspaceUserController extends Controller
 
     public function destroy(Workspace $workspace, User $user)
     {
-        $this->authorize('delete', [$workspace, $user]);
+        $this->authorizeWorkspace($workspace);
+
+        if ($user->id === $workspace->owner_id) {
+            return back()->with('error', 'The workspace owner cannot be removed.');
+        }
 
         $workspace->users()->detach($user->id);
 
