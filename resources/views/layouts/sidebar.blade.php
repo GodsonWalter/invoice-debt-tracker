@@ -29,9 +29,14 @@
             </a>
             <ul class="sidebar-dropdown-menu">
                 <li><a href="{{ route('workspace.index') }}">Workspaces</a></li>
-                <li><a href="{{ route('workspace.create') }}">Add Workspace</a></li>
+                @if (isset($currentWorkspace))
+                    <li><a href="{{ route('workspace.users.index', $currentWorkspace) }}">Workspace Users</a></li>
+                    <li><a href="{{ route('workspace.users.create', $currentWorkspace) }}">Invite Workspace User</a></li>
+                @endif
             </ul>
         </li>
+
+        
 
 
 

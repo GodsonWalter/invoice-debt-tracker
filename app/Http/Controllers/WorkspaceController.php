@@ -64,7 +64,10 @@ class WorkspaceController extends Controller
     {
         abort_unless(Auth::id() === $workspace->owner_id, 403);
 
-        return view('workspace.show', ['workspace' => $workspace]);
+        return view('workspace.show', [
+            'workspace' => $workspace,
+            'currentWorkspace' => $workspace,
+        ]);
     }
 
 
@@ -75,7 +78,10 @@ class WorkspaceController extends Controller
     {
         abort_unless(Auth::id() === $workspace->owner_id, 403);
 
-        return view('workspace.edit', ['workspace' => $workspace]);
+        return view('workspace.edit', [
+            'workspace' => $workspace,
+            'currentWorkspace' => $workspace,
+        ]);
     }
 
     /**

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\WorkspaceUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,6 +20,17 @@ Route::middleware(['auth', 'verified', 'workspace.active'])->group(function () {
     Route::get('/workspace/{workspace}/edit', [WorkspaceController::class, 'edit'])->name('workspace.edit');
     Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('/workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.destroy');
+
+    Route::prefix('workspace/{workspace}/users')->name('workspace.users.')->group(function () {
+        Route::get('/', [WorkspaceUserController::class, 'index'])->name('index');
+        Route::get('/create', [WorkspaceUserController::class, 'create'])->name('create');
+        Route::post('/', [WorkspaceUserController::class, 'store'])->name('store');
+        Route::get('/lookup', [WorkspaceUserController::class, 'lookup'])->name('lookup');
+        Route::get('/{user}', [WorkspaceUserController::class, 'show'])->name('show');
+        Route::get('/{user}/edit', [WorkspaceUserController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [WorkspaceUserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
+    });
 
     Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
    
