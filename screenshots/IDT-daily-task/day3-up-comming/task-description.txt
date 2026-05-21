@@ -1,12 +1,8 @@
 Day 3 — Multi-Tenant Workspace Design
-Estimated: 6–8 hrs
+
 Tasks:
-1.	Design DB schema: 
-o	users 
-o	workspaces 
-o	workspace_users 
-2.	Create migrations 
-3.	Create models & relationships 
-4.	Workspace switching logic 
+# Add User To workspace.
+# User invitation/acceptance to workspace (via email)
+# User joins workspace via link
 Deliverable:
 •	User can belong to multiple workspaces 

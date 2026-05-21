@@ -9,9 +9,20 @@ Just completed the multi-tenant workspace system:
 ✔️ Seamless workspace switching
 ✔️ Scalable DB design
 
+
+Tech Stack: Laravel | PHP | MySQL | Blade | JavaScript | Bootstrap CSS
+
+Technical Challenges:
+# Currently focused on building and refining core application features while maintaining clean architecture and scalable code structure.
+
+What I Learned:
+# Enhanced problem-solving and debugging workflow during feature implementation.
+
+
 Still building — next phase:
-🔹 User invitation/acceptance to workspace
-🔹 Invoices
+# Add User To workspace.
+# User invitation/acceptance to workspace (via email)
+# User joins workspace via link
 
 Open to remote, contract & full-time roles.
 
