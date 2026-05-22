@@ -23,7 +23,11 @@
             <p>You have been invited to join the <strong>{{ $workspace->name }}</strong> workspace as a <strong>{{ ucfirst($role) }}</strong>.</p>
             
             <p>
-                <a href="{{ route('dashboard') }}" class="button">View Your Workspaces</a>
+                @if(! empty($activationToken))
+                    <a href="{{ route('workspace.users.accept', $activationToken) }}" class="button">Accept Invitation</a>
+                @else
+                    <a href="{{ route('dashboard') }}" class="button">View Your Workspaces</a>
+                @endif
             </p>
             
             <p>If you don't have an account yet, you can create one using this email address. Once logged in, you'll have access to this workspace.</p>

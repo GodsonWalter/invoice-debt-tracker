@@ -5,14 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class WorkspaceController extends Controller
 {
+    private function authorizeWorkspaceUser(Workspace $workspace): void
+    {
+        // deny access if the user is not the workspace owner or admin
+        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+            throw new HttpResponseException(
+                redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
+            );
+        }
+    }
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {       
+    public function index(Request $request, Workspace $workspace)
+    {
         $workspace = Auth::user()->workspaces()->orderBy('created_at', 'desc');
         $data['workspaces'] = $workspace->paginate(10);
         $data['activeWorkSpaces'] = $workspace->whereNotNull('subdomain')->where('workspaces.is_active', true)->get();
@@ -23,16 +33,19 @@ class WorkspaceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Workspace $workspace)
     {
+         $this->authorizeWorkspaceUser($workspace);
         return view('workspace.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, Workspace $workspace)
     {
+         $this->authorizeWorkspaceUser($workspace);
+        
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug'],
@@ -60,7 +73,7 @@ class WorkspaceController extends Controller
      */
     public function show(Workspace $workspace)
     {
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
+        $this->authorizeWorkspaceUser($workspace);
 
         return view('workspace.show', [
             'workspace' => $workspace,
@@ -74,7 +87,7 @@ class WorkspaceController extends Controller
      */
     public function edit(Workspace $workspace)
     {
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
+        $this->authorizeWorkspaceUser($workspace);
 
         return view('workspace.edit', [
             'workspace' => $workspace,
@@ -87,7 +100,7 @@ class WorkspaceController extends Controller
      */
     public function update(Request $request, Workspace $workspace)
     {
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
+         $this->authorizeWorkspaceUser($workspace);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -113,7 +126,7 @@ class WorkspaceController extends Controller
      */
     public function destroy(Workspace $workspace)
     {
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
+        $this->authorizeWorkspaceUser($workspace);
 
         $workspace->delete();
 
@@ -126,10 +139,6 @@ class WorkspaceController extends Controller
     public function switch(string $workspace)
     {
         $workspace = Workspace::where('subdomain', $workspace)->firstOrFail();
-
-        abort_unless(Auth::id() === $workspace->owner_id, 403);
-
         return redirect()->route('dashboard')->with('success', 'Switched to workspace: ' . $workspace->name);
-       
-        }
+    }
 }

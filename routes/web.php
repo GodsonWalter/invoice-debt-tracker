@@ -38,4 +38,9 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Invitation acceptance route (requires login)
+Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acceptInvitation'])
+    ->name('workspace.users.accept')
+    ->middleware('auth');
+
 require __DIR__ . '/auth.php';

@@ -18,6 +18,7 @@ class WorkspaceUserInvitation extends Mailable
         public Workspace $workspace,
         public User $user,
         public string $role,
+        public ?string $activationToken = null,
     ) {}
 
     public function envelope(): Envelope
