@@ -11,14 +11,12 @@ class WorkspaceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-
-        $data['subdomain'] = $subdomain = explode('.', request()->getHost())[0];
+    public function index(Request $request)
+    {       
         $workspace = Auth::user()->workspaces()->orderBy('created_at', 'desc');
         $data['workspaces'] = $workspace->paginate(10);
-        $data['currentWorkspace'] = Workspace::where('subdomain', $subdomain)->first();
         $data['activeWorkSpaces'] = $workspace->whereNotNull('subdomain')->where('workspaces.is_active', true)->get();
+
         return view('workspace.index', $data);
     }
 

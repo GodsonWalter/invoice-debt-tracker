@@ -28,6 +28,17 @@
                         >
                             Dashboard
                         </a>
+                        <a href="{{ route('logout') }}"
+                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            Log out
+                        </a>
+
+                       
+
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                            @csrf
+                        </form>
                     @else
                         <a
                             href="{{ route('login') }}"

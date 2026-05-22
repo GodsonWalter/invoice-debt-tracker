@@ -16,59 +16,41 @@
             </a>
         </li>
 
-        {{-- <li class="nav-divider"></li>
+        {{-- workspaces --}}
+        <li class="nav-item">
+            <a href="{{ route('workspace.index') }}" class="nav-link">
+                <i class="fa-solid fa-building fa-fw"></i> <span>Workspaces</span>
+            </a>
+        </li>
 
-        <li class="nav-section-title">Network Audit</li> --}}
+        {{-- users --}}
+        @if (isset($currentWorkspace))
+            <li class="nav-item">
+                <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
+                </a>
+            </li>
+        @endif
 
-        {{-- workspace dropdown menu --}}
-        <li class="nav-item has-dropdown">
-            <a href="{{ route('dashboard') }}" class="nav-link">
-                <i class="fa-solid fa-building fa-fw"></i>
-                <span>Workspaces</span>
+
+
+        {{-- <li class="nav-divider"></li> --}}
+        {{-- <li class="nav-section-title">Network Audit</li> --}}
+
+
+        {{-- drop down example --}}
+        {{-- <li class="nav-item has-dropdown">
+            <a href="#" class="nav-link">
+                <i class="fa-solid fa-users fa-fw"></i>
+                <span>Users</span>
                 <i class="fa-solid fa-chevron-down dropdown-toggle-icon"></i>
             </a>
             <ul class="sidebar-dropdown-menu">
-                <li><a href="{{ route('workspace.index') }}">Workspaces</a></li>
-                @if (isset($currentWorkspace))
-                    <li><a href="{{ route('workspace.users.index', $currentWorkspace) }}">Workspace Users</a></li>
-                @endif
+                <li><a href="#">All Users</a></li>
+                <li><a href="#">Active Users</a></li>
+                <li><a href="#">Banned Users</a></li>
             </ul>
-        </li>
-
-        
-
-
-
-
-
-
-        {{-- <li class="nav-item">
-            <a href="#" class="nav-link">
-                <i class="fa-solid fa-user-slash fa-fw"></i> <span>Banned Accounts</span>
-            </a>
         </li> --}}
 
-        {{-- <li class="nav-divider"></li>
-
-        <li class="nav-section-title">Financials</li>
-        <li class="nav-item">
-            <a href="#" class="nav-link">
-                <i class="fa-solid fa-money-bill-transfer fa-fw"></i> <span>Manage Balances</span>
-            </a>
-        </li> --}}
-        {{-- <li class="nav-item">
-            <a href="#" class="nav-link">
-                <i class="fa-solid fa-wallet fa-fw"></i> <span>Withdrawal Requests</span>
-            </a>
-        </li> --}}
-
-        {{-- <li class="nav-divider"></li>
-
-        <li class="nav-section-title">System</li>
-        <li class="nav-item">
-            <a href="#" class="nav-link">
-                <i class="fa-solid fa-gear fa-fw"></i> <span>Settings</span>
-            </a>
-        </li> --}}
     </ul>
 </nav>

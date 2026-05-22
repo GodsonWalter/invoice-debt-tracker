@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
        $middleware->alias([
             'workspace.active' => \App\Http\Middleware\EnsureWorkspaceIsActive::class,
+            'resolve.workspace' => \App\Http\Middleware\ResolveWorkspace::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

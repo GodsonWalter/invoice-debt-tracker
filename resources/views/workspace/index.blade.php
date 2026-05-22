@@ -4,47 +4,39 @@
 @section('content')
 
     <div class="container-fluid py-2">
-        <div class="mb-4">
-            <div class="col-12 my-3 bg-secondary bg-opacity-10 p-4 rounded-4 border border-secondary shadow-sm">
-                <h2 class="fs-4 fw-bold text-dark mb-1">
-                    <i class="bi bi-diagram-3-fill me-2"></i> Workspaces <br>
-                </h2>
-
-                Current workspace: <span
-                    class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span>
-                total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span>
-
+        <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+            <div>
+                <div class="col-12 my-3 bg-secondary bg-opacity-10 p-4 rounded-4 border border-secondary shadow-sm">
+                    <h2 class="fs-4 fw-bold text-dark mb-1">
+                        <i class="bi bi-diagram-3-fill me-2"></i> Workspaces
+                    </h2>
+                    <p class="text-muted small mb-0">Manage and view all workspaces in the system.</p>
+                    <p class="text-muted small mb-0 mt-2">Current workspace: <span class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span> total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span></p>
+                </div>
             </div>
-
-
-            <p class="text-muted small mb-0">Manage and view all workspaces in the system.</p>
-
-            {{-- Create class button with plus icon--}}
-            <a href="{{ route('workspace.create') }}" class="btn btn-sm btn-primary mt-2">
-                <i class="bi bi-plus-lg"></i> Create New Workspace
-            </a>
-
-            {{-- switch to workspace (subdomain based) --}}
-            <select class="form-select form-select-sm d-inline-block w-auto ms-2 btn btn-secondary"
-                onchange="if (this.value) window.location.href = this.value">
-
-                <option value="">Switch Workspace</option>
-
-                @foreach ($activeWorkSpaces as $activeWorkSpace)
-                    <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
-                        {{ $activeWorkSpace->name }}
-                    </option>
-                @endforeach
-
-            </select>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="{{ route('workspace.create') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-lg"></i> Create New Workspace
+                </a>
+                <select class="form-select form-select-sm w-auto" onchange="if (this.value) window.location.href = this.value">
+                    <option value="">Switch Workspace</option>
+                    @foreach ($activeWorkSpaces as $activeWorkSpace)
+                        <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
+                            {{ $activeWorkSpace->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         <div class="card border border-light shadow-sm rounded-4 overflow-hidden">
             <div
                 class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0 fs-6">Workspace List</h5>
-                <input type="text" id="search-box" class="form-control form-control-sm w-auto"
-                    placeholder="Search workspaces..." style="max-width: 300px;">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <input type="text" id="search-box" class="form-control form-control-sm w-auto"
+                        placeholder="Search workspaces..." style="max-width: 300px;">
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -69,7 +61,7 @@
                                     style="cursor:pointer">
                                     Status <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
                                 </th>
-                                <th scope="col" class="px-4 py-3">Actions</th>
+                                <th scope="col" class="px-4 py-3 text-start">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -99,20 +91,20 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <a href="{{ route('workspace.show', $workspace->id) }}"
-                                            class="btn btn-sm btn-secondary me-1">
-                                            <i class="bi bi-eye"></i> View
+                                            class="btn btn-sm btn-outline-primary me-1" title="View workspace">
+                                            <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{{ route('workspace.edit', $workspace->id) }}"
-                                            class="btn btn-sm btn-info me-1">
-                                            <i class="bi bi-pencil-square"></i> Edit
+                                            class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
+                                            <i class="bi bi-pencil-square"></i>
                                         </a>
                                         <form action="{{ route('workspace.destroy', $workspace->id) }}" method="POST"
                                             class="d-inline-block"
                                             onsubmit="return confirm('Are you sure you want to delete this workspace?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Delete
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete workspace">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
                                     </td>

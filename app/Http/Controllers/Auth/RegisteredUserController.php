@@ -35,10 +35,9 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
-
-        // fist user given owner role
-        $isFirstUser = User::count() === 0;
-
+ 
+        // First registered user becomes the system owner/admin.
+        $isFirstUser = !User::exists();
         $user = User::create(
             [
                 'name' => $request->name,

@@ -10,7 +10,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware(['auth', 'verified', 'workspace.active'])->group(function () {
+Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // workspace management routes
     Route::get('/workspace', [WorkspaceController::class, 'index'])->name('workspace.index');
@@ -32,8 +32,7 @@ Route::middleware(['auth', 'verified', 'workspace.active'])->group(function () {
         Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
     });
 
-    Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
-   
+    Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');   
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
