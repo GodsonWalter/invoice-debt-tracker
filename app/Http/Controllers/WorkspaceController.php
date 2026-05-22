@@ -35,7 +35,7 @@ class WorkspaceController extends Controller
      */
     public function create(Workspace $workspace)
     {
-         $this->authorizeWorkspaceUser($workspace);
+        // $this->authorizeWorkspaceUser($workspace);
         return view('workspace.create');
     }
 
@@ -44,7 +44,7 @@ class WorkspaceController extends Controller
      */
     public function store(Request $request, Workspace $workspace)
     {
-         $this->authorizeWorkspaceUser($workspace);
+        //  $this->authorizeWorkspaceUser($workspace);
         
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -131,6 +131,26 @@ class WorkspaceController extends Controller
         $workspace->delete();
 
         return redirect()->route('workspace.index')->with('success', 'Workspace deleted successfully');
+    }
+
+    /**
+     * Exit the specified workspace for the current user.
+     */
+    public function exitWorkspace(Workspace $workspace)
+    {
+        if ($workspace->owner_id === Auth::id()) {
+            return redirect()->route('workspace.index')
+                ->with('error', 'Workspace owners cannot exit their own workspace.');
+        }
+
+        if (! $workspace->users()->where('user_id', Auth::id())->exists()) {
+            return redirect()->route('workspace.index')
+                ->with('error', 'You are not a member of this workspace.');
+        }
+
+        $workspace->users()->detach(Auth::id());
+
+        return redirect()->route('workspace.index')->with('success', 'You have exited the workspace.');
     }
 
     /**

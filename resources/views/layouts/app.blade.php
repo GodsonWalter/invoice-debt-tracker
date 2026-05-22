@@ -311,6 +311,17 @@
                                 <li>
                                     <h6 class="dropdown-header px-4 py-2 mb-0">Switch Workspace</h6>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-2 px-4"
+                                        href="{{ config('app.url') ?? '#' }}dashboard"
+                                        title="Default workspace">
+                                        <i class="fa-solid fa-house fa-fw text-secondary me-3 fs-5"></i>
+                                        Default ({{ config('app.base_domain') }})
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider mx-3 my-1">
+                                </li>
                                 @php
                                     $switchableWorkspaces = Auth::user()->workspaces()
                                         ->whereNotNull('subdomain')
@@ -327,7 +338,8 @@
                                     </li>
                                 @empty
                                     <li>
-                                        <span class="dropdown-item text-muted py-2 px-4">No active workspaces available</span>
+                                        <span class="dropdown-item text-muted py-2 px-4">No active workspaces
+                                            available</span>
                                     </li>
                                 @endforelse
                                 <li>
@@ -445,93 +457,93 @@
     {{-- link table-search.js --}}
 
     <script>
-       // Reusable table search function
-function setupTableSearch(searchInputId, tableSelector) {
-    const searchInput = document.getElementById(searchInputId);
-    const tableBody = document.querySelector(tableSelector + ' tbody');
-    const rows = Array.from(tableBody.querySelectorAll('tr'));
-
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-
-        rows.forEach(row => {
-            // Get all cells except the last one (Actions column)
-            const cells = Array.from(row.cells).slice(0, -1);
-            const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
-
-            if (rowText.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    });
-}
-
-// Reusable table sorting function
-function setupTableSorting(tableSelector) {
-    const table = document.querySelector(tableSelector);
-    if (!table) {
-        return;
-    }
-
-    const tableBody = table.querySelector('tbody');
-    const sortableHeaders = Array.from(table.querySelectorAll('.sortable'));
-
-    sortableHeaders.forEach(header => {
-        header.addEventListener('click', function () {
-            const currentSort = this.dataset.sort || 'asc';
-            const newSort = currentSort === 'asc' ? 'desc' : 'asc';
-            const columnIndex = this.cellIndex;
-
-            sortableHeaders.forEach(h => {
-                if (h !== this) {
-                    delete h.dataset.sort;
-                    const hIcon = h.querySelector('i');
-                    if (hIcon) {
-                        hIcon.className = 'fa-solid fa-sort';
-                    }
-                }
-            });
-
-            this.dataset.sort = newSort;
-            const icon = this.querySelector('i');
-            if (icon) {
-                icon.className = newSort === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-            }
-
+        // Reusable table search function
+        function setupTableSearch(searchInputId, tableSelector) {
+            const searchInput = document.getElementById(searchInputId);
+            const tableBody = document.querySelector(tableSelector + ' tbody');
             const rows = Array.from(tableBody.querySelectorAll('tr'));
 
-            const sortedRows = rows.sort((a, b) => {
-                const aValue = getCellText(a, columnIndex);
-                const bValue = getCellText(b, columnIndex);
-                const aNumber = parseFloat(aValue);
-                const bNumber = parseFloat(bValue);
-                const isNumeric = !Number.isNaN(aNumber) && !Number.isNaN(bNumber);
+            searchInput.addEventListener('input', function () {
+                const searchTerm = this.value.toLowerCase();
 
-                const first = isNumeric ? aNumber : aValue;
-                const second = isNumeric ? bNumber : bValue;
+                rows.forEach(row => {
+                    // Get all cells except the last one (Actions column)
+                    const cells = Array.from(row.cells).slice(0, -1);
+                    const rowText = cells.map(cell => cell.textContent.toLowerCase()).join(' ');
 
-                if (first === second) {
-                    return 0;
-                }
+                    if (rowText.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
 
-                if (newSort === 'asc') {
-                    return first > second ? 1 : -1;
-                }
+        // Reusable table sorting function
+        function setupTableSorting(tableSelector) {
+            const table = document.querySelector(tableSelector);
+            if (!table) {
+                return;
+            }
 
-                return first < second ? 1 : -1;
+            const tableBody = table.querySelector('tbody');
+            const sortableHeaders = Array.from(table.querySelectorAll('.sortable'));
+
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', function () {
+                    const currentSort = this.dataset.sort || 'asc';
+                    const newSort = currentSort === 'asc' ? 'desc' : 'asc';
+                    const columnIndex = this.cellIndex;
+
+                    sortableHeaders.forEach(h => {
+                        if (h !== this) {
+                            delete h.dataset.sort;
+                            const hIcon = h.querySelector('i');
+                            if (hIcon) {
+                                hIcon.className = 'fa-solid fa-sort';
+                            }
+                        }
+                    });
+
+                    this.dataset.sort = newSort;
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.className = newSort === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                    }
+
+                    const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+                    const sortedRows = rows.sort((a, b) => {
+                        const aValue = getCellText(a, columnIndex);
+                        const bValue = getCellText(b, columnIndex);
+                        const aNumber = parseFloat(aValue);
+                        const bNumber = parseFloat(bValue);
+                        const isNumeric = !Number.isNaN(aNumber) && !Number.isNaN(bNumber);
+
+                        const first = isNumeric ? aNumber : aValue;
+                        const second = isNumeric ? bNumber : bValue;
+
+                        if (first === second) {
+                            return 0;
+                        }
+
+                        if (newSort === 'asc') {
+                            return first > second ? 1 : -1;
+                        }
+
+                        return first < second ? 1 : -1;
+                    });
+
+                    sortedRows.forEach(row => tableBody.appendChild(row));
+                });
             });
 
-            sortedRows.forEach(row => tableBody.appendChild(row));
-        });
-    });
-
-    function getCellText(row, index) {
-        const cell = row.cells[index];
-        return cell ? cell.textContent.trim().toLowerCase() : '';
-    }
-}
+            function getCellText(row, index) {
+                const cell = row.cells[index];
+                return cell ? cell.textContent.trim().toLowerCase() : '';
+            }
+        }
 
     </script>
 

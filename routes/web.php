@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::get('/workspace/{workspace}/edit', [WorkspaceController::class, 'edit'])->name('workspace.edit');
     Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('/workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.destroy');
+    Route::post('/workspace/{workspace}/exit', [WorkspaceController::class, 'exitWorkspace'])->name('workspace.exit');
 
     Route::prefix('workspace/{workspace}/users')->name('workspace.users.')->group(function () {
         Route::get('/', [WorkspaceUserController::class, 'index'])->name('index');

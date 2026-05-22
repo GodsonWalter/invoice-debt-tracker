@@ -94,19 +94,31 @@
                                             class="btn btn-sm btn-outline-primary me-1" title="View workspace">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="{{ route('workspace.edit', $workspace->id) }}"
-                                            class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <form action="{{ route('workspace.destroy', $workspace->id) }}" method="POST"
-                                            class="d-inline-block"
-                                            onsubmit="return confirm('Are you sure you want to delete this workspace?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete workspace">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
+
+                                        @if(optional($workspace->pivot)->role === 'owner')
+                                            <a href="{{ route('workspace.edit', $workspace->id) }}"
+                                                class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <form action="{{ route('workspace.destroy', $workspace->id) }}" method="POST"
+                                                class="d-inline-block"
+                                                onsubmit="return confirm('Are you sure you want to delete this workspace?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete workspace">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('workspace.exit', $workspace->id) }}" method="POST"
+                                                class="d-inline-block"
+                                                onsubmit="return confirm('Are you sure you want to exit this workspace?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
+                                                    <i class="bi bi-box-arrow-right"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
 
