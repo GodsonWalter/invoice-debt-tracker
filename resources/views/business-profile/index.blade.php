@@ -5,7 +5,7 @@
 @section('content')
 <div class="container-fluid py-2">
     <div class="mb-4">
-        <h2 class="fs-4 fw-bold text-dark mb-1">Edit Business Profile</h2>
+        <h4 class="fs-4 fw-bold text-muted mb-1">Business Profile</h4>
         <p class="text-muted small mb-0">Update business profile information.</p>
     </div>
 

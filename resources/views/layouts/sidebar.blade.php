@@ -30,6 +30,9 @@
 
         @if (isset($currentWorkspace))
 
+        <li class="nav-divider"></li>
+        <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
+
         {{-- business profiles --}}
         <li class="nav-item">
             <a href="{{ route('business-profile.index') }}" class="nav-link">
@@ -47,8 +50,7 @@
 
 
 
-        {{-- <li class="nav-divider"></li> --}}
-        {{-- <li class="nav-section-title">Network Audit</li> --}}
+        
 
 
         {{-- drop down example --}}

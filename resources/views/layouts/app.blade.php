@@ -313,8 +313,7 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center py-2 px-4"
-                                        href="{{ config('app.url') ?? '#' }}dashboard"
-                                        title="Default workspace">
+                                        href="{{ config('app.url') ?? '#' }}dashboard" title="Default workspace">
                                         <i class="fa-solid fa-house fa-fw text-secondary me-3 fs-5"></i>
                                         Default ({{ config('app.base_domain') }})
                                     </a>
@@ -373,7 +372,10 @@
 
 
 
-            <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">
+            <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">                
+                <div class="m-0">                 
+                    <h2 class=" fw-bold text-muted mb-1">{{ $currentWorkspace->name ?? '' }}</h2>
+                </div>
                 @yield('content')
             </main>
         </div>
