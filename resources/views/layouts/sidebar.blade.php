@@ -1,6 +1,11 @@
 <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
     <div class="p-3 fs-4 fw-bold border-bottom border-secondary text-center d-flex justify-content-center align-items-center"
         style="height: 73px;">
+        {{-- @if (isset($currentWorkspace))
+            <div class="position-absolute" style="top: 12px; right: 14px;">
+                <span class="badge bg-secondary">{{ $currentWorkspace->name ?? 'Current Workspace' }}</span>
+            </div>
+        @endif --}}
         <span class="sidebar-text">
             {{-- get the app name --}}
             {{ config('app.name', 'IDT') }}
@@ -23,8 +28,16 @@
             </a>
         </li>
 
-        {{-- users --}}
         @if (isset($currentWorkspace))
+
+        {{-- business profiles --}}
+        <li class="nav-item">
+            <a href="{{ route('business-profile.index') }}" class="nav-link">
+                <i class="fa-solid fa-briefcase fa-fw"></i> <span>Business Profile</span>
+            </a>
+        </li>
+
+        {{-- users --}}
             <li class="nav-item">
                 <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
                     <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
