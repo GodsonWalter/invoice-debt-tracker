@@ -22,7 +22,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::delete('/workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.destroy');
     Route::post('/workspace/{workspace}/exit', [WorkspaceController::class, 'exitWorkspace'])->name('workspace.exit');
 
-    Route::prefix('workspace/{workspace}/users')->name('workspace.users.')->group(function () {
+    Route::prefix('workspace/{workspace}/user')->name('workspace.users.')->group(function () {
         Route::get('/', [WorkspaceUserController::class, 'index'])->name('index');
         Route::get('/create', [WorkspaceUserController::class, 'create'])->name('create');
         Route::post('/', [WorkspaceUserController::class, 'store'])->name('store');
@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::get('/{user}', [WorkspaceUserController::class, 'show'])->name('show');
         Route::get('/{user}/edit', [WorkspaceUserController::class, 'edit'])->name('edit');
         Route::put('/{user}', [WorkspaceUserController::class, 'update'])->name('update');
+        // Route::put('/workspaces/{workspace}/users/{user}', ...)
         Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
     });
 
@@ -38,6 +39,11 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// // Join workspace via shareable link (requires login)
+// Route::get('/workspace/join/{workspace:slug}', [WorkspaceController::class, 'join'])
+//     ->name('workspace.join')
+//     ->middleware(['auth', 'verified']);
 
 // Invitation acceptance route (requires login)
 Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acceptInvitation'])

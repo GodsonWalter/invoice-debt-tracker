@@ -13,7 +13,7 @@
             <i class="bi bi-arrow-left"></i> Back to User Details
         </a>
     </div>
-
+    
     <div class="card border-light shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-3 p-md-4">
             <form method="POST" action="{{ route('workspace.users.update', [$workspace, $user]) }}">

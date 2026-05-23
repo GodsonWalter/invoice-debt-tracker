@@ -48,6 +48,7 @@
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="name"
                                     style="cursor: pointer;">
                                     Name <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
+                                    
                                 </th>
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="subdomain"
                                     style="cursor: pointer;">
@@ -61,6 +62,7 @@
                                     style="cursor:pointer">
                                     Status <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
                                 </th>
+                                
                                 <th scope="col" class="px-4 py-3 text-start">Actions</th>
                             </tr>
                         </thead>

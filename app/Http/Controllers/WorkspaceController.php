@@ -161,4 +161,23 @@ class WorkspaceController extends Controller
         $workspace = Workspace::where('subdomain', $workspace)->firstOrFail();
         return redirect()->route('dashboard')->with('success', 'Switched to workspace: ' . $workspace->name);
     }
+
+    // /**
+    //  * Join a workspace via a shareable link.
+    //  */
+    // public function join(Workspace $workspace)
+    // {
+    //     if ($workspace->users()->where('user_id', auth()->id())->exists()) {
+    //         return redirect()->route('dashboard')
+    //             ->with('info', 'You are already a member of this workspace.');
+    //     }
+
+    //     $workspace->users()->attach(auth()->id(), [
+    //         'role' => 'member',
+    //         'is_active' => true,
+    //     ]);
+
+    //     return redirect()->route('workspace.show', $workspace)
+    //         ->with('success', 'You have joined the workspace.');
+    // }
 }

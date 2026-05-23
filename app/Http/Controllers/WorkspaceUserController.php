@@ -21,8 +21,6 @@ class WorkspaceUserController extends Controller
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
         }
-        
-        
     }
 
     public function index(Workspace $workspace)
@@ -48,7 +46,7 @@ class WorkspaceUserController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
-            'role' => ['required', 'in:owner,admin,member,viewer'],
+            'role' => ['required', 'in:admin,member,viewer'],
             // 'is_active' => ['required', 'boolean'],
         ]);
 
@@ -102,41 +100,41 @@ class WorkspaceUserController extends Controller
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $workspaceUser = $workspace->users()->where('user_id', $user->id)->firstOrFail();
+        $data['user'] = $workspace->users()->where('user_id', $user->id)->firstOrFail();
+        $data['workspace'] = $workspace;
 
-        return view('workspace-users.show', [
-            'workspace' => $workspace,
-            'user' => $workspaceUser,
-        ]);
+        return view('workspace-users.show', $data);
     }
 
     public function edit(Workspace $workspace, User $user)
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $workspaceUser = $workspace->users()->where('user_id', $user->id)->firstOrFail();
-
-        return view('workspace-users.edit', [
-            'workspace' => $workspace,
-            'user' => $workspaceUser,
-        ]);
+        $data['user'] = $workspace->users()->where('user_id', $user->id)->firstOrFail();
+        $data['workspace'] = $workspace;
+        return view('workspace-users.edit', $data);
     }
 
     public function update(Request $request, Workspace $workspace, User $user)
     {
         $this->authorizeWorkspaceUser($workspace);
 
+
         if ($user->id === $workspace->owner_id) {
             return back()->with('error', 'The workspace owner cannot be modified.');
         }
+        $workspaceUser = $workspace->users()->where('user_id', $user->id)->firstOrFail();
 
-        abort_unless($workspace->users()->where('user_id', $user->id)->exists(), 404);
+        if ($workspaceUser->pivot->activation_token) {
+            return back()->with('error', 'The invited user must accept the workspace invitation before their role can be updated.');
+        }
+     
 
-        
-        $validated = $request->validate([            
-            'role' => ['required', 'in:owner,admin,member,viewer'],
+        $validated = $request->validate([
+            'role' => ['required', 'in:admin,member,viewer'],
             'is_active' => ['required', 'boolean'],
-        ]);        
+        ]);
+
 
         $workspace->users()->updateExistingPivot($user->id, [
             'role' => $validated['role'],
@@ -188,34 +186,23 @@ class WorkspaceUserController extends Controller
      */
     public function acceptInvitation(Request $request, string $token)
     {
-        // find pivot row by token
-        $row = DB::table('workspace_user')->where('activation_token', $token)->first();
-
-        if (! $row) {
-            abort(404);
-        }
-
-        // require authentication (route also has auth middleware)
         if (! auth()->check()) {
             return redirect()->route('login')->with('warning', 'Please log in to accept the invitation.');
         }
 
-        // ensure the logged in user matches the invited user
-        if (auth()->id() !== $row->user_id) {
-            return redirect()->route('dashboard')->with('error', 'This invitation is not for your account.');
+        $user = auth()->user();
+
+        $workspace = $user->workspaces()->wherePivot('activation_token', $token)->first();
+
+        if (! $workspace) {
+            abort(404);
         }
 
-        // activate the pivot
-        $updated = DB::table('workspace_user')->where('id', $row->id)->update([
+        $user->workspaces()->updateExistingPivot($workspace->id, [
             'is_active' => true,
             'activation_token' => null,
-            'updated_at' => now(),
         ]);
 
-        if (! $updated) {
-            return redirect()->route('dashboard')->with('error', 'Unable to activate invitation.');
-        }
-
-        return redirect()->route('workspace.show', $row->workspace_id)->with('success', 'You have joined the workspace.');
+        return redirect()->route('workspace.show', $workspace)->with('success', 'You have joined the workspace.');
     }
 }
