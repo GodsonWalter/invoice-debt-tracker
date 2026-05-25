@@ -19,5 +19,12 @@ class Client extends Model
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'client_id');
+    }
 }
+
+
 

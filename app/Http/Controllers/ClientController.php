@@ -64,7 +64,8 @@ class ClientController extends Controller
             if ($alreadyExists) {
                 return back()
                     ->withInput()
-                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.']);
+                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.'])
+                    ->with('error', 'Failed to create client. Please fix the errors and try again.');
             }
         }
 
@@ -130,7 +131,8 @@ class ClientController extends Controller
             if ($emailAlreadyUsed) {
                 return back()
                     ->withInput()
-                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.']);
+                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.'])
+                    ->with('error', 'Failed to update client. Please fix the errors and try again.');
             }
         }
 

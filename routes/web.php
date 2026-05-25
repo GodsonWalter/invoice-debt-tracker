@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
@@ -43,13 +44,13 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
 
     // clients routes (workspace scoped)
     Route::prefix('workspace/{workspace}/clients')->name('clients.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ClientController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\ClientController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\ClientController::class, 'store'])->name('store');
-        Route::get('/{client}', [\App\Http\Controllers\ClientController::class, 'show'])->name('show');
-        Route::get('/{client}/edit', [\App\Http\Controllers\ClientController::class, 'edit'])->name('edit');
-        Route::put('/{client}', [\App\Http\Controllers\ClientController::class, 'update'])->name('update');
-        Route::delete('/{client}', [\App\Http\Controllers\ClientController::class, 'destroy'])->name('destroy');
+        Route::get('/', [ClientController::class, 'index'])->name('index');
+        Route::get('/create', [ClientController::class, 'create'])->name('create');
+        Route::post('/', [ClientController::class, 'store'])->name('store');
+        Route::get('/{client}', [ClientController::class, 'show'])->name('show');
+        Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
+        Route::put('/{client}', [ClientController::class, 'update'])->name('update');
+        Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

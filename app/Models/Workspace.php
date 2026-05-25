@@ -41,5 +41,10 @@ class Workspace extends Model
     {
         return $this->hasMany(Client::class, 'workspace_id');
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'workspace_id');
+    }
  
 }
