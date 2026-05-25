@@ -82,6 +82,7 @@
                                             <form action="{{ route('clients.destroy', [$workspace, $client]) }}" method="POST"
                                                 class="d-inline-block" onsubmit="return confirm('Delete this client?');">
                                                 @csrf
+                                                
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                     <i class="bi bi-trash"></i>
