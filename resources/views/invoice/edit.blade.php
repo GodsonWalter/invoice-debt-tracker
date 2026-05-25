@@ -84,9 +84,11 @@
 
                                     <div class="row g-2 align-items-end">
                                         <div class="col-12 col-md-3">
+                                            <button type="button" class="btn btn-link p-0 ms-auto text-danger remove-item" title="Remove" aria-label="Remove row">×</button>
                                             <label class="form-label">Item Name</label>
                                             <input type="text" name="items[{{ $idx }}][item_name]" class="form-control" value="{{ old('items.' . $idx . '.item_name', $item->item_name) }}" required>
                                         </div>
+
                                         <div class="col-12 col-md-3">
                                             <label class="form-label">Description</label>
                                             <input type="text" name="items[{{ $idx }}][description]" class="form-control" value="{{ old('items.' . $idx . '.description', $item->description) }}">
