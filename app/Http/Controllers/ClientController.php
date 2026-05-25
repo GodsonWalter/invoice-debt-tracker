@@ -53,13 +53,29 @@ class ClientController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $email = $validated['email'] ?? null;
+
+        // Prevent duplicate email within the same workspace
+        if ($email) {
+            $alreadyExists = $workspace->clients()
+                ->where('email', $email)
+                ->exists();
+
+            if ($alreadyExists) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.']);
+            }
+        }
+
         $workspace->clients()->create([
             'name' => $validated['name'],
-            'email' => $validated['email'] ?? null,
+            'email' => $email,
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+
 
         return redirect()->route('clients.index', $workspace)->with('success', 'Client created successfully.');
     }
@@ -102,13 +118,30 @@ class ClientController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $email = $validated['email'] ?? null;
+
+        // Prevent duplicate email within the same workspace (excluding the current client)
+        if ($email) {
+            $emailAlreadyUsed = $workspace->clients()
+                ->where('email', $email)
+                ->where('id', '!=', $client->id)
+                ->exists();
+
+            if ($emailAlreadyUsed) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['email' => 'A client with this email already exists in the current workspace.']);
+            }
+        }
+
         $client->update([
             'name' => $validated['name'],
-            'email' => $validated['email'] ?? null,
+            'email' => $email,
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+
 
         return redirect()->route('clients.show', [$workspace, $client])
             ->with('success', 'Client updated successfully.');
