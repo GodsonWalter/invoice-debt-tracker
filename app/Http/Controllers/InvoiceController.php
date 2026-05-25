@@ -2,64 +2,225 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    private function authorizeWorkspaceUser(Workspace $workspace): void
     {
-        //
+        // deny access if the user is not the workspace owner or admin
+        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+            throw new HttpResponseException(
+                redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
+            );
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(Workspace $workspace)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoices = $workspace->invoices()
+            ->with(['client'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('invoice.index', [
+            'workspace' => $workspace,
+            'invoices' => $invoices,
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function create(Workspace $workspace)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $clients = $workspace->clients()->orderBy('name')->get();
+
+        return view('invoice.create', [
+            'workspace' => $workspace,
+            'clients' => $clients,
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Invoice $invoice)
+    public function store(Request $request, Workspace $workspace)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $validated = $request->validate([
+            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number'],
+            'client_id' => ['required', 'exists:clients,id'],
+            'issue_date' => ['required', 'date'],
+            'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
+            'status' => ['required', 'in:draft,sent,paid,overdue'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_name' => ['required', 'string', 'max:255'],
+            'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.total_price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        // ensure client belongs to workspace
+        $client = $workspace->clients()->where('id', $validated['client_id'])->firstOrFail();
+
+        $tax = (float) ($validated['tax_amount'] ?? 0);
+        $discount = (float) ($validated['discount_amount'] ?? 0);
+
+        $subtotal = 0.0;
+        $itemsPayload = [];
+        foreach ($validated['items'] as $item) {
+            $qty = (int) $item['quantity'];
+            $unit = (float) $item['unit_price'];
+            $lineTotal = $qty * $unit;
+            $subtotal += $lineTotal;
+
+            $itemsPayload[] = [
+                'item_name' => $item['item_name'],
+                'description' => $item['description'] ?? '',
+                'quantity' => $qty,
+                'unit_price' => $unit,
+                'total_price' => $lineTotal,
+            ];
+        }
+
+        $totalAmount = $subtotal + $tax - $discount;
+
+        $invoice = $workspace->invoices()->create([
+            'client_id' => $client->id,
+            'invoice_number' => $validated['invoice_number'],
+            'issue_date' => $validated['issue_date'],
+            'due_date' => $validated['due_date'],
+            'status' => $validated['status'],
+            'subtotal' => $subtotal,
+            'tax_amount' => $tax,
+            'discount_amount' => $discount,
+            'total_amount' => $totalAmount,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        foreach ($itemsPayload as $payload) {
+            $invoice->items()->create($payload);
+        }
+
+        return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice created successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Invoice $invoice)
+    public function show(Workspace $workspace, Invoice $invoice)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()->with(['client', 'items'])->where('id', $invoice->id)->firstOrFail();
+
+        return view('invoice.show', [
+            'workspace' => $workspace,
+            'invoice' => $invoice,
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Invoice $invoice)
+    public function edit(Workspace $workspace, Invoice $invoice)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()->with(['items'])->where('id', $invoice->id)->firstOrFail();
+        $clients = $workspace->clients()->orderBy('name')->get();
+
+        return view('invoice.edit', [
+            'workspace' => $workspace,
+            'invoice' => $invoice,
+            'clients' => $clients,
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Invoice $invoice)
+    public function update(Request $request, Workspace $workspace, Invoice $invoice)
     {
-        //
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
+
+        $validated = $request->validate([
+            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,' . $invoice->id],
+            'client_id' => ['required', 'exists:clients,id'],
+            'issue_date' => ['required', 'date'],
+            'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
+            'status' => ['required', 'in:draft,sent,paid,overdue'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['nullable', 'integer', 'exists:invoice_items,id'],
+            'items.*.item_name' => ['required', 'string', 'max:255'],
+            'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $client = $workspace->clients()->where('id', $validated['client_id'])->firstOrFail();
+
+        $tax = (float) ($validated['tax_amount'] ?? 0);
+        $discount = (float) ($validated['discount_amount'] ?? 0);
+
+        $subtotal = 0.0;
+        $seenItemIds = [];
+
+        // Replace all items (simpler/robust)
+        $invoice->items()->delete();
+
+        foreach ($validated['items'] as $item) {
+            $qty = (int) $item['quantity'];
+            $unit = (float) $item['unit_price'];
+            $lineTotal = $qty * $unit;
+            $subtotal += $lineTotal;
+
+            $invoice->items()->create([
+                'item_name' => $item['item_name'],
+                'description' => $item['description'] ?? '',
+                'quantity' => $qty,
+                'unit_price' => $unit,
+                'total_price' => $lineTotal,
+            ]);
+
+            if (!empty($item['id'])) {
+                $seenItemIds[] = $item['id'];
+            }
+        }
+
+        $totalAmount = $subtotal + $tax - $discount;
+
+        $invoice->update([
+            'client_id' => $client->id,
+            'invoice_number' => $validated['invoice_number'],
+            'issue_date' => $validated['issue_date'],
+            'due_date' => $validated['due_date'],
+            'status' => $validated['status'],
+            'subtotal' => $subtotal,
+            'tax_amount' => $tax,
+            'discount_amount' => $discount,
+            'total_amount' => $totalAmount,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
+    }
+
+    public function destroy(Workspace $workspace, Invoice $invoice)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
+
+        $invoice->delete();
+
+        return redirect()->route('invoices.index', $workspace)->with('success', 'Invoice deleted successfully.');
     }
 }
+

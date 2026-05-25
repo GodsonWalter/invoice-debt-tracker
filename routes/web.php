@@ -53,7 +53,21 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
     });
 
+    // invoices routes (workspace scoped)
+    Route::prefix('workspace/{workspace}/invoices')->name('invoices.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\InvoiceController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\InvoiceController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\InvoiceController::class, 'store'])->name('store');
+        Route::get('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'show'])->name('show');
+        Route::get('/{invoice}/edit', [\App\Http\Controllers\InvoiceController::class, 'edit'])->name('edit');
+        Route::put('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'update'])->name('update');
+        Route::delete('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'destroy'])->name('destroy');
+    });
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+
+
 
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

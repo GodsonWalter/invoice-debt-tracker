@@ -35,7 +35,15 @@
             </a>
         </li>
 
+        {{-- invoices --}}
+        <li class="nav-item">
+            <a href="{{ route('invoices.index', $currentWorkspace) }}" class="nav-link">
+                <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
+            </a>
+        </li>
+
         {{-- clients --}}
+
         <li class="nav-item">
             <a href="{{ route('clients.index', $currentWorkspace) }}" class="nav-link">
                 <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
