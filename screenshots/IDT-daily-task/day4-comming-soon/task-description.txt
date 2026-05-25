@@ -1,0 +1,9 @@
+Day 6 — Client Management DB + CRUD
+
+Tasks:
+1.	Client migration/model 
+2.	CRUD controller 
+3.	Client list page 
+4.	Search/filter clients 
+Deliverable:
+•	Client management complete 

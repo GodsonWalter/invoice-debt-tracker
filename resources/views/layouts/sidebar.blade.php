@@ -1,11 +1,7 @@
 <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
     <div class="p-3 fs-4 fw-bold border-bottom border-secondary text-center d-flex justify-content-center align-items-center"
         style="height: 73px;">
-        {{-- @if (isset($currentWorkspace))
-            <div class="position-absolute" style="top: 12px; right: 14px;">
-                <span class="badge bg-secondary">{{ $currentWorkspace->name ?? 'Current Workspace' }}</span>
-            </div>
-        @endif --}}
+       
         <span class="sidebar-text">
             {{-- get the app name --}}
             {{ config('app.name', 'IDT') }}
@@ -14,7 +10,6 @@
     </div>
 
     <ul class="nav flex-column mt-2 pb-4">
-        <li class="nav-section-title">Overview</li>
         <li class="nav-item">
             <a href="{{ route('dashboard') }}" class="nav-link active">
                 <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
@@ -28,7 +23,7 @@
             </a>
         </li>
 
-        @if (isset($currentWorkspace))
+        @if (isset($currentWorkspace))             
 
         <li class="nav-divider"></li>
         <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
@@ -40,12 +35,20 @@
             </a>
         </li>
 
+        {{-- clients --}}
+        <li class="nav-item">
+            <a href="{{ route('clients.index', $currentWorkspace) }}" class="nav-link">
+                <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
+            </a>
+        </li>
+
         {{-- users --}}
-            <li class="nav-item">
-                <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
-                    <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
-                </a>
-            </li>
+        <li class="nav-item">
+            <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
+                <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
+            </a>
+        </li>
+
         @endif
 
 

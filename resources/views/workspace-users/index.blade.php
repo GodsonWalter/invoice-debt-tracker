@@ -6,7 +6,7 @@
     <div class="container-fluid py-2">
         <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
             <div>
-                
+               
                 <p class="text-muted small mb-0">Manage members assigned to {{ $workspace->name }}.</p>
             </div>
             <div class="d-flex gap-2">

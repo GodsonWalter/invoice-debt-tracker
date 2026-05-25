@@ -40,8 +40,20 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
     Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])->name('business-profile.update');
-    
+
+    // clients routes (workspace scoped)
+    Route::prefix('workspace/{workspace}/clients')->name('clients.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ClientController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\ClientController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\ClientController::class, 'store'])->name('store');
+        Route::get('/{client}', [\App\Http\Controllers\ClientController::class, 'show'])->name('show');
+        Route::get('/{client}/edit', [\App\Http\Controllers\ClientController::class, 'edit'])->name('edit');
+        Route::put('/{client}', [\App\Http\Controllers\ClientController::class, 'update'])->name('update');
+        Route::delete('/{client}', [\App\Http\Controllers\ClientController::class, 'destroy'])->name('destroy');
+    });
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

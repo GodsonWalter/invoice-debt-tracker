@@ -36,5 +36,10 @@ class Workspace extends Model
             ->withPivot(['role', 'is_active', 'activation_token'])
             ->withTimestamps();
     }
+
+    public function clients()
+    {
+        return $this->hasMany(Client::class, 'workspace_id');
+    }
  
 }
