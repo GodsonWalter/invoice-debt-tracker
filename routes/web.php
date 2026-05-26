@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
 use App\Http\Controllers\BusinessProfileController;
+use App\Http\Controllers\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -55,13 +56,13 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
 
     // invoices routes (workspace scoped)
     Route::prefix('workspace/{workspace}/invoices')->name('invoices.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\InvoiceController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\InvoiceController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\InvoiceController::class, 'store'])->name('store');
-        Route::get('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'show'])->name('show');
-        Route::get('/{invoice}/edit', [\App\Http\Controllers\InvoiceController::class, 'edit'])->name('edit');
-        Route::put('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'update'])->name('update');
-        Route::delete('/{invoice}', [\App\Http\Controllers\InvoiceController::class, 'destroy'])->name('destroy');
+        Route::get('/', [InvoiceController::class, 'index'])->name('index');
+        Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+        Route::post('/', [InvoiceController::class, 'store'])->name('store');
+        Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+        Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
+        Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
+        Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

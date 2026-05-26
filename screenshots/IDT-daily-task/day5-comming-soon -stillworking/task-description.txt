@@ -1,0 +1,10 @@
+* Invoice database design
+* Invoice items architecture
+* Relationships setup
+* Invoice status workflow (Draft, Sent, Paid, Overdue)
+* Invoice creation UI
+* Dynamic line items with JavaScript
+* Quantity, tax, discount, and total calculations
+* Validation
+* Full invoice CRUD (create, edit, view, delete)
+* Draft invoice saving

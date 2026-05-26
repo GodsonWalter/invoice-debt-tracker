@@ -1,0 +1,20 @@
+Today I completed the invoice module for the Invoice + Debt Tracking SaaS I’m building with Laravel.
+
+Completed:
+
+* Invoice database design
+* Invoice items architecture
+* Relationships setup
+* Invoice status workflow (Draft, Sent, Paid, Overdue)
+* Invoice creation UI
+* Dynamic line items with JavaScript
+* Quantity, tax, discount, and total calculations
+* Validation
+* Full invoice CRUD (create, edit, view, delete)
+* Draft invoice saving
+
+One thing I’m learning from building this project is that simple-looking features usually require a lot of thought behind the scenes, especially around database structure and relationships.
+
+Still building and improving daily.
+
+#SoftWareEngineer #Laravel #PHP #WebDevelopment #SaaS #BackendDevelopment #BuildInPublic #OpenToWork

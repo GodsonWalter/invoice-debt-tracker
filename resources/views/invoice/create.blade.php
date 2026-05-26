@@ -220,11 +220,7 @@
                     <button type="button" class="btn btn-link p-0 ms-auto text-danger remove-item" title="Remove" aria-label="Remove row">×</button>
                     <label class="form-label">Item Name</label>
                     <input type="text" name="items[${index}][item_name]" class="form-control" required>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Item Name</label>
-                    <input type="text" name="items[${index}][item_name]" class="form-control" required>
-                </div>
+                </div>                
                 <div class="col-12 col-md-3">
                     <label class="form-label">Description</label>
                     <input type="text" name="items[${index}][description]" class="form-control">
