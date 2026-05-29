@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
@@ -43,6 +44,17 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
     Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])->name('business-profile.update');
+
+    // system currency management routes
+    Route::prefix('currencies')->name('currencies.')->group(function () {
+        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+        Route::get('/create', [CurrencyController::class, 'create'])->name('create');
+        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+        Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
+        Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+        Route::patch('/{currency}/toggle', [CurrencyController::class, 'toggle'])->name('toggle');
+        Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
+    });
 
     // clients routes (workspace scoped)
     Route::prefix('workspace/{workspace}/clients')->name('clients.')->group(function () {

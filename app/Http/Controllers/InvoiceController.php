@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\CurrencyService;
 use App\Services\InvoiceService;
+use App\Services\PaymentService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,7 +63,7 @@ class InvoiceController extends Controller
             'currency_id' => ['required', $currencyService->activeCurrencyRule()],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'status' => ['required', 'in:draft,sent,paid,overdue'],
+            'status' => ['required', 'in:'.implode(',', Invoice::STATUSES)],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
@@ -86,7 +87,7 @@ class InvoiceController extends Controller
         }
     }
 
-    public function show(Workspace $workspace, Invoice $invoice)
+    public function show(Workspace $workspace, Invoice $invoice, PaymentService $paymentService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
@@ -95,6 +96,8 @@ class InvoiceController extends Controller
                 'client',
                 'currency',
                 'items',
+                'workspace.businessProfile',
+                'workspace.currency',
                 'payments' => fn ($query) => $query
                     ->orderByDesc('payment_date')
                     ->orderByDesc('created_at'),
@@ -105,6 +108,7 @@ class InvoiceController extends Controller
         return view('invoice.show', [
             'workspace' => $workspace,
             'invoice' => $invoice,
+            'paymentTimeline' => $paymentService->paymentTimeline($invoice),
         ]);
     }
 
@@ -136,7 +140,7 @@ class InvoiceController extends Controller
             'issue_date' => ['required', 'date'],
 
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'status' => ['required', 'in:draft,sent,paid,overdue'],
+            'status' => ['required', 'in:'.implode(',', Invoice::STATUSES)],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],

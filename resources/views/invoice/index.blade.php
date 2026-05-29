@@ -63,6 +63,7 @@
                                                 $badge = match ($invoice->status) {
                                                     'draft' => 'secondary',
                                                     'sent' => 'info',
+                                                    'partial' => 'warning',
                                                     'paid' => 'success',
                                                     'overdue' => 'danger',
                                                     default => 'secondary'

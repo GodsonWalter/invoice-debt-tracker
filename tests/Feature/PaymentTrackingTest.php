@@ -59,15 +59,21 @@ test('a workspace user can record partial and final invoice payments', function 
             'amount' => 400,
             'payment_date' => now()->toDateString(),
             'payment_method' => 'Bank transfer',
+            'reference' => 'TXN-400',
         ])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('invoices.show', [$workspace, $invoice]));
 
     expect($invoice->refresh())
-        ->status->toBe('sent')
+        ->status->toBe('partial')
         ->paid_amount->toBe(400.0)
+        ->total_paid->toBe(400.0)
         ->remaining_balance->toBe(600.0)
-        ->is_paid->toBeFalse();
+        ->is_paid->toBeFalse()
+        ->is_partially_paid->toBeTrue();
+
+    expect($invoice->payments()->first())
+        ->reference->toBe('TXN-400');
 
     $this->actingAs($user)
         ->post(route('invoices.payments.store', [$workspace, $invoice]), [
@@ -102,4 +108,31 @@ test('payment amount cannot exceed the invoice remaining balance', function () {
         ->status->toBe('sent')
         ->paid_amount->toBe(0.0)
         ->remaining_balance->toBe(1000.0);
+});
+
+test('invoice payment history shows payment audit details', function () {
+    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+
+    [$user, $workspace, $invoice] = createInvoiceForPaymentTest('sent');
+
+    $this->actingAs($user)
+        ->post(route('invoices.payments.store', [$workspace, $invoice]), [
+            'amount' => 250,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'Card',
+            'reference' => 'RCPT-250',
+            'notes' => 'Customer paid by card.',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($user)
+        ->get(route('invoices.show', [$workspace, $invoice]))
+        ->assertOk()
+        ->assertSee('Payment History')
+        ->assertSee('Invoice Created')
+        ->assertSee('Payment Received')
+        ->assertSee('Card')
+        ->assertSee('RCPT-250')
+        ->assertSee('Customer paid by card.')
+        ->assertSee('Remaining balance');
 });

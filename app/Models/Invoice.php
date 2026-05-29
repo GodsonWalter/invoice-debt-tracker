@@ -8,6 +8,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_SENT = 'sent';
+
+    public const STATUS_PARTIAL = 'partial';
+
+    public const STATUS_PAID = 'paid';
+
+    public const STATUS_OVERDUE = 'overdue';
+
+    public const STATUSES = [
+        self::STATUS_DRAFT,
+        self::STATUS_SENT,
+        self::STATUS_PARTIAL,
+        self::STATUS_PAID,
+        self::STATUS_OVERDUE,
+    ];
+
     protected $fillable = [
         'workspace_id',
         'client_id',
@@ -57,7 +75,17 @@ class Invoice extends Model
         return $this->hasMany(Payment::class, 'invoice_id');
     }
 
+    public function businessProfile(): ?BusinessProfile
+    {
+        return $this->workspace?->businessProfile;
+    }
+
     public function getPaidAmountAttribute(): float
+    {
+        return $this->total_paid;
+    }
+
+    public function getTotalPaidAttribute(): float
     {
         if ($this->relationLoaded('payments')) {
             return (float) $this->payments->sum('amount');
@@ -68,12 +96,22 @@ class Invoice extends Model
 
     public function getRemainingBalanceAttribute(): float
     {
-        return max(round((float) $this->total_amount - $this->paid_amount, 2), 0.0);
+        return max(round((float) $this->total_amount - $this->total_paid, 2), 0.0);
     }
 
     public function getIsPaidAttribute(): bool
     {
-        return $this->remaining_balance <= 0;
+        return $this->is_fully_paid;
+    }
+
+    public function getIsFullyPaidAttribute(): bool
+    {
+        return $this->remaining_balance <= 0 && (float) $this->total_amount > 0;
+    }
+
+    public function getIsPartiallyPaidAttribute(): bool
+    {
+        return $this->total_paid > 0 && ! $this->is_fully_paid;
     }
 
     public function getCurrencySymbolAttribute(): string

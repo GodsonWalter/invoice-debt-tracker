@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Invoice;
+use App\Services\PaymentService;
 use Illuminate\Database\Seeder;
 
 class PaymentSeeder extends Seeder
@@ -16,7 +17,7 @@ class PaymentSeeder extends Seeder
             ->with('payments')
             ->orderBy('id')
             ->each(function (Invoice $invoice): void {
-                if (! in_array($invoice->status, ['paid', 'sent'], true)) {
+                if (! in_array($invoice->status, ['paid', 'sent', 'partial'], true)) {
                     return;
                 }
 
@@ -36,11 +37,7 @@ class PaymentSeeder extends Seeder
                     ],
                 );
 
-                $invoice->load('payments');
-
-                $invoice->update([
-                    'status' => $invoice->remaining_balance <= 0 ? 'paid' : 'sent',
-                ]);
+                app(PaymentService::class)->updateInvoicePaymentStatus($invoice);
             });
     }
 }

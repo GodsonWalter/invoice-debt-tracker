@@ -23,6 +23,14 @@
             </a>
         </li>
 
+        @if (in_array(Auth::user()?->role, ['owner', 'admin'], true))
+            <li class="nav-item">
+                <a href="{{ route('currencies.index') }}" class="nav-link">
+                    <i class="fa-solid fa-coins fa-fw"></i> <span>Currencies</span>
+                </a>
+            </li>
+        @endif
+
         @if (isset($currentWorkspace))
 
             <li class="nav-divider"></li>

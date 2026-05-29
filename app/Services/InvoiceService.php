@@ -144,6 +144,10 @@ class InvoiceService
                 'notes' => $validated['notes'] ?? null,
             ]);
 
+            if ($invoice->payments()->exists()) {
+                app(PaymentService::class)->updateInvoicePaymentStatus($invoice);
+            }
+
             return $invoice;
         });
     }

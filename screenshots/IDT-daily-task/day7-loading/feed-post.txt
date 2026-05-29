@@ -1,0 +1,23 @@
+Completed the Payment Tracking module for my Invoice & Debt Tracking SaaS.
+
+Implemented:
+• Partial payments
+• Remaining balance calculations
+• Automatic invoice status updates
+• Overpayment prevention
+• Multi-currency support
+• Clean service-based architecture
+
+Focused heavily on:
+
+* scalable backend structure
+* accounting integrity
+* multi-tenant architecture
+* clean Laravel practices
+
+Next up:
+* Payment history
+* Professional invoice PDF generation
+
+Building real-world SaaS systems step by step while improving both software engineering and product architecture skills.
+

@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\BusinessProfile;
-use App\Models\Workspace;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Exceptions\HttpResponseException;
-
 
 class BusinessProfileController extends Controller
 {
@@ -21,6 +19,7 @@ class BusinessProfileController extends Controller
             );
         }
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -33,16 +32,15 @@ class BusinessProfileController extends Controller
             ['business_name' => $request->currentWorkspace->name]
         );
         $data['businessProfile'] = $businessProfile;
+
         return view('business-profile.index', $data);
     }
 
-
     public function update(Request $request, BusinessProfile $businessProfile)
     {
-        $workspace = $request->route('workspace');
-        $workspaceId = $workspace->id ?? $workspace;
+        $this->authorizeWorkspaceUser();
 
-        $this->authorizeWorkspaceUser();        
+        abort_unless($businessProfile->workspace_id === $request->currentWorkspace->id, 404);
 
         $validated = $request->validate([
             'business_name' => ['required', 'string', 'max:255'],
@@ -61,7 +59,7 @@ class BusinessProfileController extends Controller
         $logoPath = $businessProfile->logo;
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('business-profiles', 'public');
-        };
+        }
         $businessProfile->update([
             ...$validated,
             'logo' => $logoPath,

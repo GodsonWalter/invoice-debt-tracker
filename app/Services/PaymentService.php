@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Workspace;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
     /**
-     * @param  array{amount: numeric, payment_date: string, payment_method?: ?string, notes?: ?string}  $validated
+     * @param  array{amount: numeric, payment_date: string, payment_method?: ?string, reference?: ?string, notes?: ?string}  $validated
      */
     public function createPayment(Workspace $workspace, Invoice $invoice, array $validated): Payment
     {
@@ -35,16 +37,110 @@ class PaymentService
                 'amount' => $paymentAmount,
                 'payment_date' => $validated['payment_date'],
                 'payment_method' => $validated['payment_method'] ?? null,
+                'reference' => $validated['reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            $invoice->load('payments');
-
-            $invoice->update([
-                'status' => $invoice->remaining_balance <= 0 ? 'paid' : 'sent',
-            ]);
+            $this->updateInvoicePaymentStatus($invoice);
 
             return $payment;
         });
+    }
+
+    public function calculateTotalPaid(Invoice $invoice): float
+    {
+        if ($invoice->relationLoaded('payments')) {
+            return round((float) $invoice->payments->sum('amount'), 2);
+        }
+
+        return round((float) $invoice->payments()->sum('amount'), 2);
+    }
+
+    public function calculateRemainingBalance(Invoice $invoice): float
+    {
+        return max(round((float) $invoice->total_amount - $this->calculateTotalPaid($invoice), 2), 0.0);
+    }
+
+    public function updateInvoicePaymentStatus(Invoice $invoice): Invoice
+    {
+        $invoice->load('payments');
+
+        $totalPaid = $this->calculateTotalPaid($invoice);
+        $remainingBalance = $this->calculateRemainingBalance($invoice);
+
+        $status = match (true) {
+            $remainingBalance <= 0 && (float) $invoice->total_amount > 0 => Invoice::STATUS_PAID,
+            $totalPaid > 0 => Invoice::STATUS_PARTIAL,
+            $invoice->due_date?->isPast() => Invoice::STATUS_OVERDUE,
+            default => Invoice::STATUS_SENT,
+        };
+
+        $invoice->forceFill(['status' => $status])->save();
+
+        return $invoice->refresh();
+    }
+
+    /**
+     * @return Collection<int, array{type: string, title: string, date: Carbon|null, badge: string, amount?: float, method?: ?string, reference?: ?string, notes?: ?string, remaining_balance?: float}>
+     */
+    public function paymentTimeline(Invoice $invoice): Collection
+    {
+        $runningPaid = 0.0;
+
+        $paymentEvents = $invoice->payments
+            ->sortBy([
+                ['payment_date', 'asc'],
+                ['created_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->map(function (Payment $payment) use ($invoice, &$runningPaid): array {
+                $runningPaid = round($runningPaid + (float) $payment->amount, 2);
+                $remainingBalance = max(round((float) $invoice->total_amount - $runningPaid, 2), 0.0);
+
+                return [
+                    'type' => 'payment',
+                    'title' => $remainingBalance <= 0 ? 'Final Payment Received' : 'Payment Received',
+                    'date' => $payment->payment_date,
+                    'badge' => $remainingBalance <= 0 ? 'success' : 'warning',
+                    'amount' => (float) $payment->amount,
+                    'method' => $payment->payment_method,
+                    'reference' => $payment->reference,
+                    'notes' => $payment->notes,
+                    'remaining_balance' => $remainingBalance,
+                ];
+            });
+
+        $events = collect([
+            [
+                'type' => 'invoice',
+                'title' => 'Invoice Created',
+                'date' => $invoice->created_at,
+                'badge' => 'secondary',
+                'amount' => (float) $invoice->total_amount,
+                'remaining_balance' => (float) $invoice->total_amount,
+            ],
+        ])->merge($paymentEvents);
+
+        if ($invoice->is_partially_paid) {
+            $events->push([
+                'type' => 'status',
+                'title' => 'Invoice Partially Paid',
+                'date' => $invoice->updated_at,
+                'badge' => 'warning',
+                'remaining_balance' => $invoice->remaining_balance,
+            ]);
+        }
+
+        if ($invoice->is_fully_paid) {
+            $events->push([
+                'type' => 'status',
+                'title' => 'Invoice Marked Paid',
+                'date' => $invoice->updated_at,
+                'badge' => 'success',
+                'remaining_balance' => 0.0,
+            ]);
+        }
+
+        return $events->sortByDesc('date')->values();
     }
 }

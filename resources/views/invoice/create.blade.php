@@ -84,7 +84,7 @@
                         <div class="col-12 col-md-4">
                             <label class="form-label">Status</label>
                             <select name="status" class="form-select @error('status') is-invalid @enderror">
-                                @foreach(['draft', 'sent', 'paid', 'overdue'] as $st)
+                                @foreach(\App\Models\Invoice::STATUSES as $st)
                                     <option value="{{ $st }}" {{ old('status', 'draft') == $st ? 'selected' : '' }}>
                                         {{ ucfirst($st) }}</option>
                                 @endforeach
