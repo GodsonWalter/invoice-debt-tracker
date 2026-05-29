@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Workspace extends Model
@@ -19,6 +20,7 @@ class Workspace extends Model
         'subdomain',
         'metadata',
         'invoice_prefix',
+        'currency_id',
         'is_active',
     ];
 
@@ -30,6 +32,11 @@ class Workspace extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency_id');
     }
 
     public function users()
@@ -52,5 +59,17 @@ class Workspace extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'workspace_id');
+    }
+
+    public function getCurrencySymbolAttribute(): string
+    {
+        return $this->currency?->symbol ?? '';
+    }
+
+    public function formatMoney(float|int|string|null $amount): string
+    {
+        return $this->currency
+            ? $this->currency->formatMoney($amount)
+            : number_format((float) $amount, 2);
     }
 }

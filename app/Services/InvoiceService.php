@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Workspace;
 use App\Models\Invoice;
+use App\Models\Workspace;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceService
 {
-
     public function generateInvoiceNumber(Workspace $workspace): string
     {
         $number = str_pad(
@@ -18,9 +17,8 @@ class InvoiceService
             STR_PAD_LEFT
         );
 
-        return $workspace->invoice_prefix . '-' . now()->year . '-' . $number;
+        return $workspace->invoice_prefix.'-'.now()->year.'-'.$number;
     }
-
 
     public function createInvoice(Workspace $workspace, array $validated): Invoice
     {
@@ -63,7 +61,7 @@ class InvoiceService
 
             $totalAmount = $subtotal + $tax - $discount;
 
-            echo $invoiceNumber = app(InvoiceService::class)
+            $invoiceNumber = app(InvoiceService::class)
                 ->generateInvoiceNumber($workspace);
 
             // prevent duplicates
@@ -76,6 +74,7 @@ class InvoiceService
 
             $invoice = $workspace->invoices()->create([
                 'client_id' => $client->id,
+                'currency_id' => $validated['currency_id'],
                 'invoice_number' => $invoiceNumber,
                 'issue_date' => $validated['issue_date'],
                 'due_date' => $validated['due_date'],
@@ -112,8 +111,6 @@ class InvoiceService
             $discount = (float) ($validated['discount_amount'] ?? 0);
 
             $subtotal = 0.0;
-            $seenItemIds = [];
-
             // Replace all items (simpler/robust)
             $invoice->items()->delete();
 
@@ -130,16 +127,13 @@ class InvoiceService
                     'unit_price' => $unit,
                     'total_price' => $lineTotal,
                 ]);
-
-                if (!empty($item['id'])) {
-                    $seenItemIds[] = $item['id'];
-                }
             }
 
             $totalAmount = $subtotal + $tax - $discount;
 
             $invoice->update([
                 'client_id' => $client->id,
+                'currency_id' => $validated['currency_id'],
                 'issue_date' => $validated['issue_date'],
                 'due_date' => $validated['due_date'],
                 'status' => $validated['status'],
@@ -149,7 +143,6 @@ class InvoiceService
                 'total_amount' => $totalAmount,
                 'notes' => $validated['notes'] ?? null,
             ]);
-
 
             return $invoice;
         });

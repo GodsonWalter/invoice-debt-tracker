@@ -51,6 +51,12 @@
                     <div class="form-text">Optional JSON metadata for the workspace.</div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label">Default Currency</label>
+                    <input type="text" class="form-control" value="{{ $defaultCurrency ? $defaultCurrency->code . ' - ' . $defaultCurrency->name : 'System default' }}" readonly>
+                    <div class="form-text">New workspaces inherit your profile default currency.</div>
+                </div>
+
                 <div class="d-grid d-md-block mt-3">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-plus-lg me-2"></i> Create Workspace

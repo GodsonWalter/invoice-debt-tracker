@@ -47,6 +47,19 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="default_currency_id" :value="__('Default Currency')" />
+            <select id="default_currency_id" name="default_currency_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                <option value="">{{ __('Use system default') }}</option>
+                @foreach ($currencies as $currency)
+                    <option value="{{ $currency->id }}" {{ (string) old('default_currency_id', $user->default_currency_id) === (string) $currency->id ? 'selected' : '' }}>
+                        {{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('default_currency_id')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

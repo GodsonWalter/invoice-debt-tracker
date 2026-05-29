@@ -26,6 +26,10 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'default_currency_id' => [
+                'nullable',
+                Rule::exists('currencies', 'id')->where('is_active', true),
+            ],
         ];
     }
 }

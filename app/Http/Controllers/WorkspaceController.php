@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workspace;
+use App\Services\CurrencyService;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class WorkspaceController extends Controller
 {
@@ -18,6 +19,7 @@ class WorkspaceController extends Controller
             );
         }
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -33,19 +35,21 @@ class WorkspaceController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Workspace $workspace)
+    public function create(Workspace $workspace, CurrencyService $currencyService)
     {
         // $this->authorizeWorkspaceUser($workspace);
-        return view('workspace.create');
+        return view('workspace.create', [
+            'defaultCurrency' => $currencyService->defaultCurrencyForUser(Auth::user()),
+        ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Workspace $workspace)
+    public function store(Request $request, Workspace $workspace, CurrencyService $currencyService)
     {
         //  $this->authorizeWorkspaceUser($workspace);
-        
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug'],
@@ -59,6 +63,7 @@ class WorkspaceController extends Controller
                 'name' => $validated['name'],
                 'slug' => $validated['slug'],
                 'subdomain' => $validated['subdomain'] ?? null,
+                'currency_id' => $currencyService->defaultCurrencyForUser(Auth::user())?->id,
                 'metadata' => isset($validated['metadata']) ? json_decode($validated['metadata'], true) : null,
             ]
         );
@@ -81,36 +86,36 @@ class WorkspaceController extends Controller
         ]);
     }
 
-
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Workspace $workspace)
+    public function edit(Workspace $workspace, CurrencyService $currencyService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         return view('workspace.edit', [
             'workspace' => $workspace,
             'currentWorkspace' => $workspace,
+            'currencies' => $currencyService->activeCurrencies(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Workspace $workspace)
+    public function update(Request $request, Workspace $workspace, CurrencyService $currencyService)
     {
-         $this->authorizeWorkspaceUser($workspace);
+        $this->authorizeWorkspaceUser($workspace);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,' . $workspace->id],
-            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,' . $workspace->id],
+            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,'.$workspace->id],
+            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,'.$workspace->id],
             'metadata' => ['nullable', 'json'],
             'invoice_prefix' => ['nullable', 'string', 'max:50'],
+            'currency_id' => ['required', $currencyService->activeCurrencyRule()],
             'is_active' => ['required', 'boolean'],
         ]);
-
 
         $workspace->update([
             'name' => $validated['name'],
@@ -118,9 +123,9 @@ class WorkspaceController extends Controller
             'subdomain' => $validated['subdomain'] ?? null,
             'metadata' => isset($validated['metadata']) ? json_decode($validated['metadata'], true) : null,
             'invoice_prefix' => $validated['invoice_prefix'] ?? null,
+            'currency_id' => $validated['currency_id'],
             'is_active' => $validated['is_active'],
         ]);
-
 
         return redirect()->route('workspace.show', $workspace)->with('success', 'Workspace updated successfully.');
     }
@@ -163,7 +168,8 @@ class WorkspaceController extends Controller
     public function switch(string $workspace)
     {
         $workspace = Workspace::where('subdomain', $workspace)->firstOrFail();
-        return redirect()->route('dashboard')->with('success', 'Switched to workspace: ' . $workspace->name);
+
+        return redirect()->route('dashboard')->with('success', 'Switched to workspace: '.$workspace->name);
     }
 
     // /**

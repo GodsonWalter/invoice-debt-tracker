@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Currency;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -41,12 +42,17 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
+            $defaultCurrency = Currency::query()
+                ->where('code', $userData['email'] === 'amina@example.com' ? 'NGN' : 'USD')
+                ->first();
+
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
                     'password' => 'password',
                     'role' => $userData['role'],
+                    'default_currency_id' => $defaultCurrency?->id,
                 ],
             );
 

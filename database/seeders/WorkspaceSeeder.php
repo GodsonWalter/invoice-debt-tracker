@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Currency;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Database\Seeder;
@@ -52,12 +53,17 @@ class WorkspaceSeeder extends Seeder
 
         foreach ($workspaces as $workspaceData) {
             $owner = User::query()
+                ->with('defaultCurrency')
                 ->where('email', $workspaceData['owner_email'])
                 ->first() ?? $users->first();
+
+            $currency = $owner?->defaultCurrency
+                ?? Currency::query()->where('code', 'USD')->first();
 
             unset($workspaceData['owner_email']);
 
             $workspaceData['owner_id'] = $owner?->id;
+            $workspaceData['currency_id'] = $currency?->id;
             $created = Workspace::updateOrCreate(
                 ['slug' => $workspaceData['slug']],
                 $workspaceData

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Workspace;
+use App\Services\CurrencyService;
 use App\Services\InvoiceService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class InvoiceController extends Controller
         $this->authorizeWorkspaceUser($workspace);
 
         $invoices = $workspace->invoices()
-            ->with(['client'])
+            ->with(['client', 'currency'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -36,7 +37,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function create(Workspace $workspace)
+    public function create(Workspace $workspace, CurrencyService $currencyService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
@@ -47,15 +48,18 @@ class InvoiceController extends Controller
             'workspace' => $workspace,
             'clients' => $clients,
             'invoiceNumber' => $invoiceNumber,
+            'currencies' => $currencyService->activeCurrencies(),
+            'defaultCurrency' => $currencyService->defaultCurrencyForWorkspace($workspace),
         ]);
     }
 
-    public function store(Request $request, Workspace $workspace, InvoiceService $invoiceService)
+    public function store(Request $request, Workspace $workspace, InvoiceService $invoiceService, CurrencyService $currencyService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'currency_id' => ['required', $currencyService->activeCurrencyRule()],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
             'status' => ['required', 'in:draft,sent,paid,overdue'],
@@ -89,6 +93,7 @@ class InvoiceController extends Controller
         $invoice = $workspace->invoices()
             ->with([
                 'client',
+                'currency',
                 'items',
                 'payments' => fn ($query) => $query
                     ->orderByDesc('payment_date')
@@ -103,21 +108,22 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function edit(Workspace $workspace, Invoice $invoice)
+    public function edit(Workspace $workspace, Invoice $invoice, CurrencyService $currencyService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $invoice = $workspace->invoices()->with(['items'])->where('id', $invoice->id)->firstOrFail();
+        $invoice = $workspace->invoices()->with(['currency', 'items'])->where('id', $invoice->id)->firstOrFail();
         $clients = $workspace->clients()->orderBy('name')->get();
 
         return view('invoice.edit', [
             'workspace' => $workspace,
             'invoice' => $invoice,
             'clients' => $clients,
+            'currencies' => $currencyService->activeCurrencies(),
         ]);
     }
 
-    public function update(Request $request, Workspace $workspace, Invoice $invoice, InvoiceService $invoiceService)
+    public function update(Request $request, Workspace $workspace, Invoice $invoice, InvoiceService $invoiceService, CurrencyService $currencyService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
@@ -126,6 +132,7 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,'.$invoice->id.',id,workspace_id,'.$workspace->id],
             'client_id' => ['required', 'exists:clients,id'],
+            'currency_id' => ['required', $currencyService->activeCurrencyRule()],
             'issue_date' => ['required', 'date'],
 
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],

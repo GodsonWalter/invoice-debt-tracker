@@ -49,6 +49,20 @@
                         </div>
 
                         <div class="col-12 col-md-4">
+                            <label class="form-label">Currency</label>
+                            <select name="currency_id" class="form-select @error('currency_id') is-invalid @enderror" required>
+                                @foreach ($currencies as $currency)
+                                    <option value="{{ $currency->id }}" {{ (string) old('currency_id', $defaultCurrency?->id) === (string) $currency->id ? 'selected' : '' }}>
+                                        {{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('currency_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 col-md-4">
                             <label class="form-label">Issue Date</label>
                             <input type="date" name="issue_date"
                                 class="form-control @error('issue_date') is-invalid @enderror"

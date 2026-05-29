@@ -11,6 +11,7 @@ class Invoice extends Model
     protected $fillable = [
         'workspace_id',
         'client_id',
+        'currency_id',
         'invoice_number',
         'issue_date',
         'due_date',
@@ -41,6 +42,11 @@ class Invoice extends Model
         return $this->belongsTo(Client::class, 'client_id');
     }
 
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class, 'invoice_id');
@@ -68,5 +74,19 @@ class Invoice extends Model
     public function getIsPaidAttribute(): bool
     {
         return $this->remaining_balance <= 0;
+    }
+
+    public function getCurrencySymbolAttribute(): string
+    {
+        return $this->currency?->symbol ?? $this->workspace?->currency_symbol ?? '';
+    }
+
+    public function formatMoney(float|int|string|null $amount): string
+    {
+        $currency = $this->currency ?? $this->workspace?->currency;
+
+        return $currency
+            ? $currency->formatMoney($amount)
+            : number_format((float) $amount, 2);
     }
 }

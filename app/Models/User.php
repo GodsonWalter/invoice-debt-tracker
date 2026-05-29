@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -20,8 +19,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'role',        
-      ];
+        'role',
+        'default_currency_id',
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -45,5 +46,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Workspace::class, 'workspace_user')
             ->withPivot(['role', 'is_active', 'activation_token'])
             ->withTimestamps();
+    }
+
+    public function defaultCurrency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'default_currency_id');
     }
 }

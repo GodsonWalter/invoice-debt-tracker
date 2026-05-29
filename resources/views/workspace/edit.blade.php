@@ -65,6 +65,21 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="currency_id" class="form-label">Workspace Currency</label>
+                    <select name="currency_id" id="currency_id" class="form-select @error('currency_id') is-invalid @enderror" required>
+                        @foreach ($currencies as $currency)
+                            <option value="{{ $currency->id }}" {{ (string) old('currency_id', $workspace->currency_id) === (string) $currency->id ? 'selected' : '' }}>
+                                {{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('currency_id')
+                        <div class="text-danger">{{ $message }}</div>
+                    @enderror
+                    <div class="form-text">New invoices use this currency by default unless overridden.</div>
+                </div>
+
+                <div class="mb-3">
                     <label for="metadata" class="form-label">Metadata</label>
                     <textarea name="metadata" id="metadata" rows="4"
                         class="form-control @error('metadata') is-invalid @enderror"
@@ -96,4 +111,3 @@
 </div>
 
 @endsection
-

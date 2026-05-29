@@ -70,7 +70,7 @@
                                             @endphp
                                             <span class="badge bg-{{ $badge }}">{{ ucfirst($invoice->status) }}</span>
                                         </td>
-                                        <td class="text-end px-4 py-3">{{ number_format((float) $invoice->total_amount, 2) }}</td>
+                                        <td class="text-end px-4 py-3">{{ $invoice->formatMoney($invoice->total_amount) }}</td>
                                         <td class="text-end px-4 py-3">
                                             <a href="{{ route('invoices.show', [$workspace, $invoice]) }}"
                                                 class="btn btn-sm btn-outline-primary me-1" title="View">

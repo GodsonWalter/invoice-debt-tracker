@@ -66,6 +66,7 @@ class InvoiceSeeder extends Seeder
                     ],
                     [
                         'client_id' => $client->id,
+                        'currency_id' => $workspace->currency_id,
                         'issue_date' => $issueDate->toDateString(),
                         'due_date' => $dueDate->toDateString(),
                         'status' => $status,

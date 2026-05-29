@@ -47,8 +47,8 @@
                                             <td class="fw-medium">{{ $item->item_name }}</td>
                                             <td>{{ $item->description }}</td>
                                             <td class="text-end">{{ $item->quantity }}</td>
-                                            <td class="text-end">{{ number_format((float) $item->unit_price, 2) }}</td>
-                                            <td class="text-end">{{ number_format((float) $item->total_price, 2) }}</td>
+                                            <td class="text-end">{{ $invoice->formatMoney($item->unit_price) }}</td>
+                                            <td class="text-end">{{ $invoice->formatMoney($item->total_price) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -82,7 +82,7 @@
                                             <td>{{ $payment->payment_date?->format('Y-m-d') }}</td>
                                             <td>{{ $payment->payment_method ?: '-' }}</td>
                                             <td>{{ $payment->notes ?: '-' }}</td>
-                                            <td class="text-end">{{ number_format((float) $payment->amount, 2) }}</td>
+                                            <td class="text-end">{{ $invoice->formatMoney($payment->amount) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -111,17 +111,22 @@
                         @endphp
                         <span class="badge bg-{{ $badge }}">{{ ucfirst($invoice->status) }}</span>
                     </p>
+                    <p class="mb-2"><strong>Currency:</strong>
+                        <span class="badge bg-light text-dark border">
+                            {{ $invoice->currency?->code ?? $workspace->currency?->code ?? 'Default' }}
+                        </span>
+                    </p>
 
                     <p class="mb-2"><strong>Issue Date:</strong> {{ $invoice->issue_date?->format('Y-m-d') }}</p>
                     <p class="mb-2"><strong>Due Date:</strong> {{ $invoice->due_date?->format('Y-m-d') }}</p>
 
                     <hr>
-                    <p class="mb-2 d-flex justify-content-between"><strong>Subtotal</strong><span>{{ number_format((float) $invoice->subtotal, 2) }}</span></p>
-                    <p class="mb-2 d-flex justify-content-between"><strong>Tax</strong><span>{{ number_format((float) $invoice->tax_amount, 2) }}</span></p>
-                    <p class="mb-2 d-flex justify-content-between"><strong>Discount</strong><span>{{ number_format((float) $invoice->discount_amount, 2) }}</span></p>
-                    <p class="mb-2 d-flex justify-content-between fs-5"><strong>Total</strong><span>{{ number_format((float) $invoice->total_amount, 2) }}</span></p>
-                    <p class="mb-2 d-flex justify-content-between text-success"><strong>Total Paid</strong><span>{{ number_format((float) $invoice->paid_amount, 2) }}</span></p>
-                    <p class="mb-0 d-flex justify-content-between text-danger"><strong>Remaining</strong><span>{{ number_format((float) $invoice->remaining_balance, 2) }}</span></p>
+                    <p class="mb-2 d-flex justify-content-between"><strong>Subtotal</strong><span>{{ $invoice->formatMoney($invoice->subtotal) }}</span></p>
+                    <p class="mb-2 d-flex justify-content-between"><strong>Tax</strong><span>{{ $invoice->formatMoney($invoice->tax_amount) }}</span></p>
+                    <p class="mb-2 d-flex justify-content-between"><strong>Discount</strong><span>{{ $invoice->formatMoney($invoice->discount_amount) }}</span></p>
+                    <p class="mb-2 d-flex justify-content-between fs-5"><strong>Total</strong><span>{{ $invoice->formatMoney($invoice->total_amount) }}</span></p>
+                    <p class="mb-2 d-flex justify-content-between text-success"><strong>Total Paid</strong><span>{{ $invoice->formatMoney($invoice->paid_amount) }}</span></p>
+                    <p class="mb-0 d-flex justify-content-between text-danger"><strong>Remaining</strong><span>{{ $invoice->formatMoney($invoice->remaining_balance) }}</span></p>
 
                     @if ($invoice->notes)
                         <hr>
