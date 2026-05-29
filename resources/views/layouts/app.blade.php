@@ -286,8 +286,12 @@
                                 <span
                                     class="me-2 fw-medium text-dark d-none d-sm-inline-block">{{ explode(' ', (Auth::user()->name ?? 'Admin'))[0] }}</span>
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
-                                    style="width: 38px; height: 38px; font-size: 1.1rem;">
-                                    {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                                    style="width: 38px; height: 38px; font-size: 1.1rem; overflow: hidden;">
+                                    @if (Auth::user()?->avatar)
+                                        <img src="{{ asset('storage/'.Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-100 h-100 object-fit-cover">
+                                    @else
+                                        {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                                    @endif
                                 </div>
                             </a>
 
