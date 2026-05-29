@@ -1,7 +1,7 @@
 <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
     <div class="p-3 fs-4 fw-bold border-bottom border-secondary text-center d-flex justify-content-center align-items-center"
         style="height: 73px;">
-       
+
         <span class="sidebar-text">
             {{-- get the app name --}}
             {{ config('app.name', 'IDT') }}
@@ -23,45 +23,59 @@
             </a>
         </li>
 
-        @if (isset($currentWorkspace))             
+        @if (isset($currentWorkspace))
 
-        <li class="nav-divider"></li>
-        <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
+            <li class="nav-divider"></li>
+            <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
 
-        {{-- business profiles --}}
-        <li class="nav-item">
-            <a href="{{ route('business-profile.index') }}" class="nav-link">
-                <i class="fa-solid fa-briefcase fa-fw"></i> <span>Business Profile</span>
-            </a>
-        </li>
 
-        {{-- invoices --}}
-        <li class="nav-item">
-            <a href="{{ route('invoices.index', $currentWorkspace) }}" class="nav-link">
-                <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
-            </a>
-        </li>
 
-        {{-- clients --}}
 
-        <li class="nav-item">
-            <a href="{{ route('clients.index', $currentWorkspace) }}" class="nav-link">
-                <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
-            </a>
-        </li>
+            {{-- invoices --}}
+            <li class="nav-item">
+                <a href="{{ route('invoices.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
+                </a>
+            </li>
 
-        {{-- users --}}
-        <li class="nav-item">
-            <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
-                <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
-            </a>
-        </li>
+
+            {{-- clients --}}
+
+            <li class="nav-item">
+                <a href="{{ route('clients.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
+                </a>
+            </li>
+
+            {{-- users --}}
+            <li class="nav-item">
+                <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
+                </a>
+            </li>
+
+            <li class="nav-divider"></li>
+            <li class="nav-section-title">Settings</li>
+            
+            {{-- workspace settings --}}
+            <li class="nav-item">
+                <a href="{{ route('workspace.edit', $currentWorkspace->id) }}" class="nav-link">
+                    <i class="fa-solid fa-gear fa-fw"></i> <span>Workspace </span>
+                </a>
+            </li>
+
+            {{-- business profiles --}}
+            <li class="nav-item">
+                <a href="{{ route('business-profile.index') }}" class="nav-link">
+                    <i class="fa-solid fa-briefcase fa-fw"></i> <span>Business Profile</span>
+                </a>
+            </li>
 
         @endif
 
 
 
-        
+
 
 
         {{-- drop down example --}}

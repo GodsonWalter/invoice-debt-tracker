@@ -40,6 +40,11 @@
                 </div>
 
                 <div class="col-12 col-md-6">
+                    <h6 class="mb-2">Invoice Prefix</h6>
+                    <p class="mb-0">{{ $workspace->invoice_prefix ?? 'Not assigned' }}</p>
+                </div>
+
+                <div class="col-12 col-md-6">
                     <h6 class="mb-2">Status</h6>
                     <p class="mb-0">
                         @if ($workspace->is_active)

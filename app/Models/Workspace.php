@@ -17,6 +17,7 @@ class Workspace extends Model
         'slug',
         'subdomain',
         'metadata',
+        'invoice_prefix',
         'is_active',
     ];
 

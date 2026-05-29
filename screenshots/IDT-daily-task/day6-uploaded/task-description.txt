@@ -1,0 +1,8 @@
+Invoice Numbering System
+
+Tasks:
+1.	Auto-increment invoice numbers 
+2.	Custom prefix support 
+3.	Duplicate prevention 
+Deliverable:
+•	Reliable invoice numbering 

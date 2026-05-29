@@ -15,7 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('workspace_id')->constrained()->onDelete('cascade');
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
-            $table->string('invoice_number')->unique();
+
+            // invoice_number is unique per workspace, not globally unique
+            $table->string('invoice_number');
+            $table->unique([
+                'workspace_id',
+                'invoice_number'
+            ]);
+
             $table->date('issue_date');
             $table->date('due_date');
             $table->enum('status', ['draft', 'sent', 'paid', 'overdue'])->default('draft');

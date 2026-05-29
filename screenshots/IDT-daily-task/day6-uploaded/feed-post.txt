@@ -1,0 +1,20 @@
+Completed the Invoice Numbering System for my Invoice & Debt Tracking SaaS.
+Implemented:
+• Auto-generated invoice numbers
+• Workspace-specific numbering
+• Custom invoice prefixes
+• Duplicate prevention
+• Service-based invoice generation architecture
+
+Example formats:
+INV-0001
+TECH-0001
+INV-2026-0001
+
+Also spent time improving the project structure by separating controller responsibilities from business logic using service classes.
+Small improvements daily. Building step by step.
+
+Next up:
+• Payment tracking system
+• Payment history
+• Professional invoice PDF generation

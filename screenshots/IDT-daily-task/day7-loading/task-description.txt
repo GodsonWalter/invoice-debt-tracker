@@ -1,0 +1,9 @@
+Payment Tracking
+Tasks:
+1.	Payments table 
+2.	Mark as paid 
+3.	Partial payments 
+4.	Remaining balance calculation 
+Deliverable:
+•	Payment tracking system 
+________________________________________

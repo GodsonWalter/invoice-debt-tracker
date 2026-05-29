@@ -25,7 +25,7 @@
                 <div class="row g-3">
                     <div class="col-12 col-md-6">
                         <label class="form-label">Invoice Number</label>
-                        <input type="text" name="invoice_number" class="form-control @error('invoice_number') is-invalid @enderror" value="{{ old('invoice_number', $invoice->invoice_number) }}" required>
+                        <input type="text" name="invoice_number" class="form-control" value="{{ $invoice->invoice_number }}" readonly required>
                         @error('invoice_number')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

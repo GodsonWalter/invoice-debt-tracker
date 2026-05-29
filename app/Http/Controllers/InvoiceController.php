@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Workspace;
+use App\Services\InvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
@@ -42,19 +43,20 @@ class InvoiceController extends Controller
         $this->authorizeWorkspaceUser($workspace);
 
         $clients = $workspace->clients()->orderBy('name')->get();
+        $invoiceNumber = app(InvoiceService::class)->generateInvoiceNumber($workspace);
 
         return view('invoice.create', [
             'workspace' => $workspace,
             'clients' => $clients,
+            'invoiceNumber' => $invoiceNumber,
         ]);
     }
 
-    public function store(Request $request, Workspace $workspace)
+    public function store(Request $request, Workspace $workspace, InvoiceService $invoiceService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         $validated = $request->validate([
-            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number'],
             'client_id' => ['required', 'exists:clients,id'],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
@@ -70,49 +72,15 @@ class InvoiceController extends Controller
             'items.*.total_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        // ensure client belongs to workspace
-        $client = $workspace->clients()->where('id', $validated['client_id'])->firstOrFail();
-
-        $tax = (float) ($validated['tax_amount'] ?? 0);
-        $discount = (float) ($validated['discount_amount'] ?? 0);
-
-        $subtotal = 0.0;
-        $itemsPayload = [];
-        foreach ($validated['items'] as $item) {
-            $qty = (int) $item['quantity'];
-            $unit = (float) $item['unit_price'];
-            $lineTotal = $qty * $unit;
-            $subtotal += $lineTotal;
-
-            $itemsPayload[] = [
-                'item_name' => $item['item_name'],
-                'description' => $item['description'] ?? '',
-                'quantity' => $qty,
-                'unit_price' => $unit,
-                'total_price' => $lineTotal,
-            ];
+        try {
+            $invoice = $invoiceService->createInvoice($workspace, $validated);
+            return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice created successfully.');
+        } catch (\Exception $e) {
+            return back()->with(
+                'error',
+                'Failed to create invoice: ' . $e->getMessage(),
+            );
         }
-
-        $totalAmount = $subtotal + $tax - $discount;
-
-        $invoice = $workspace->invoices()->create([
-            'client_id' => $client->id,
-            'invoice_number' => $validated['invoice_number'],
-            'issue_date' => $validated['issue_date'],
-            'due_date' => $validated['due_date'],
-            'status' => $validated['status'],
-            'subtotal' => $subtotal,
-            'tax_amount' => $tax,
-            'discount_amount' => $discount,
-            'total_amount' => $totalAmount,
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($itemsPayload as $payload) {
-            $invoice->items()->create($payload);
-        }
-
-        return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice created successfully.');
     }
 
     public function show(Workspace $workspace, Invoice $invoice)
@@ -141,16 +109,17 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function update(Request $request, Workspace $workspace, Invoice $invoice)
+    public function update(Request $request, Workspace $workspace, Invoice $invoice, InvoiceService $invoiceService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
 
         $validated = $request->validate([
-            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,' . $invoice->id],
+            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,' . $invoice->id . ',id,workspace_id,' . $workspace->id],
             'client_id' => ['required', 'exists:clients,id'],
             'issue_date' => ['required', 'date'],
+
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
             'status' => ['required', 'in:draft,sent,paid,overdue'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -164,50 +133,16 @@ class InvoiceController extends Controller
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $client = $workspace->clients()->where('id', $validated['client_id'])->firstOrFail();
-
-        $tax = (float) ($validated['tax_amount'] ?? 0);
-        $discount = (float) ($validated['discount_amount'] ?? 0);
-
-        $subtotal = 0.0;
-        $seenItemIds = [];
-
-        // Replace all items (simpler/robust)
-        $invoice->items()->delete();
-
-        foreach ($validated['items'] as $item) {
-            $qty = (int) $item['quantity'];
-            $unit = (float) $item['unit_price'];
-            $lineTotal = $qty * $unit;
-            $subtotal += $lineTotal;
-
-            $invoice->items()->create([
-                'item_name' => $item['item_name'],
-                'description' => $item['description'] ?? '',
-                'quantity' => $qty,
-                'unit_price' => $unit,
-                'total_price' => $lineTotal,
-            ]);
-
-            if (!empty($item['id'])) {
-                $seenItemIds[] = $item['id'];
-            }
+        try {
+            $invoice = $invoiceService->updateInvoice($workspace, $validated, $invoice);
+            return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
+        } catch (\Exception $e) {
+            return back()->with(
+                'error',
+                'Failed to update invoice: ' . $e->getMessage(),
+            );
         }
 
-        $totalAmount = $subtotal + $tax - $discount;
-
-        $invoice->update([
-            'client_id' => $client->id,
-            'invoice_number' => $validated['invoice_number'],
-            'issue_date' => $validated['issue_date'],
-            'due_date' => $validated['due_date'],
-            'status' => $validated['status'],
-            'subtotal' => $subtotal,
-            'tax_amount' => $tax,
-            'discount_amount' => $discount,
-            'total_amount' => $totalAmount,
-            'notes' => $validated['notes'] ?? null,
-        ]);
 
         return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
     }
@@ -223,4 +158,3 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.index', $workspace)->with('success', 'Invoice deleted successfully.');
     }
 }
-

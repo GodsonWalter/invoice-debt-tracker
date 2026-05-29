@@ -53,10 +53,22 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="invoice_prefix" class="form-label">Invoice Prefix</label>
+                    <input type="text" name="invoice_prefix" id="invoice_prefix" 
+                        class="form-control @error('invoice_prefix') is-invalid @enderror"
+                        value="{{ old('invoice_prefix', $workspace->invoice_prefix ?? '') }}"
+                        placeholder="e.g. TKE">
+                    @error('invoice_prefix')
+                        <div class="text-danger">{{ $message }}</div>
+                    @enderror
+                    <div class="form-text">Generated invoices look like: TKE-2026-0001</div>
+                </div>
+
+                <div class="mb-3">
                     <label for="metadata" class="form-label">Metadata</label>
                     <textarea name="metadata" id="metadata" rows="4"
                         class="form-control @error('metadata') is-invalid @enderror"
-                        placeholder="{&quot;color&quot;:&quot;blue&quot;,&quot;timezone&quot;:&quot;UTC&quot;}">{{ old('metadata', json_encode($workspace->metadata ?? [], JSON_PRETTY_PRINT)) }}</textarea>
+                        placeholder="{"color":"blue","timezone":"UTC"}">{{ old('metadata', json_encode($workspace->metadata ?? [], JSON_PRETTY_PRINT)) }}</textarea>
                     @error('metadata')
                         <div class="text-danger">{{ $message }}</div>
                     @enderror
@@ -84,3 +96,4 @@
 </div>
 
 @endsection
+

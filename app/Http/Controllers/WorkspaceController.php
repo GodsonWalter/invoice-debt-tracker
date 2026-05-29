@@ -107,16 +107,20 @@ class WorkspaceController extends Controller
             'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,' . $workspace->id],
             'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,' . $workspace->id],
             'metadata' => ['nullable', 'json'],
+            'invoice_prefix' => ['nullable', 'string', 'max:50'],
             'is_active' => ['required', 'boolean'],
         ]);
+
 
         $workspace->update([
             'name' => $validated['name'],
             'slug' => $validated['slug'],
             'subdomain' => $validated['subdomain'] ?? null,
             'metadata' => isset($validated['metadata']) ? json_decode($validated['metadata'], true) : null,
+            'invoice_prefix' => $validated['invoice_prefix'] ?? null,
             'is_active' => $validated['is_active'],
         ]);
+
 
         return redirect()->route('workspace.show', $workspace)->with('success', 'Workspace updated successfully.');
     }

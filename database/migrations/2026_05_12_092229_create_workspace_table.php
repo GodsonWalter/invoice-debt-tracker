@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('subdomain')->nullable()->unique();
+            $table->string('invoice_prefix')->default('INV');
+            $table->unsignedBigInteger('next_invoice_number')->default(1);
             $table->json('metadata')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
