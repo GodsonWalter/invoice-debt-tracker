@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Workspace;
 use App\Services\InvoiceService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
@@ -74,11 +72,12 @@ class InvoiceController extends Controller
 
         try {
             $invoice = $invoiceService->createInvoice($workspace, $validated);
+
             return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice created successfully.');
         } catch (\Exception $e) {
             return back()->with(
                 'error',
-                'Failed to create invoice: ' . $e->getMessage(),
+                'Failed to create invoice: '.$e->getMessage(),
             );
         }
     }
@@ -87,7 +86,16 @@ class InvoiceController extends Controller
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $invoice = $workspace->invoices()->with(['client', 'items'])->where('id', $invoice->id)->firstOrFail();
+        $invoice = $workspace->invoices()
+            ->with([
+                'client',
+                'items',
+                'payments' => fn ($query) => $query
+                    ->orderByDesc('payment_date')
+                    ->orderByDesc('created_at'),
+            ])
+            ->where('id', $invoice->id)
+            ->firstOrFail();
 
         return view('invoice.show', [
             'workspace' => $workspace,
@@ -116,7 +124,7 @@ class InvoiceController extends Controller
         $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
 
         $validated = $request->validate([
-            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,' . $invoice->id . ',id,workspace_id,' . $workspace->id],
+            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,'.$invoice->id.',id,workspace_id,'.$workspace->id],
             'client_id' => ['required', 'exists:clients,id'],
             'issue_date' => ['required', 'date'],
 
@@ -135,14 +143,14 @@ class InvoiceController extends Controller
 
         try {
             $invoice = $invoiceService->updateInvoice($workspace, $validated, $invoice);
+
             return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
         } catch (\Exception $e) {
             return back()->with(
                 'error',
-                'Failed to update invoice: ' . $e->getMessage(),
+                'Failed to update invoice: '.$e->getMessage(),
             );
         }
-
 
         return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
     }

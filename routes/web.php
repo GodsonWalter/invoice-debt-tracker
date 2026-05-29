@@ -1,12 +1,13 @@
 <?php
 
+use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
-use App\Http\Controllers\BusinessProfileController;
-use App\Http\Controllers\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,7 +38,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
     });
 
-    Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');   
+    Route::domain('{workspace}.'.config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
 
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
@@ -60,15 +61,13 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::get('/create', [InvoiceController::class, 'create'])->name('create');
         Route::post('/', [InvoiceController::class, 'store'])->name('store');
         Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+        Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
         Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-
-
-
 
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -84,4 +83,4 @@ Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acce
     ->name('workspace.users.accept')
     ->middleware('auth');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

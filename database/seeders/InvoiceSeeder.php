@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Workspace;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class InvoiceSeeder extends Seeder
 {
@@ -21,12 +18,11 @@ class InvoiceSeeder extends Seeder
                 continue;
             }
 
-            // Create a few invoices per workspace (deterministic-ish but varied)
             for ($i = 1; $i <= min(5, $clients->count()); $i++) {
                 $client = $clients->get($i - 1);
 
                 $issueDate = now()->subDays(20 + $i);
-                $dueDate = now()->subDays(20 + $i - 5)->addDays(20); // roughly future
+                $dueDate = $issueDate->copy()->addDays(20);
 
                 $status = match (true) {
                     $i % 4 === 0 => 'overdue',
@@ -61,24 +57,27 @@ class InvoiceSeeder extends Seeder
                 $discount = ($i % 2 === 0) ? 0.05 * $subtotal : 0.0; // 5% sometimes
                 $total = $subtotal + $tax - $discount;
 
-                // Ensure unique invoice_number
-                $invoiceNumber = strtoupper(
-                    $workspace->slug . '-' . Str::upper(Str::random(6)) . '-' . $i
+                $invoiceNumber = $workspace->invoice_prefix.'-'.now()->year.'-'.str_pad((string) $i, 4, '0', STR_PAD_LEFT);
+
+                $invoice = Invoice::updateOrCreate(
+                    [
+                        'workspace_id' => $workspace->id,
+                        'invoice_number' => $invoiceNumber,
+                    ],
+                    [
+                        'client_id' => $client->id,
+                        'issue_date' => $issueDate->toDateString(),
+                        'due_date' => $dueDate->toDateString(),
+                        'status' => $status,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => $tax,
+                        'discount_amount' => $discount,
+                        'total_amount' => $total,
+                        'notes' => 'Seeded invoice for testing workspace invoices.',
+                    ],
                 );
 
-                $invoice = $workspace->invoices()->create([
-                    'client_id' => $client->id,
-                    'invoice_number' => $invoiceNumber,
-                    'issue_date' => $issueDate->toDateString(),
-                    'due_date' => $dueDate->toDateString(),
-                    'status' => $status,
-                    'subtotal' => $subtotal,
-                    'tax_amount' => $tax,
-                    'discount_amount' => $discount,
-                    'total_amount' => $total,
-                    'notes' => 'Seeded invoice for testing workspace invoices.',
-                ]);
-
+                $invoice->items()->delete();
                 foreach ($items as $it) {
                     $invoice->items()->create([
                         'item_name' => $it['item_name'],
@@ -89,7 +88,10 @@ class InvoiceSeeder extends Seeder
                     ]);
                 }
             }
+
+            $workspace->forceFill([
+                'next_invoice_number' => max((int) $workspace->next_invoice_number, 6),
+            ])->save();
         }
     }
 }
-

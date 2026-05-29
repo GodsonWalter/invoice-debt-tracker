@@ -13,6 +13,8 @@ class WorkspaceSeeder extends Seeder
      */
     public function run(): void
     {
+        $users = User::query()->orderBy('id')->take(5)->get();
+
         $workspaces = [
             [
                 'name' => 'Acme Corporation',
@@ -20,6 +22,7 @@ class WorkspaceSeeder extends Seeder
                 'subdomain' => 'acme',
                 'metadata' => ['timezone' => 'UTC', 'currency' => 'USD'],
                 'is_active' => true,
+                'owner_email' => 'amina@example.com',
             ],
             [
                 'name' => 'Blue Horizon',
@@ -27,6 +30,7 @@ class WorkspaceSeeder extends Seeder
                 'subdomain' => 'blue',
                 'metadata' => ['timezone' => 'UTC', 'currency' => 'EUR'],
                 'is_active' => true,
+                'owner_email' => 'daniel@example.com',
             ],
             [
                 'name' => 'Green Fields',
@@ -34,6 +38,7 @@ class WorkspaceSeeder extends Seeder
                 'subdomain' => 'green',
                 'metadata' => ['timezone' => 'UTC', 'currency' => 'GBP'],
                 'is_active' => true,
+                'owner_email' => 'grace@example.com',
             ],
             [
                 'name' => 'Silver Line',
@@ -41,20 +46,55 @@ class WorkspaceSeeder extends Seeder
                 'subdomain' => 'silver',
                 'metadata' => ['timezone' => 'UTC', 'currency' => 'CAD'],
                 'is_active' => true,
+                'owner_email' => 'maya@example.com',
             ],
         ];
 
-        $owner = User::first();
+        foreach ($workspaces as $workspaceData) {
+            $owner = User::query()
+                ->where('email', $workspaceData['owner_email'])
+                ->first() ?? $users->first();
 
-        foreach ($workspaces as $workspace) {
-            $workspace['owner_id'] = $owner?->id;
+            unset($workspaceData['owner_email']);
+
+            $workspaceData['owner_id'] = $owner?->id;
             $created = Workspace::updateOrCreate(
-                ['slug' => $workspace['slug']],
-                $workspace
+                ['slug' => $workspaceData['slug']],
+                $workspaceData
             );
 
             if ($owner) {
-                $created->users()->syncWithoutDetaching($owner->id);
+                $created->users()->syncWithoutDetaching([
+                    $owner->id => [
+                        'role' => 'owner',
+                        'is_active' => true,
+                    ],
+                ]);
+
+                $created->users()->updateExistingPivot($owner->id, [
+                    'role' => 'owner',
+                    'is_active' => true,
+                ]);
+            }
+
+            foreach ($users as $user) {
+                if ($owner && $user->is($owner)) {
+                    continue;
+                }
+
+                $role = $user->role === 'admin' ? 'admin' : 'member';
+
+                $created->users()->syncWithoutDetaching([
+                    $user->id => [
+                        'role' => $role,
+                        'is_active' => true,
+                    ],
+                ]);
+
+                $created->users()->updateExistingPivot($user->id, [
+                    'role' => $role,
+                    'is_active' => true,
+                ]);
             }
         }
     }

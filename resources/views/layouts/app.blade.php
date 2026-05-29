@@ -450,11 +450,19 @@
     @foreach (['success', 'error', 'warning', 'info'] as $msg)
         @if (session()->has($msg))
             <script>
-                toastr.{{ $msg }}("{{ session($msg) }}");
+                toastr.{{ $msg }}(@json(session($msg)));
             </script>
         @endif
 
     @endforeach
+
+    @if ($errors->any())
+        <script>
+            @foreach ($errors->all() as $error)
+                toastr.error(@json($error));
+            @endforeach
+        </script>
+    @endif
 
     {{-- link table-search.js --}}
 

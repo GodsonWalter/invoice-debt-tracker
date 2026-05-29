@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Workspace extends Model
 {
@@ -47,5 +48,9 @@ class Workspace extends Model
     {
         return $this->hasMany(Invoice::class, 'workspace_id');
     }
- 
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'workspace_id');
+    }
 }
