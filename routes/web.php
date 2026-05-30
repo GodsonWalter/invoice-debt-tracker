@@ -72,6 +72,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::get('/', [InvoiceController::class, 'index'])->name('index');
         Route::get('/create', [InvoiceController::class, 'create'])->name('create');
         Route::post('/', [InvoiceController::class, 'store'])->name('store');
+        Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
         Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
         Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');

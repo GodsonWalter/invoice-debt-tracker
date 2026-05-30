@@ -7,6 +7,7 @@ use App\Models\Workspace;
 use App\Services\CurrencyService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +111,30 @@ class InvoiceController extends Controller
             'invoice' => $invoice,
             'paymentTimeline' => $paymentService->paymentTimeline($invoice),
         ]);
+    }
+
+    public function downloadPdf(Workspace $workspace, Invoice $invoice)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()
+            ->with([
+                'client',
+                'items',
+                'payments',
+                'workspace.businessProfile',
+                'workspace.currency',
+                'currency',
+            ])
+            ->where('id', $invoice->id)
+            ->firstOrFail();
+
+        $filename = 'invoice-'.preg_replace('/[^A-Za-z0-9\-_]/', '-', $invoice->invoice_number).'.pdf';
+
+        return Pdf::loadView('invoices.pdf', [
+            'workspace' => $workspace,
+            'invoice' => $invoice,
+        ])->setPaper('a4')->download($filename);
     }
 
     public function edit(Workspace $workspace, Invoice $invoice, CurrencyService $currencyService)

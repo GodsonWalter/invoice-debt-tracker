@@ -120,6 +120,9 @@
             <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-pencil-square"></i> Edit
             </a>
+            <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+            </a>
         </div>
     </div>
 
