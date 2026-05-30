@@ -49,6 +49,7 @@ class InvoiceEmailService
 
         $invoice = $emailLog->invoice;
         $this->validateCanEmail($invoice, allowDraft: true);
+        $invoice->ensurePublicToken();
 
         $pdfContent = $this->invoicePdfService->content($invoice);
 

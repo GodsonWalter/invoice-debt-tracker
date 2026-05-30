@@ -83,10 +83,10 @@
             <p class="text-muted mb-0 public-header-note">Secure invoice from {{ $businessName }}</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('public.invoice.pdf', $invoice->public_token) }}" class="btn btn-primary btn-sm">
+            <a href="{{ $pdfUrl }}" class="btn btn-primary btn-sm">
                 <i class="bi bi-file-earmark-pdf"></i> Download PDF
             </a>
-            <a href="{{ route('public.invoice.print', $invoice->public_token) }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ $printUrl }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-printer"></i> Print Invoice
             </a>
         </div>

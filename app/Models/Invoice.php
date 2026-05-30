@@ -67,6 +67,15 @@ class Invoice extends Model
         });
     }
 
+    public function ensurePublicToken(): self
+    {
+        if (! $this->public_token) {
+            $this->forceFill(['public_token' => (string) Str::uuid()])->save();
+        }
+
+        return $this;
+    }
+
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');

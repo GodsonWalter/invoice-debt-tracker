@@ -17,9 +17,9 @@ Route::get('/', function () {
 });
 
 Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
-    Route::get('/{token}', [PublicInvoiceController::class, 'show'])->name('show');
-    Route::get('/{token}/pdf', [PublicInvoiceController::class, 'downloadPdf'])->name('pdf');
-    Route::get('/{token}/print', [PublicInvoiceController::class, 'print'])->name('print');
+    Route::get('/{token}', [PublicInvoiceController::class, 'show'])->middleware('signed')->name('show');
+    Route::get('/{token}/pdf', [PublicInvoiceController::class, 'downloadPdf'])->middleware('signed')->name('pdf');
+    Route::get('/{token}/print', [PublicInvoiceController::class, 'print'])->middleware('signed')->name('print');
 });
 
 Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {

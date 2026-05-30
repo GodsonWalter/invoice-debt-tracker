@@ -12,7 +12,11 @@
     $businessAddress = $businessProfile?->formatted_address;
     $businessTaxLabel = $businessProfile?->tax_label;
     $clientName = $invoice->client?->name ?? 'there';
-    $invoiceUrl = route('public.invoice.show', $invoice->public_token);
+    $invoiceUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        'public.invoice.show',
+        now()->addDays(30),
+        ['token' => $invoice->public_token],
+    );
     $statusColors = [
         'draft' => '#64748b',
         'sent' => '#0284c7',

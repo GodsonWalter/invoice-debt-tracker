@@ -6,6 +6,7 @@ use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Support\Facades\URL;
 
 /**
  * @return array{0: Workspace, 1: Invoice}
@@ -68,7 +69,7 @@ function createPublicInvoiceFixture(string $status = Invoice::STATUS_SENT): arra
 test('guest can view a public invoice by token', function () {
     [, $invoice] = createPublicInvoiceFixture();
 
-    $this->get(route('public.invoice.show', $invoice->public_token))
+    $this->get(URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => $invoice->public_token]))
         ->assertOk()
         ->assertSee('Invoice PUB-2026-0001')
         ->assertSee('Public Client')
@@ -83,7 +84,7 @@ test('guest can view a public invoice by token', function () {
 test('guest can download a public invoice pdf by token', function () {
     [, $invoice] = createPublicInvoiceFixture();
 
-    $this->get(route('public.invoice.pdf', $invoice->public_token))
+    $this->get(URL::temporarySignedRoute('public.invoice.pdf', now()->addDays(30), ['token' => $invoice->public_token]))
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf')
         ->assertHeader('content-disposition', 'attachment; filename=invoice-PUB-2026-0001.pdf');
@@ -94,7 +95,7 @@ test('guest can download a public invoice pdf by token', function () {
 test('guest can open public invoice print view by token', function () {
     [, $invoice] = createPublicInvoiceFixture();
 
-    $this->get(route('public.invoice.print', $invoice->public_token))
+    $this->get(URL::temporarySignedRoute('public.invoice.print', now()->addDays(30), ['token' => $invoice->public_token]))
         ->assertOk()
         ->assertSee('window.print')
         ->assertSee('Invoice PUB-2026-0001');
@@ -105,6 +106,22 @@ test('guest can open public invoice print view by token', function () {
 test('public invoice route does not expose invalid or draft invoices', function () {
     [, $invoice] = createPublicInvoiceFixture(Invoice::STATUS_DRAFT);
 
-    $this->get(route('public.invoice.show', $invoice->public_token))->assertNotFound();
-    $this->get(route('public.invoice.show', 'not-a-real-token'))->assertNotFound();
+    $this->get(URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => $invoice->public_token]))
+        ->assertNotFound();
+
+    $this->get(URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => 'not-a-real-token']))
+        ->assertNotFound();
+});
+
+test('public invoice routes reject unsigned or tampered URLs', function () {
+    [, $invoice] = createPublicInvoiceFixture();
+
+    $this->get(route('public.invoice.show', $invoice->public_token))->assertForbidden();
+    $this->get(route('public.invoice.pdf', $invoice->public_token))->assertForbidden();
+    $this->get(route('public.invoice.print', $invoice->public_token))->assertForbidden();
+
+    $signedUrl = URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => $invoice->public_token]);
+    $tamperedUrl = str_replace($invoice->public_token, 'not-a-real-token', $signedUrl);
+
+    $this->get($tamperedUrl)->assertForbidden();
 });

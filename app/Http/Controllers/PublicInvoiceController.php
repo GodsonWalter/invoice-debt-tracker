@@ -6,6 +6,7 @@ use App\Services\InvoicePdfService;
 use App\Services\PublicInvoiceService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\URL;
 
 class PublicInvoiceController extends Controller
 {
@@ -24,6 +25,8 @@ class PublicInvoiceController extends Controller
             'invoice' => $invoice,
             'workspace' => $invoice->workspace,
             'printMode' => false,
+            'pdfUrl' => $this->signedUrl('public.invoice.pdf', $token),
+            'printUrl' => $this->signedUrl('public.invoice.print', $token),
         ]);
     }
 
@@ -49,6 +52,13 @@ class PublicInvoiceController extends Controller
             'invoice' => $invoice,
             'workspace' => $invoice->workspace,
             'printMode' => true,
+            'pdfUrl' => $this->signedUrl('public.invoice.pdf', $token),
+            'printUrl' => $this->signedUrl('public.invoice.print', $token),
         ]);
+    }
+
+    private function signedUrl(string $routeName, string $token): string
+    {
+        return URL::temporarySignedRoute($routeName, now()->addDays(30), ['token' => $token]);
     }
 }
