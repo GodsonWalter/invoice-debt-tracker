@@ -67,6 +67,11 @@ class Workspace extends Model
         return $this->hasMany(Payment::class, 'workspace_id');
     }
 
+    public function invoiceEmailLogs(): HasMany
+    {
+        return $this->hasMany(InvoiceEmailLog::class, 'workspace_id');
+    }
+
     public function getCurrencySymbolAttribute(): string
     {
         return $this->currency?->symbol ?? '';

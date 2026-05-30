@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Models\InvoiceEmailLog;
 use App\Models\Payment;
 use App\Models\Workspace;
 use Illuminate\Support\Carbon;
@@ -81,7 +82,7 @@ class PaymentService
     }
 
     /**
-     * @return Collection<int, array{type: string, title: string, date: Carbon|null, badge: string, amount?: float, method?: ?string, reference?: ?string, notes?: ?string, remaining_balance?: float}>
+     * @return Collection<int, array{type: string, title: string, date: Carbon|null, badge: string, amount?: float, method?: ?string, reference?: ?string, notes?: ?string, remaining_balance?: float, recipient_email?: string, subject?: string, status?: string}>
      */
     public function paymentTimeline(Invoice $invoice): Collection
     {
@@ -110,6 +111,48 @@ class PaymentService
                 ];
             });
 
+        $emailEvents = $invoice->relationLoaded('emailLogs')
+            ? $invoice->emailLogs->map(function (InvoiceEmailLog $emailLog): array {
+                $status = $emailLog->status;
+
+                return [
+                    'type' => 'email',
+                    'title' => $status === InvoiceEmailLog::STATUS_SENT ? 'Invoice Sent' : 'Invoice Email '.ucfirst($status),
+                    'date' => $emailLog->sent_at ?? $emailLog->created_at,
+                    'badge' => match ($status) {
+                        InvoiceEmailLog::STATUS_SENT => 'info',
+                        InvoiceEmailLog::STATUS_FAILED => 'danger',
+                        default => 'secondary',
+                    },
+                    'recipient_email' => $emailLog->recipient_email,
+                    'subject' => $emailLog->subject,
+                    'status' => $status,
+                    'notes' => $emailLog->error_message,
+                ];
+            })
+            : collect();
+
+        $publicActivityEvents = collect([
+            [
+                'type' => 'public',
+                'title' => 'Invoice Viewed',
+                'date' => $invoice->viewed_at,
+                'badge' => 'primary',
+            ],
+            [
+                'type' => 'public',
+                'title' => 'Invoice Downloaded',
+                'date' => $invoice->downloaded_at,
+                'badge' => 'info',
+            ],
+            [
+                'type' => 'public',
+                'title' => 'Invoice Printed',
+                'date' => $invoice->printed_at,
+                'badge' => 'secondary',
+            ],
+        ])->filter(fn (array $event): bool => filled($event['date']));
+
         $events = collect([
             [
                 'type' => 'invoice',
@@ -119,7 +162,7 @@ class PaymentService
                 'amount' => (float) $invoice->total_amount,
                 'remaining_balance' => (float) $invoice->total_amount,
             ],
-        ])->merge($paymentEvents);
+        ])->merge($emailEvents)->merge($publicActivityEvents)->merge($paymentEvents);
 
         if ($invoice->is_partially_paid) {
             $events->push([

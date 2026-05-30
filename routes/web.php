@@ -7,12 +7,19 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
+    Route::get('/{token}', [PublicInvoiceController::class, 'show'])->name('show');
+    Route::get('/{token}/pdf', [PublicInvoiceController::class, 'downloadPdf'])->name('pdf');
+    Route::get('/{token}/print', [PublicInvoiceController::class, 'print'])->name('print');
 });
 
 Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {
@@ -73,6 +80,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::get('/create', [InvoiceController::class, 'create'])->name('create');
         Route::post('/', [InvoiceController::class, 'store'])->name('store');
         Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
+        Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
         Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
         Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');

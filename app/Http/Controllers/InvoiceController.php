@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\CurrencyService;
+use App\Services\InvoiceEmailService;
+use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
@@ -99,6 +101,9 @@ class InvoiceController extends Controller
                 'items',
                 'workspace.businessProfile',
                 'workspace.currency',
+                'emailLogs' => fn ($query) => $query
+                    ->with('sender')
+                    ->orderByDesc('created_at'),
                 'payments' => fn ($query) => $query
                     ->orderByDesc('payment_date')
                     ->orderByDesc('created_at'),
@@ -113,7 +118,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function downloadPdf(Workspace $workspace, Invoice $invoice)
+    public function downloadPdf(Workspace $workspace, Invoice $invoice, InvoicePdfService $invoicePdfService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
@@ -129,12 +134,25 @@ class InvoiceController extends Controller
             ->where('id', $invoice->id)
             ->firstOrFail();
 
-        $filename = 'invoice-'.preg_replace('/[^A-Za-z0-9\-_]/', '-', $invoice->invoice_number).'.pdf';
+        return response($invoicePdfService->content($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename='.$invoicePdfService->filename($invoice),
+        ]);
+    }
 
-        return Pdf::loadView('invoices.pdf', [
-            'workspace' => $workspace,
-            'invoice' => $invoice,
-        ])->setPaper('a4')->download($filename);
+    public function send(Workspace $workspace, Invoice $invoice, InvoiceEmailService $invoiceEmailService)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+
+        try {
+            $invoiceEmailService->queueInvoice($workspace, $invoice, Auth::user());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', collect($exception->errors())->flatten()->first());
+        }
+
+        return redirect()
+            ->route('invoices.show', [$workspace, $invoice])
+            ->with('success', 'Invoice email has been queued for sending.');
     }
 
     public function edit(Workspace $workspace, Invoice $invoice, CurrencyService $currencyService)

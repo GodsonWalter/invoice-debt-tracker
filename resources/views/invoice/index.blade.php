@@ -81,6 +81,17 @@
                                                 class="btn btn-sm btn-outline-secondary me-1" title="Edit">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
+                                            <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}"
+                                                class="btn btn-sm btn-outline-primary me-1" title="Download PDF">
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                            </a>
+                                            <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST"
+                                                class="d-inline-block me-1">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-primary" title="Send Invoice">
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                            </form>
                                             <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST"
                                                 class="d-inline-block" onsubmit="return confirm('Delete this invoice?');">
                                                 @csrf

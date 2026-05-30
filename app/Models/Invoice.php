@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -31,6 +32,7 @@ class Invoice extends Model
         'client_id',
         'currency_id',
         'invoice_number',
+        'public_token',
         'issue_date',
         'due_date',
         'status',
@@ -39,6 +41,9 @@ class Invoice extends Model
         'discount_amount',
         'total_amount',
         'notes',
+        'viewed_at',
+        'downloaded_at',
+        'printed_at',
     ];
 
     protected $casts = [
@@ -48,7 +53,19 @@ class Invoice extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'viewed_at' => 'datetime',
+        'downloaded_at' => 'datetime',
+        'printed_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice): void {
+            if (! $invoice->public_token) {
+                $invoice->public_token = (string) Str::uuid();
+            }
+        });
+    }
 
     public function workspace(): BelongsTo
     {
@@ -73,6 +90,11 @@ class Invoice extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'invoice_id');
+    }
+
+    public function emailLogs(): HasMany
+    {
+        return $this->hasMany(InvoiceEmailLog::class, 'invoice_id');
     }
 
     public function businessProfile(): ?BusinessProfile

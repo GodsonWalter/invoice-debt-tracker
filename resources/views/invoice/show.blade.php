@@ -123,6 +123,13 @@
             <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-file-earmark-pdf"></i> Download PDF
             </a>
+            <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-send"></i>
+                    {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend Invoice' : 'Send Invoice' }}
+                </button>
+            </form>
         </div>
     </div>
 
@@ -256,8 +263,8 @@
                 <div class="card-header bg-white p-4 border-bottom">
                     <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
                         <div>
-                            <h5 class="fw-bold text-dark mb-1 fs-6">Payment History</h5>
-                            <p class="text-muted small mb-0">Audit trail for invoice payments and status changes.</p>
+                            <h5 class="fw-bold text-dark mb-1 fs-6">Payment History &amp; Activity Timeline</h5>
+                            <p class="text-muted small mb-0">Audit trail for invoice emails, payments, and status changes.</p>
                         </div>
                         <span class="badge bg-light text-dark border align-self-sm-start">
                             {{ $invoice->payments->count() }} {{ \Illuminate\Support\Str::plural('payment', $invoice->payments->count()) }}
@@ -272,8 +279,8 @@
                     <div class="payment-timeline">
                         @foreach ($paymentTimeline as $event)
                             <div class="payment-timeline-item pb-4">
-                                <span class="payment-timeline-marker rounded-circle bg-{{ $event['badge'] }} d-inline-flex align-items-center justify-content-center">
-                                    <i class="bi {{ $event['type'] === 'payment' ? 'bi-cash-coin' : 'bi-receipt' }} text-white small"></i>
+                                    <span class="payment-timeline-marker rounded-circle bg-{{ $event['badge'] }} d-inline-flex align-items-center justify-content-center">
+                                    <i class="bi {{ $event['type'] === 'payment' ? 'bi-cash-coin' : ($event['type'] === 'email' ? 'bi-envelope-paper' : 'bi-receipt') }} text-white small"></i>
                                 </span>
 
                                 <div class="border rounded-3 p-3 bg-white">
@@ -298,6 +305,19 @@
                                             <div class="col-sm-6">
                                                 <span class="fw-semibold text-dark">Reference:</span>
                                                 {{ $event['reference'] ?: 'Not provided' }}
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if ($event['type'] === 'email')
+                                        <div class="row g-2 small text-muted">
+                                            <div class="col-sm-12">
+                                                <span class="fw-semibold text-dark">Recipient:</span>
+                                                {{ $event['recipient_email'] }}
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <span class="fw-semibold text-dark">Subject:</span>
+                                                {{ $event['subject'] }}
                                             </div>
                                         </div>
                                     @endif
@@ -458,6 +478,59 @@
                     </div>
                 </div>
             @endif
+
+            <div class="card border-light shadow-sm rounded-4 overflow-hidden mt-3">
+                <div class="card-header bg-white p-4 border-bottom">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1 fs-6">Invoice Email History</h5>
+                            <p class="text-muted small mb-0">Complete delivery log for this invoice.</p>
+                        </div>
+                        <span class="badge bg-light text-dark border align-self-sm-start">
+                            {{ $invoice->emailLogs->count() }} {{ \Illuminate\Support\Str::plural('email', $invoice->emailLogs->count()) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    @forelse ($invoice->emailLogs as $emailLog)
+                        @php
+                            $emailBadge = match ($emailLog->status) {
+                                'sent' => 'success',
+                                'failed' => 'danger',
+                                default => 'secondary',
+                            };
+                        @endphp
+                        <div class="border rounded-3 p-3 {{ $loop->last ? '' : 'mb-3' }}">
+                            <div class="d-flex justify-content-between gap-3 mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1">{{ $emailLog->sent_at?->format('M j') ?? $emailLog->created_at?->format('M j') ?? '-' }}</h6>
+                                    <p class="text-muted small mb-0">Invoice sent to: {{ $emailLog->recipient_email }}</p>
+                                </div>
+                                <span class="badge bg-{{ $emailBadge }} align-self-start">{{ ucfirst($emailLog->status) }}</span>
+                            </div>
+                            <p class="small mb-1"><strong>Subject:</strong> {{ $emailLog->subject }}</p>
+                            <p class="small mb-1"><strong>Sent by:</strong> {{ $emailLog->sender?->name ?? 'System' }}</p>
+                            <p class="small text-muted mb-0">
+                                <strong>Sent date:</strong>
+                                {{ $emailLog->sent_at?->format('Y-m-d H:i') ?? 'Queued' }}
+                            </p>
+                            @if ($emailLog->error_message)
+                                <div class="alert alert-danger small mt-3 mb-0">{{ $emailLog->error_message }}</div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-muted mb-3">No invoice emails have been sent yet.</p>
+                    @endforelse
+
+                    <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="mt-3">
+                        @csrf
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-send"></i>
+                            {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend Invoice' : 'Send Invoice' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
