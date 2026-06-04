@@ -19,12 +19,27 @@ class Invoice extends Model
 
     public const STATUS_OVERDUE = 'overdue';
 
+    public const REMINDER_STATUS_NOT_DUE = 'not_due';
+
+    public const REMINDER_STATUS_SCHEDULED = 'scheduled';
+
+    public const REMINDER_STATUS_SENT = 'sent';
+
+    public const REMINDER_STATUS_OVERDUE = 'overdue';
+
     public const STATUSES = [
         self::STATUS_DRAFT,
         self::STATUS_SENT,
         self::STATUS_PARTIAL,
         self::STATUS_PAID,
         self::STATUS_OVERDUE,
+    ];
+
+    public const REMINDER_STATUSES = [
+        self::REMINDER_STATUS_NOT_DUE,
+        self::REMINDER_STATUS_SCHEDULED,
+        self::REMINDER_STATUS_SENT,
+        self::REMINDER_STATUS_OVERDUE,
     ];
 
     protected $fillable = [
@@ -36,6 +51,7 @@ class Invoice extends Model
         'issue_date',
         'due_date',
         'status',
+        'reminder_status',
         'subtotal',
         'tax_amount',
         'discount_amount',
@@ -104,6 +120,11 @@ class Invoice extends Model
     public function emailLogs(): HasMany
     {
         return $this->hasMany(InvoiceEmailLog::class, 'invoice_id');
+    }
+
+    public function reminderLogs(): HasMany
+    {
+        return $this->hasMany(ReminderLog::class, 'invoice_id');
     }
 
     public function businessProfile(): ?BusinessProfile

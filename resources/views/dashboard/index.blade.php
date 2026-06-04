@@ -7,6 +7,7 @@
         <p class="text-muted small mb-0">Welcome back, {{ Auth::user()->name }}!</p>
     </div>
 
+
     {{-- <div class="row g-4 mb-4">
         
         <div class="col-12 col-md-6">

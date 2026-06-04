@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BusinessProfileSeeder::class);
         $this->call(InvoiceSeeder::class);
         $this->call(PaymentSeeder::class);
+        $this->call(ReminderScheduleSeeder::class);
+        $this->call(EmailTemplateSeeder::class);
     }
 }

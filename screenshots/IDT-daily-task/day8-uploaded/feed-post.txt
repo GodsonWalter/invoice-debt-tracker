@@ -1,0 +1,22 @@
+Built and shipped several core features for my Invoice & Debt Tracking SaaS over the past few days.
+
+Completed:
+
+Payment Tracking system (including partial payments & balance calculation)
+Payment History with activity logs and invoice status updates
+PDF Invoice Generation with branding and downloadable formats
+Email Invoice System with automated sending and public invoice links
+
+The system now supports a full end-to-end flow:
+invoice creation → payment tracking → history logging → PDF generation → email delivery.
+
+Still iterating and improving as I continue building production-ready SaaS features.
+
+Next up
+— Debt Reminder System (Core Feature)
+	— Reminder Architecture
+	— Automated Reminder Logic
+	— Reminder Email Templates
+	— Reminder Sending Service
+	— Reminder Dashboard
+	

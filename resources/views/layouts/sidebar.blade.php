@@ -79,6 +79,12 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('email-templates.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-envelope-open-text fa-fw"></i> <span>Email Templates</span>
+                </a>
+            </li>
+
         @endif
 
 

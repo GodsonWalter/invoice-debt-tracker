@@ -4,12 +4,14 @@ use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -46,7 +48,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
     });
 
-    Route::domain('{workspace}.'.config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
+    Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
 
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
@@ -72,6 +74,11 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
         Route::put('/{client}', [ClientController::class, 'update'])->name('update');
         Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('workspace/{workspace}')->group(function () {
+        Route::post('email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+        Route::resource('email-templates', EmailTemplateController::class)->except(['show']);
     });
 
     // invoices routes (workspace scoped)
@@ -104,4 +111,5 @@ Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acce
     ->name('workspace.users.accept')
     ->middleware('auth');
 
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';
