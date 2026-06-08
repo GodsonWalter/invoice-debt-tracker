@@ -9,6 +9,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
 use Illuminate\Support\Facades\Cache;
@@ -79,6 +80,9 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::prefix('workspace/{workspace}')->group(function () {
         Route::post('email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
         Route::resource('email-templates', EmailTemplateController::class)->except(['show']);
+
+        Route::resource('reminder-schedules', ReminderScheduleController::class)->except(['show']);
+        Route::patch('reminder-schedules/{reminderSchedule}/toggle', [ReminderScheduleController::class, 'toggle'])->name('reminder-schedules.toggle');
     });
 
     // invoices routes (workspace scoped)

@@ -85,6 +85,12 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('reminder-schedules.index', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-bell fa-fw"></i> <span>Reminder Schedules</span>
+                </a>
+            </li>
+
         @endif
 
 
