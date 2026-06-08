@@ -123,14 +123,19 @@ class EmailTemplateController extends Controller
             ]);
     }
 
+
+
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
-        if (! $workspace->users()->where('user_id', Auth::id())->where('workspace_user.is_active', true)->exists()) {
+        // deny access if the user is not the workspace owner or admin
+        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
             throw new HttpResponseException(
-                redirect()->route('dashboard')->with('error', 'You are not authorized to manage templates for this workspace.')
+                redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
         }
     }
+
+
 
     private function workspaceTemplate(Workspace $workspace, EmailTemplate $emailTemplate): EmailTemplate
     {

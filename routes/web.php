@@ -9,6 +9,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
@@ -103,6 +104,16 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
 
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Reminder Dashboard Routes
+    Route::prefix('reminders/')->name('reminders.')->group(function () {
+        Route::get('/', [ReminderDashboardController::class, 'index'])->name('index');
+        Route::get('/activity', [ReminderDashboardController::class, 'activity'])->name('activity');
+        Route::get('/upcoming', [ReminderDashboardController::class, 'upcoming'])->name('upcoming');
+        Route::get('/sent', [ReminderDashboardController::class, 'sent'])->name('sent');
+        Route::get('/failed', [ReminderDashboardController::class, 'failed'])->name('failed');
+        Route::post('/retry/{log}', [ReminderDashboardController::class, 'retry'])->name('retry');
+    });
 });
 
 // // Join workspace via shareable link (requires login)

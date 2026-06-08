@@ -6,6 +6,7 @@ use App\Http\Requests\StoreReminderScheduleRequest;
 use App\Http\Requests\UpdateReminderScheduleRequest;
 use App\Models\ReminderSchedule;
 use App\Models\Workspace;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,7 @@ class ReminderScheduleController extends Controller
 {
     public function index(Workspace $workspace): View
     {
-        $this->authorizeWorkspaceAdmin($workspace);
-
+        $this->authorizeWorkspaceUser($workspace);
         return view('reminder-schedules.index', [
             'workspace' => $workspace,
             'reminderSchedules' => $workspace->reminderSchedules()
@@ -27,7 +27,7 @@ class ReminderScheduleController extends Controller
 
     public function create(Workspace $workspace): View
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
 
         return view('reminder-schedules.create', [
             'workspace' => $workspace,
@@ -41,7 +41,7 @@ class ReminderScheduleController extends Controller
 
     public function store(StoreReminderScheduleRequest $request, Workspace $workspace): RedirectResponse
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
 
         $workspace->reminderSchedules()->create($request->validated());
 
@@ -52,7 +52,7 @@ class ReminderScheduleController extends Controller
 
     public function edit(Workspace $workspace, ReminderSchedule $reminderSchedule): View
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
         $reminderSchedule = $this->workspaceSchedule($workspace, $reminderSchedule);
 
         return view('reminder-schedules.edit', [
@@ -63,7 +63,7 @@ class ReminderScheduleController extends Controller
 
     public function update(UpdateReminderScheduleRequest $request, Workspace $workspace, ReminderSchedule $reminderSchedule): RedirectResponse
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
         $reminderSchedule = $this->workspaceSchedule($workspace, $reminderSchedule);
 
         $reminderSchedule->update($request->validated());
@@ -75,7 +75,7 @@ class ReminderScheduleController extends Controller
 
     public function destroy(Workspace $workspace, ReminderSchedule $reminderSchedule): RedirectResponse
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
         $reminderSchedule = $this->workspaceSchedule($workspace, $reminderSchedule);
 
         $reminderSchedule->delete();
@@ -87,7 +87,7 @@ class ReminderScheduleController extends Controller
 
     public function toggle(Workspace $workspace, ReminderSchedule $reminderSchedule): RedirectResponse
     {
-        $this->authorizeWorkspaceAdmin($workspace);
+        $this->authorizeWorkspaceUser($workspace);
         $reminderSchedule = $this->workspaceSchedule($workspace, $reminderSchedule);
 
         $reminderSchedule->update(['is_active' => !$reminderSchedule->is_active]);
@@ -97,10 +97,15 @@ class ReminderScheduleController extends Controller
             ->with('success', 'Reminder schedule status updated successfully.');
     }
 
-    private function authorizeWorkspaceAdmin(Workspace $workspace): void
+
+
+        private function authorizeWorkspaceUser(Workspace $workspace): void
     {
-        if (!$workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
-            abort(403, 'You are not authorized to manage reminder schedules for this workspace.');
+        // deny access if the user is not the workspace owner or admin
+        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+            throw new HttpResponseException(
+                redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
+            );
         }
     }
 
