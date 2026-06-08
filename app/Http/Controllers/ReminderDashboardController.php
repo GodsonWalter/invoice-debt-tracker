@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ReminderLog;
 use App\Models\Invoice;
+use App\Models\ReminderLog;
 use App\Models\Workspace;
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -14,18 +14,34 @@ use Illuminate\View\View;
 
 class ReminderDashboardController extends Controller
 {
-
-        private function authorizeWorkspaceUser(Workspace $workspace): void
-    {        
+    /**
+     * Authorize that the current user is an owner or admin of the workspace
+     *
+     * @throws HttpResponseException
+     */
+    private function authorizeWorkspaceUser(Workspace $workspace): void
+    {
         // deny access if the user is not the workspace owner or admin
         if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
         }
     }
+
+    /**
+     * Get the current workspace from the request
+     */
+    private function getCurrentWorkspace(): Workspace
+    {
+        return app('currentWorkspace');
+    }
+
     public function index(): View
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
         $today = now()->startOfDay();
 
         // Dashboard statistics
@@ -56,6 +72,9 @@ class ReminderDashboardController extends Controller
 
     public function activity(): View
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
+
         $query = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule']);
 
@@ -88,6 +107,9 @@ class ReminderDashboardController extends Controller
 
     public function upcoming(): View
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
+
         $today = now()->startOfDay();
 
         $query = Invoice::query()
@@ -115,6 +137,9 @@ class ReminderDashboardController extends Controller
 
     public function sent(): View
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
+
         $query = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule'])
             ->where('status', ReminderLog::STATUS_SENT);
@@ -149,6 +174,9 @@ class ReminderDashboardController extends Controller
 
     public function failed(): View
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
+
         $query = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule'])
             ->where('status', ReminderLog::STATUS_FAILED);
@@ -183,9 +211,12 @@ class ReminderDashboardController extends Controller
 
     public function retry(ReminderLog $log): RedirectResponse
     {
+        $currentWorkspace = $this->getCurrentWorkspace();
+        $this->authorizeWorkspaceUser($currentWorkspace);
+
         // Placeholder for retry logic
         // Will be implemented to dispatch a new SendReminderEmailJob
-        
+
         return back()->with('info', 'Retry functionality coming soon.');
     }
 }

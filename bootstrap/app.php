@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAuthorizeWorkspaceUser;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'workspace.active' => EnsureWorkspaceIsActive::class,
             'resolve.workspace' => ResolveWorkspace::class,
+            'authorized-workspace-user' => EnsureAuthorizeWorkspaceUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

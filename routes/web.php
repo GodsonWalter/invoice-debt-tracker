@@ -13,7 +13,6 @@ use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceUserController;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -50,7 +49,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
         Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
     });
 
-    Route::domain('{workspace}.' . config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
+    Route::domain('{workspace}.'.config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
 
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
@@ -105,8 +104,8 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Reminder Dashboard Routes
-    Route::prefix('reminders/')->name('reminders.')->group(function () {
+    // Reminder Dashboard Routes - Only for workspace owners and admins
+    Route::middleware('authorized-workspace-user')->prefix('reminders/')->name('reminders.')->group(function () {
         Route::get('/', [ReminderDashboardController::class, 'index'])->name('index');
         Route::get('/activity', [ReminderDashboardController::class, 'activity'])->name('activity');
         Route::get('/upcoming', [ReminderDashboardController::class, 'upcoming'])->name('upcoming');
@@ -126,5 +125,4 @@ Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acce
     ->name('workspace.users.accept')
     ->middleware('auth');
 
-
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

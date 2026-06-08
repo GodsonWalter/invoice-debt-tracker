@@ -23,6 +23,7 @@ class ResolveWorkspace
         $workspace = $this->resolveWorkspaceFromHost($request->getHost());
 
         // Make the workspace available across the application.
+        
         app()->instance('currentWorkspace', $workspace);
         // Retrieve anywhere using: app('currentWorkspace')
 
