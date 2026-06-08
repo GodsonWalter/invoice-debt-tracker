@@ -1,0 +1,3 @@
+— Reminder Architecture 
+— Automated Reminder Logic  
+— Reminder Email Templates

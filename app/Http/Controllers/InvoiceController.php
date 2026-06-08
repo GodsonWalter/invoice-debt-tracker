@@ -144,6 +144,7 @@ class InvoiceController extends Controller
     {
         $this->authorizeWorkspaceUser($workspace);
 
+        
         try {
             $invoiceEmailService->queueInvoice($workspace, $invoice, Auth::user());
         } catch (ValidationException $exception) {

@@ -1,0 +1,38 @@
+🚀 Progress Update — Invoice & Debt Tracking (IDT) SaaS
+
+Over the past few days, I've been focused on building the core of the automated debt reminder system for my multi-tenant Invoice & Debt Tracking SaaS.
+
+✅ — Reminder Architecture
+Designed reminder schedules
+Implemented reminder logs
+Added reminder status tracking
+Built the backend structure for scalable reminder processing
+
+✅ — Automated Reminder Logic
+Automated before-due reminders
+Automated due-date reminders
+Automated overdue reminders
+Integrated Laravel Scheduler for background processing
+
+✅ — Reminder Email Templates
+Built customizable reminder templates
+Implemented dynamic placeholder variables
+Added email preview functionality
+Enabled workspace-specific template customization
+
+Key Engineering Concepts Applied
+Laravel Queues
+Laravel Scheduler
+Multi-Tenant Architecture
+Background Job Processing
+Template Rendering Engine
+Reminder Tracking & Logging
+Scalable SaaS Design Patterns
+
+One thing I've learned while building this system is that sending an email is the easy part. Building a reliable reminder engine that prevents duplicates, tracks delivery states, supports customization, and scales across multiple workspaces is where the real engineering happens.
+
+Next, I'll be focusing on reminder analytics, delivery monitoring, and further improvements to the debt recovery workflow.
+
+Building in public. Learning every day. Shipping consistently.
+
+#Laravel #PHP #SaaS #WebDevelopment #SoftwareEngineering #BackendDevelopment #FullStackDevelopment #Tech #OpenToWork #RemoteJobs #Developer #BuildInPublic #Startup #InvoiceManagement #FinTech

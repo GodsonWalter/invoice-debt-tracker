@@ -7,38 +7,21 @@
         <p class="text-muted small mb-0">Welcome back, {{ Auth::user()->name }}!</p>
     </div>
 
-
-    {{-- <div class="row g-4 mb-4">
-        
-        <div class="col-12 col-md-6">
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-md-6 col-lg-4">
             <div class="card border border-light shadow-sm rounded-4 h-100 p-4">
                 <div class="d-flex align-items-center">
                     <div class="p-3 rounded-3 bg-primary bg-opacity-10 text-primary me-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                         <i class="fa-solid fa-users fs-3"></i>
                     </div>
                     <div>
-                        <p class="text-muted small fw-bold text-uppercase tracking-wide mb-1">Total Users</p>
-                        <h3 class="fs-3 fw-bold text-dark mb-0">{{ number_format(5) }}</h3>
+                        <p class="text-muted small fw-bold text-uppercase tracking-wide mb-1">Total Clients</p>
+                        <h3 class="fs-3 fw-bold text-dark mb-0">{{ number_format($clientCount) }}</h3>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-12 col-md-6">
-            <div class="card border border-light shadow-sm rounded-4 h-100 p-4">
-                <div class="d-flex align-items-center">
-                    <div class="p-3 rounded-3 bg-success bg-opacity-10 text-success me-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                        <i class="fa-solid fa-box-open fs-3"></i>
-                    </div>
-                    <div>
-                        <p class="text-muted small fw-bold text-uppercase tracking-wide mb-1">Total Products</p>
-                        <h3 class="fs-3 fw-bold text-dark mb-0">{{ number_format(5) }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div> --}}
+    </div>
 
    
 
