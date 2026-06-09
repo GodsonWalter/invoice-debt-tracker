@@ -11,14 +11,17 @@
                         <i class="bi bi-diagram-3-fill me-2"></i> Workspaces
                     </h2>
                     <p class="text-muted small mb-0">Manage and view all workspaces in the system.</p>
-                    <p class="text-muted small mb-0 mt-2">Current workspace: <span class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span> total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span></p>
+                    <p class="text-muted small mb-0 mt-2">Current workspace: <span
+                            class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span>
+                        total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span></p>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center">
                 <a href="{{ route('workspace.create') }}" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-plus-lg"></i> Create New Workspace
                 </a>
-                <select class="form-select form-select-sm w-auto" onchange="if (this.value) window.location.href = this.value">
+                <select class="form-select form-select-sm w-auto"
+                    onchange="if (this.value) window.location.href = this.value">
                     <option value="">Switch Workspace</option>
                     @foreach ($activeWorkSpaces as $activeWorkSpace)
                         <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
@@ -43,12 +46,14 @@
                     <table class="table table-hover mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="sn" style="cursor: pointer;">SN
-                                    <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i></th>
+                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="sn"
+                                    style="cursor: pointer;">SN
+                                    <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
+                                </th>
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="name"
                                     style="cursor: pointer;">
                                     Name <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                    
+
                                 </th>
                                 <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="subdomain"
                                     style="cursor: pointer;">
@@ -62,7 +67,7 @@
                                     style="cursor:pointer">
                                     Status <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
                                 </th>
-                                
+
                                 <th scope="col" class="px-4 py-3 text-start">Actions</th>
                             </tr>
                         </thead>
@@ -78,6 +83,10 @@
                                     <th scope="row" class="px-4 py-3">{{ $key + 1 }}</th>
                                     <td class="px-4 py-3">
                                         {{ $workspace->name }}
+                                        @if (optional($workspace->pivot)->role === 'owner')<br>
+                                            <span class="badge bg-info text-dark ms-2">Own by you</span>
+                                        @endif
+
                                     </td>
                                     <td class="px-4 py-3">{{ $workspace->subdomain }}</td>
                                     <td class="px-4 py-3">
@@ -107,7 +116,8 @@
                                                 onsubmit="return confirm('Are you sure you want to delete this workspace?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete workspace">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    title="Delete workspace">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>

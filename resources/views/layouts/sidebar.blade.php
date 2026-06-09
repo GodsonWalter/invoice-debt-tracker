@@ -72,11 +72,11 @@
                         <i class="fa-solid fa-chevron-down dropdown-toggle-icon"></i>
                     </a>
                     <ul class="sidebar-dropdown-menu">
-                        <li><a href="{{ route('reminders.index') }}" class="{{ request()->routeIs('reminders.index') ? 'active' : '' }}"><i class="fa-solid fa-chart-line fa-fw"></i> Overview</a></li>
-                        <li><a href="{{ route('reminders.activity') }}" class="{{ request()->routeIs('reminders.activity') ? 'active' : '' }}"><i class="fa-solid fa-history fa-fw"></i> Activity</a></li>
-                        <li><a href="{{ route('reminders.upcoming') }}" class="{{ request()->routeIs('reminders.upcoming') ? 'active' : '' }}"><i class="fa-solid fa-calendar-days fa-fw"></i> Upcoming</a></li>
-                        <li><a href="{{ route('reminders.sent') }}" class="{{ request()->routeIs('reminders.sent') ? 'active' : '' }}"><i class="fa-solid fa-paper-plane fa-fw"></i> Sent</a></li>
-                        <li><a href="{{ route('reminders.failed') }}" class="{{ request()->routeIs('reminders.failed') ? 'active' : '' }}"><i class="fa-solid fa-exclamation-triangle fa-fw"></i> Failed</a></li>
+                        <li><a href="{{ route('reminders.index') }}"><i class="fa-solid fa-chart-line fa-fw"></i> Overview</a></li>
+                        <li><a href="{{ route('reminders.activity') }}"><i class="fa-solid fa-history fa-fw"></i> Activity</a></li>
+                        <li><a href="{{ route('reminders.upcoming') }}"><i class="fa-solid fa-calendar-days fa-fw"></i> Upcoming</a></li>
+                        <li><a href="{{ route('reminders.sent') }}"><i class="fa-solid fa-paper-plane fa-fw"></i> Sent</a></li>
+                        <li><a href="{{ route('reminders.failed') }}"><i class="fa-solid fa-exclamation-triangle fa-fw"></i> Failed</a></li>
                     </ul>
                 </li>
             
@@ -109,6 +109,7 @@
                     <i class="fa-solid fa-bell fa-fw"></i> <span>Reminder Schedules</span>
                 </a>
             </li>
+            
             @endif
      
 

@@ -37,7 +37,7 @@ class EnsureAuthorizeWorkspaceUser
 
         if (! $isAuthorized) {
             throw new HttpResponseException(
-                redirect()->route('dashboard')->with('error', 'Youas araae not authorized to manage this workspace.')
+                redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
         }      
 
