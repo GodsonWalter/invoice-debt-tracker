@@ -41,4 +41,9 @@ class ReminderLog extends Model
     {
         return $this->belongsTo(ReminderSchedule::class, 'reminder_schedule_id');
     }
+
+    public function workspace()
+    {
+        return $this->belongsTo(Workspace::class, 'workspace_id');
+    }
 }

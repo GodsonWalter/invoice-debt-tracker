@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('reminder_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
             $table->foreignId('reminder_schedule_id')->constrained()->restrictOnDelete();
             $table->string('recipient_email');
