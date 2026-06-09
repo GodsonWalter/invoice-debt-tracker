@@ -38,21 +38,23 @@ class ReminderDashboardController extends Controller
         return app('currentWorkspace');
     }
 
-    public function index(): View
+    public function index()
     {
         $currentWorkspace = $this->getCurrentWorkspace();
         $this->authorizeWorkspaceUser($currentWorkspace);
         $today = now()->startOfDay();
-
+        // return $currentWorkspace->id;
         // Dashboard statistics
         $statistics = [
-            'total_sent' => ReminderLog::where('status', ReminderLog::STATUS_SENT)->count(),
-            'total_failed' => ReminderLog::where('status', ReminderLog::STATUS_FAILED)->count(),
+            'total_sent' => ReminderLog::where('workspace_id', $currentWorkspace->id)->where('status', ReminderLog::STATUS_SENT)->count(),
+            'total_failed' => ReminderLog::where('workspace_id', $currentWorkspace->id)->where('status', ReminderLog::STATUS_FAILED)->count(),
             'upcoming_reminders' => Invoice::query()
                 ->where('status', '!=', Invoice::STATUS_PAID)
+                ->where('workspace_id', $currentWorkspace->id)
                 ->whereDate('due_date', '>=', $today)
                 ->count(),
             'today_activity' => ReminderLog::query()
+                ->where('workspace_id', $currentWorkspace->id)
                 ->whereDate('created_at', $today)
                 ->count(),
         ];
@@ -60,6 +62,7 @@ class ReminderDashboardController extends Controller
         // Recent activity (last 10)
         $recentActivity = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule'])
+            ->where('workspace_id', $currentWorkspace->id)
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
@@ -76,7 +79,8 @@ class ReminderDashboardController extends Controller
         $this->authorizeWorkspaceUser($currentWorkspace);
 
         $query = ReminderLog::query()
-            ->with(['invoice', 'invoice.client', 'reminderSchedule']);
+            ->with(['invoice', 'invoice.client', 'reminderSchedule'])
+            ->where('workspace_id', $currentWorkspace->id);
 
         // Search filters
         if ($search = request('search')) {
@@ -114,6 +118,7 @@ class ReminderDashboardController extends Controller
 
         $query = Invoice::query()
             ->with(['client', 'payments', 'currency', 'workspace'])
+            ->where('workspace_id', $currentWorkspace->id)
             ->where('status', '!=', Invoice::STATUS_PAID)
             ->whereDate('due_date', '>=', $today);
 
@@ -142,6 +147,7 @@ class ReminderDashboardController extends Controller
 
         $query = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule'])
+            ->where('workspace_id', $currentWorkspace->id)
             ->where('status', ReminderLog::STATUS_SENT);
 
         // Search filters
@@ -179,6 +185,7 @@ class ReminderDashboardController extends Controller
 
         $query = ReminderLog::query()
             ->with(['invoice', 'invoice.client', 'reminderSchedule'])
+            ->where('workspace_id', $currentWorkspace->id)
             ->where('status', ReminderLog::STATUS_FAILED);
 
         // Search filters
