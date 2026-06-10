@@ -1,0 +1,9 @@
+— Reminder Dashboard
+
+Tasks:
+1.	Reminder activity page 
+2.	Upcoming reminders 
+3.	Sent reminders 
+4.	Failed reminders 
+Deliverable:
+•	Reminder monitoring UI 

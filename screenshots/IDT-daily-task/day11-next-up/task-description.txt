@@ -1,0 +1,10 @@
+Dashboard + UX + Security
+— Dashboard Overview
+
+Tasks:
+1.	Revenue summary 
+2.	Outstanding debt 
+3.	Overdue invoices 
+4.	Recent activity 
+Deliverable:
+•	Main dashboard 

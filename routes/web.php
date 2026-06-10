@@ -3,6 +3,7 @@
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\Dashboard\AiQueryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
@@ -27,6 +28,13 @@ Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
 
 Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // AI Query routes
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('/ai-query', [AiQueryController::class, 'index'])->name('ai-query');
+        Route::post('/ai-query', [AiQueryController::class, 'search'])->name('ai-query.search');
+    });
+
     // workspace management routes
     Route::get('/workspace', [WorkspaceController::class, 'index'])->name('workspace.index');
     Route::get('/workspace/create', [WorkspaceController::class, 'create'])->name('workspace.create');
@@ -125,4 +133,27 @@ Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acce
     ->name('workspace.users.accept')
     ->middleware('auth');
 
+
+    // testing routes
+
+    Route::get('/php-info', function () {
+    phpinfo();
+});
+
+
+Route::get('/ssl-test', function () {
+    return [
+        'curl.cainfo' => ini_get('curl.cainfo'),
+        'openssl.cafile' => ini_get('openssl.cafile'),
+    ];
+});
+
+
+Route::get('/ssl-check', function () {
+    return response()->json([
+        'curl.cainfo' => ini_get('curl.cainfo'),
+        'openssl.cafile' => ini_get('openssl.cafile'),
+        'php_ini_loaded' => php_ini_loaded_file(),
+    ]);
+});
 require __DIR__.'/auth.php';
