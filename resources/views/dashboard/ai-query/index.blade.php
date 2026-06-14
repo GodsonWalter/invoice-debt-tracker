@@ -156,7 +156,7 @@
             </div>
         </div>
 
-        {{-- <script src="https://js.puter.com/v2/"></script> --}}
+        <script src="https://js.puter.com/v2/"></script>
         <script>
 
             function askPuter() {

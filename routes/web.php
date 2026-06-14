@@ -134,26 +134,5 @@ Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acce
     ->middleware('auth');
 
 
-    // testing routes
 
-    Route::get('/php-info', function () {
-    phpinfo();
-});
-
-
-Route::get('/ssl-test', function () {
-    return [
-        'curl.cainfo' => ini_get('curl.cainfo'),
-        'openssl.cafile' => ini_get('openssl.cafile'),
-    ];
-});
-
-
-Route::get('/ssl-check', function () {
-    return response()->json([
-        'curl.cainfo' => ini_get('curl.cainfo'),
-        'openssl.cafile' => ini_get('openssl.cafile'),
-        'php_ini_loaded' => php_ini_loaded_file(),
-    ]);
-});
 require __DIR__.'/auth.php';

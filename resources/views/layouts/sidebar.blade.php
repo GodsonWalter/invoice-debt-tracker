@@ -16,12 +16,6 @@
             </a>
         </li>
 
-        <li class="nav-item">
-            <a href="{{ route('dashboard.ai-query') }}" class="nav-link">
-                <i class="fa-solid fa-wand-magic-sparkles fa-fw"></i> <span>AI Query</span>
-            </a>
-        </li>
-
         {{-- workspaces --}}
         <li class="nav-item">
             <a href="{{ route('workspace.index') }}" class="nav-link">
@@ -44,6 +38,12 @@
             <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
 
 
+
+        <li class="nav-item">
+            <a href="{{ route('dashboard.ai-query') }}" class="nav-link">
+                <i class="fa-solid fa-wand-magic-sparkles fa-fw"></i> <span>AI Query</span>
+            </a>
+        </li>
 
 
             {{-- invoices --}}
@@ -87,7 +87,7 @@
                 </li>
             
 
-            <li class="nav-divider"></li>
+            {{-- <li class="nav-divider"></li> --}}
             <li class="nav-section-title">Settings</li>
             
             {{-- workspace settings --}}

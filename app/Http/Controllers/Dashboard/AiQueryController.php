@@ -25,7 +25,7 @@ class AiQueryController extends Controller
 
     public function index(): View
     {
-        $workspace = app('currentWorkspace');
+       $workspace = app('currentWorkspace');
 
         $recentQueries = AiQuery::where('workspace_id', $workspace->id)
             ->where('user_id', auth()->id())
