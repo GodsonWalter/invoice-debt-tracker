@@ -13,6 +13,7 @@ use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\WorkspaceDashboardController;
 use App\Http\Controllers\WorkspaceUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,6 +87,8 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     });
 
     Route::prefix('workspace/{workspace}')->group(function () {
+        Route::get('/dashboard', WorkspaceDashboardController::class)->name('workspace.dashboard');
+
         Route::post('email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
         Route::resource('email-templates', EmailTemplateController::class)->except(['show']);
 
@@ -123,7 +126,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     });
 });
 
-// // Join workspace via shareable link (requires login)
+// Join workspace via shareable link (requires login)
 // Route::get('/workspace/join/{workspace:slug}', [WorkspaceController::class, 'join'])
 //     ->name('workspace.join')
 //     ->middleware(['auth', 'verified']);

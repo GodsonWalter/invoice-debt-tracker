@@ -102,6 +102,8 @@ class Invoice extends Model
         return $this->belongsTo(Client::class, 'client_id');
     }
 
+    
+
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id');

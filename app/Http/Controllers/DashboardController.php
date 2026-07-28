@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DashboardService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -17,51 +18,34 @@ class DashboardController extends Controller
         return view('dashboard.index', compact('clientCount'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+
+    public function __invoke(DashboardService $dashboardService) {
+        $workspace = request()->currentWorkspace;
+
+        return view('dashboard.index', [
+            
+
+            'revenue' => $dashboardService->revenueSummary($workspace->id),
+
+            'debt' => $dashboardService->outstandingDebt($workspace->id),
+
+            'overdue' => $dashboardService->overdueSummary($workspace->id),
+
+            'activities' => $dashboardService->recentActivities($workspace->id),
+
+            'topDebtors' => $dashboardService->topDebtors($workspace->id),
+
+            // 'reminderStats' => $dashboardService->reminderStats($workspace->id),
+
+            'outstandingInvoices' => $dashboardService->outstandingInvoices($workspace->id),
+            /*
+             'revenue' => $dashboardService->revenueSummary($workspace->id),
+    'debt' => $dashboardService->outstandingDebt($workspace->id),
+    'overdue' => $dashboardService->overdueSummary($workspace->id),
+
+    'monthlyRevenue' => $dashboardService->monthlyRevenue($workspace->id),
+             */
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
 }

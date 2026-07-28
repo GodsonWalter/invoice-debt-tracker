@@ -76,7 +76,13 @@ class PaymentService
             default => Invoice::STATUS_SENT,
         };
 
-        $invoice->forceFill(['status' => $status])->save();
+        // if invoice is fully paid, set paid_at to the latest payment date, otherwise set it to null
+        if ($status === Invoice::STATUS_PAID) {
+            $paid_at =  now();
+        } else {
+            $paid_at = null;
+        }
+        $invoice->forceFill(['status' => $status, 'paid_at' => $paid_at])->save();
 
         return $invoice->refresh();
     }
@@ -117,7 +123,7 @@ class PaymentService
 
                 return [
                     'type' => 'email',
-                    'title' => $status === InvoiceEmailLog::STATUS_SENT ? 'Invoice Sent' : 'Invoice Email '.ucfirst($status),
+                    'title' => $status === InvoiceEmailLog::STATUS_SENT ? 'Invoice Sent' : 'Invoice Email ' . ucfirst($status),
                     'date' => $emailLog->sent_at ?? $emailLog->created_at,
                     'badge' => match ($status) {
                         InvoiceEmailLog::STATUS_SENT => 'info',
@@ -151,7 +157,7 @@ class PaymentService
                 'date' => $invoice->printed_at,
                 'badge' => 'secondary',
             ],
-        ])->filter(fn (array $event): bool => filled($event['date']));
+        ])->filter(fn(array $event): bool => filled($event['date']));
 
         $events = collect([
             [

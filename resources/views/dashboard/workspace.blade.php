@@ -24,14 +24,14 @@
         </div>
 
         <!-- Summary Cards -->
-        {{-- <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4">
 
             <div class="col-md-6 col-xl-3">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
                         <small class="text-muted">Total Revenue</small>
                         <h3 class="fw-bold mt-2 mb-0">
-                            ₦{{ number_format($revenue['total_revenue']) }}
+                            {{ $workspace->formatMoney($revenue['total_revenue']) }}
                         </h3>
 
                         <span class="text-muted small">
@@ -49,11 +49,13 @@
                     <div class="card-body">
                         <small class="text-muted">Outstanding Debt</small>
                         <h3 class="fw-bold mt-2 mb-0">
-                            ₦{{ number_format($debt['total_debt']) }}
+                            {{ $workspace->formatMoney($debt['total_debt']) }}
                         </h3>
 
                         <span class="text-danger small">
-                            {{ $debt['unpaid_count'] }} unpaid invoices
+                            {{ $debt['unpaid_count'] }} unpaid {{ Str::plural('invoice', $debt['unpaid_count']) }}<br>
+                            
+                            {{ $debt['customers_owing'] }} {{ Str::plural('customer', $debt['customers_owing']) }} owing
                         </span>
 
                     </div>
@@ -65,11 +67,12 @@
                     <div class="card-body">
                         <small class="text-muted">Overdue Invoices</small>
                         <h3 class="fw-bold mt-2 mb-0">
-                            ₦{{ number_format($overdue['overdue_amount']) }}
+                            {{ $workspace->formatMoney($overdue['overdue_amount']) }}
                         </h3>
 
                         <span class="text-warning small">
-                            {{ $overdue['overdue_count'] }} overdue invoices
+                            {{ $overdue['overdue_count'] }} overdue 
+                            {{ Str::plural('invoice', $overdue['overdue_count'] ) }}
                         </span>
 
                     </div>
@@ -92,10 +95,10 @@
                 </div>
             </div>
 
-        </div> --}}
+        </div>
 
         <!-- Revenue Chart + Reminder Stats -->
-        {{-- <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4">
 
             <div class="col-lg-8">
                 <div class="card shadow-sm border-0 h-100">
@@ -160,7 +163,7 @@
                                 </strong>
 
                                 <div class="text-danger">
-                                    ₦{{ number_format($debtor->total_debt) }}
+                                    {{ $workspace->formatMoney($debtor->total_debt) }}
                                 </div>
 
                             </div>
@@ -178,10 +181,10 @@
 
             </div>
 
-        </div> --}}
+        </div>
 
         <!-- Outstanding Invoices -->
-        {{-- <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-4">
 
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Outstanding Invoices</h5>
@@ -224,7 +227,9 @@
                                 </td>
 
                                 <td>
-                                    ₦{{ number_format($invoice->balance_due) }}
+                                    <small class="fw-bold">Total: {{ $invoice->formatMoney($invoice->total_amount) }}</small>
+                                    <br> <small class="text-success">Paid: {{ $invoice->formatMoney($invoice->total_paid) }}</small>
+                                    <br> <small class="text-danger">Balance: {{ $invoice->formatMoney($invoice->remaining_balance) }}</small>
                                 </td>
 
                                 <td>
@@ -262,10 +267,10 @@
                 </table>
 
             </div>
-        </div> --}}
+        </div>
 
         <!-- Recent Activities -->
-        {{-- <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0">
 
             <div class="card-header bg-white">
                 <h5 class="mb-0">Recent Activity</h5>
@@ -290,7 +295,8 @@
                     @empty
 
                         <li class="list-group-item text-center text-muted">
-                            No recent activities found.
+                            {{-- No recent activities found. --}}
+                            Recent activities coming soon...
                         </li>
 
                     @endforelse
@@ -299,7 +305,46 @@
 
             </div>
 
-        </div> --}}
+        </div>
 
     </div>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: [
+                    'Jan', 'Feb', 'Mar', 'Apr',
+                    'May', 'Jun', 'Jul', 'Aug',
+                    'Sep', 'Oct', 'Nov', 'Dec'
+                ],
+                datasets: [{
+                    label: 'Revenue',
+                    data: [
+                        500000,
+                        800000,
+                        1200000,
+                        1000000,
+                        1500000,
+                        1800000,
+                        1700000,
+                        2000000,
+                        2200000,
+                        2500000,
+                        2300000,
+                        2800000
+                    ],
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+@endpush

@@ -31,19 +31,25 @@
             </li>
         @endif
 
-         @if ($currentWorkspace && $currentWorkspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists())
-           
+        @if ($currentWorkspace && $currentWorkspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists())
+
 
             <li class="nav-divider"></li>
             <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
 
 
+            {{-- dashboard --}}
+            <li class="nav-item">
+                <a href="{{ route('workspace.dashboard', $currentWorkspace) }}" class="nav-link">
+                    <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
+                </a>
+            </li>
 
-        <li class="nav-item">
-            <a href="{{ route('dashboard.ai-query') }}" class="nav-link">
-                <i class="fa-solid fa-wand-magic-sparkles fa-fw"></i> <span>AI Query</span>
-            </a>
-        </li>
+            <li class="nav-item">
+                <a href="{{ route('dashboard.ai-query') }}" class="nav-link">
+                    <i class="fa-solid fa-wand-magic-sparkles fa-fw"></i> <span>AI Query</span>
+                </a>
+            </li>
 
 
             {{-- invoices --}}
@@ -71,25 +77,29 @@
 
 
             {{-- reminder dashboard dropdown - only visible to owners and admins --}}
-                <li class="nav-item has-dropdown">
-                    <a href="#" class="nav-link {{ request()->routeIs('reminders.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-bell fa-fw"></i>
-                        <span>Reminders</span>
-                        <i class="fa-solid fa-chevron-down dropdown-toggle-icon"></i>
-                    </a>
-                    <ul class="sidebar-dropdown-menu">
-                        <li><a href="{{ route('reminders.index') }}"><i class="fa-solid fa-chart-line fa-fw"></i> Overview</a></li>
-                        <li><a href="{{ route('reminders.activity') }}"><i class="fa-solid fa-history fa-fw"></i> Activity</a></li>
-                        <li><a href="{{ route('reminders.upcoming') }}"><i class="fa-solid fa-calendar-days fa-fw"></i> Upcoming</a></li>
-                        <li><a href="{{ route('reminders.sent') }}"><i class="fa-solid fa-paper-plane fa-fw"></i> Sent</a></li>
-                        <li><a href="{{ route('reminders.failed') }}"><i class="fa-solid fa-exclamation-triangle fa-fw"></i> Failed</a></li>
-                    </ul>
-                </li>
-            
+            <li class="nav-item has-dropdown">
+                <a href="#" class="nav-link {{ request()->routeIs('reminders.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bell fa-fw"></i>
+                    <span>Reminders</span>
+                    <i class="fa-solid fa-chevron-down dropdown-toggle-icon"></i>
+                </a>
+                <ul class="sidebar-dropdown-menu">
+                    <li><a href="{{ route('reminders.index') }}"><i class="fa-solid fa-chart-line fa-fw"></i> Overview</a>
+                    </li>
+                    <li><a href="{{ route('reminders.activity') }}"><i class="fa-solid fa-history fa-fw"></i> Activity</a>
+                    </li>
+                    <li><a href="{{ route('reminders.upcoming') }}"><i class="fa-solid fa-calendar-days fa-fw"></i>
+                            Upcoming</a></li>
+                    <li><a href="{{ route('reminders.sent') }}"><i class="fa-solid fa-paper-plane fa-fw"></i> Sent</a></li>
+                    <li><a href="{{ route('reminders.failed') }}"><i class="fa-solid fa-exclamation-triangle fa-fw"></i>
+                            Failed</a></li>
+                </ul>
+            </li>
+
 
             {{-- <li class="nav-divider"></li> --}}
             <li class="nav-section-title">Settings</li>
-            
+
             {{-- workspace settings --}}
             <li class="nav-item">
                 <a href="{{ route('workspace.edit', $currentWorkspace->id) }}" class="nav-link">
@@ -115,9 +125,9 @@
                     <i class="fa-solid fa-bell fa-fw"></i> <span>Reminder Schedules</span>
                 </a>
             </li>
-            
-            @endif
-     
+
+        @endif
+
 
 
 

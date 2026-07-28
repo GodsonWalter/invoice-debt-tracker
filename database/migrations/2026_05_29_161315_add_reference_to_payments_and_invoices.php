@@ -18,20 +18,14 @@ return new class extends Migration
             }
         });
 
-        if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE invoices MODIFY status ENUM('draft', 'sent', 'partial', 'paid', 'overdue') NOT NULL DEFAULT 'draft'");
-        }
+      
     }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
-    {
-        if (DB::getDriverName() === 'mysql') {
-            DB::table('invoices')->where('status', 'partial')->update(['status' => 'sent']);
-            DB::statement("ALTER TABLE invoices MODIFY status ENUM('draft', 'sent', 'paid', 'overdue') NOT NULL DEFAULT 'draft'");
-        }
+    {     
 
         Schema::table('payments', function (Blueprint $table) {
             if (Schema::hasColumn('payments', 'reference')) {
