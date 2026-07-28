@@ -20,6 +20,7 @@ class ReminderLog extends Model
     ];
 
     protected $fillable = [
+        'workspace_id',
         'invoice_id',
         'reminder_schedule_id',
         'recipient_email',

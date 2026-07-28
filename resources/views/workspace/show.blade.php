@@ -16,9 +16,11 @@
                 <a href="{{ route('workspace.index') }}" class="btn btn-sm btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to List
                 </a>
-                <a href="{{ route('workspace.edit', $workspace->id) }}" class="btn btn-sm btn-warning">
-                    <i class="bi bi-pencil-square"></i> Edit Workspace
-                </a>
+                @if ($workspace->canBeManagedBy(Auth::user()))
+                    <a href="{{ route('workspace.edit', $workspace->id) }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil-square"></i> Edit Workspace
+                    </a>
+                @endif
             </div>
         </div>
 

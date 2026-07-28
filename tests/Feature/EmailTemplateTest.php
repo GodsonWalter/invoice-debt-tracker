@@ -180,6 +180,7 @@ test('reminder email job uses workspace email template', function () {
     ]);
 
     $reminderLog = ReminderLog::create([
+        'workspace_id' => $workspace->id,
         'invoice_id' => $invoice->id,
         'reminder_schedule_id' => $schedule->id,
         'recipient_email' => $client->email,

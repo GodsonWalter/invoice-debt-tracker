@@ -31,16 +31,20 @@
             </li>
         @endif
 
-        @if ($currentWorkspace && $currentWorkspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists())
+        @php
+            $workspace = $currentWorkspace ?? null;
+        @endphp
+
+        @if (Auth::check() && $workspace instanceof \App\Models\Workspace && $workspace->canBeManagedBy(Auth::user()))
 
 
             <li class="nav-divider"></li>
-            <li class="nav-section-title">{{ $currentWorkspace->name ?? ''}}</li>
+            <li class="nav-section-title">{{ $workspace->name }}</li>
 
 
             {{-- dashboard --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.dashboard', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('workspace.dashboard', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
                 </a>
             </li>
@@ -54,7 +58,7 @@
 
             {{-- invoices --}}
             <li class="nav-item">
-                <a href="{{ route('invoices.index', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('invoices.index', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
                 </a>
             </li>
@@ -63,14 +67,14 @@
             {{-- clients --}}
 
             <li class="nav-item">
-                <a href="{{ route('clients.index', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('clients.index', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
                 </a>
             </li>
 
             {{-- users --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.users.index', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('workspace.users.index', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
                 </a>
             </li>
@@ -102,7 +106,7 @@
 
             {{-- workspace settings --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.edit', $currentWorkspace->id) }}" class="nav-link">
+                <a href="{{ route('workspace.edit', $workspace->id) }}" class="nav-link">
                     <i class="fa-solid fa-gear fa-fw"></i> <span>Workspace </span>
                 </a>
             </li>
@@ -115,13 +119,13 @@
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('email-templates.index', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('email-templates.index', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-envelope-open-text fa-fw"></i> <span>Email Templates</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('reminder-schedules.index', $currentWorkspace) }}" class="nav-link">
+                <a href="{{ route('reminder-schedules.index', $workspace) }}" class="nav-link">
                     <i class="fa-solid fa-bell fa-fw"></i> <span>Reminder Schedules</span>
                 </a>
             </li>

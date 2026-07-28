@@ -27,15 +27,17 @@ function createReminderInvoiceFixture(
     string $status = Invoice::STATUS_SENT,
     ?string $clientEmail = 'billing@example.test',
     float $totalAmount = 1000,
+    string $workspaceKey = 'reminder-workspace',
 ): array {
     $user = User::factory()->create();
+    $invoicePrefix = $workspaceKey === 'reminder-workspace' ? 'REM' : strtoupper($workspaceKey);
 
     $workspace = Workspace::create([
         'owner_id' => $user->id,
-        'name' => 'Reminder Workspace',
-        'slug' => 'reminder-workspace',
-        'subdomain' => 'reminder-workspace',
-        'invoice_prefix' => 'REM',
+        'name' => $workspaceKey === 'reminder-workspace' ? 'Reminder Workspace' : 'Reminder Workspace '.$workspaceKey,
+        'slug' => $workspaceKey,
+        'subdomain' => $workspaceKey,
+        'invoice_prefix' => $invoicePrefix,
         'is_active' => true,
     ]);
 
@@ -48,7 +50,7 @@ function createReminderInvoiceFixture(
     $invoice = Invoice::create([
         'workspace_id' => $workspace->id,
         'client_id' => $client->id,
-        'invoice_number' => 'REM-2026-0001',
+        'invoice_number' => $invoicePrefix.'-2026-0001',
         'issue_date' => '2026-06-01',
         'due_date' => $dueDate,
         'status' => $status,
@@ -109,6 +111,7 @@ test('before due reminders are queued when invoice due date matches today plus o
         ->not->toBeNull()
         ->invoice_id->toBe($invoice->id)
         ->reminder_schedule_id->toBe($schedule->id)
+        ->workspace_id->toBe($workspace->id)
         ->recipient_email->toBe($client->email)
         ->status->toBe(ReminderLog::STATUS_PENDING);
 
@@ -168,6 +171,7 @@ test('duplicate reminders are not created for the same invoice and schedule', fu
     );
 
     ReminderLog::create([
+        'workspace_id' => $workspace->id,
         'invoice_id' => $invoice->id,
         'reminder_schedule_id' => $schedule->id,
         'recipient_email' => $client->email,
@@ -178,6 +182,7 @@ test('duplicate reminders are not created for the same invoice and schedule', fu
 
     expect($summary['reminders_created'])->toBe(0);
     expect(ReminderLog::query()->where('invoice_id', $invoice->id)->where('reminder_schedule_id', $schedule->id)->count())->toBe(1);
+    expect(ReminderLog::query()->where('invoice_id', $invoice->id)->value('workspace_id'))->toBe($workspace->id);
 
     Queue::assertNothingPushed();
 });
@@ -215,6 +220,7 @@ test('reminder email job sends mail and marks log as sent', function () {
     );
 
     $reminderLog = ReminderLog::create([
+        'workspace_id' => $workspace->id,
         'invoice_id' => $invoice->id,
         'reminder_schedule_id' => $schedule->id,
         'recipient_email' => $client->email,
@@ -229,9 +235,122 @@ test('reminder email job sends mail and marks log as sent', function () {
     });
 
     expect($reminderLog->refresh())
+        ->workspace_id->toBe($workspace->id)
         ->status->toBe(ReminderLog::STATUS_SENT)
         ->sent_at->not->toBeNull()
         ->error_message->toBeNull();
 
     expect($invoice->refresh()->reminder_status)->toBe(Invoice::REMINDER_STATUS_SENT);
+});
+
+test('reminder logs remain isolated between workspaces', function () {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Queue::fake();
+
+    [$firstWorkspace, , $firstInvoice] = createReminderInvoiceFixture(
+        dueDate: '2026-06-20',
+        workspaceKey: 'first-workspace',
+    );
+    [$secondWorkspace, , $secondInvoice] = createReminderInvoiceFixture(
+        dueDate: '2026-06-20',
+        workspaceKey: 'second-workspace',
+    );
+
+    createReminderScheduleFixture(
+        workspace: $firstWorkspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+    createReminderScheduleFixture(
+        workspace: $secondWorkspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+
+    app(ReminderService::class)->process();
+
+    expect(ReminderLog::query()->count())->toBe(2);
+    expect(ReminderLog::query()
+        ->where('workspace_id', $firstWorkspace->id)
+        ->where('invoice_id', $firstInvoice->id)
+        ->exists())->toBeTrue();
+    expect(ReminderLog::query()
+        ->where('workspace_id', $secondWorkspace->id)
+        ->where('invoice_id', $secondInvoice->id)
+        ->exists())->toBeTrue();
+    expect(ReminderLog::query()
+        ->where('workspace_id', $firstWorkspace->id)
+        ->where('invoice_id', $secondInvoice->id)
+        ->exists())->toBeFalse();
+    expect(ReminderLog::query()
+        ->where('workspace_id', $secondWorkspace->id)
+        ->where('invoice_id', $firstInvoice->id)
+        ->exists())->toBeFalse();
+
+    Queue::assertPushed(SendReminderEmailJob::class, 2);
+});
+
+test('failed reminder email attempts retain the correct workspace', function () {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Queue::fake();
+
+    [$workspace, $client, $invoice] = createReminderInvoiceFixture('2026-06-20');
+    $schedule = createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+
+    app(ReminderService::class)->process();
+
+    $reminderLog = ReminderLog::query()->firstOrFail();
+
+    expect($reminderLog)
+        ->workspace_id->toBe($workspace->id)
+        ->invoice_id->toBe($invoice->id)
+        ->reminder_schedule_id->toBe($schedule->id)
+        ->recipient_email->toBe($client->email);
+
+    Mail::shouldReceive('to')
+        ->once()
+        ->andThrow(new RuntimeException('SMTP connection failed.'));
+
+    expect(fn () => (new SendReminderEmailJob($reminderLog->id))->handle(
+        app(ReminderService::class),
+        app(TemplateRenderer::class),
+    ))->toThrow(RuntimeException::class, 'SMTP connection failed.');
+
+    expect($reminderLog->refresh())
+        ->workspace_id->toBe($workspace->id)
+        ->status->toBe(ReminderLog::STATUS_FAILED)
+        ->error_message->toBe('SMTP connection failed.');
+});
+
+test('mismatched existing reminder logs are rejected instead of reassigned', function () {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Queue::fake();
+
+    [$workspace, $client, $invoice] = createReminderInvoiceFixture('2026-06-20');
+    [$otherWorkspace] = createReminderInvoiceFixture(
+        dueDate: '2026-06-20',
+        workspaceKey: 'other-workspace',
+    );
+    $schedule = createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+
+    ReminderLog::create([
+        'workspace_id' => $otherWorkspace->id,
+        'invoice_id' => $invoice->id,
+        'reminder_schedule_id' => $schedule->id,
+        'recipient_email' => $client->email,
+        'status' => ReminderLog::STATUS_PENDING,
+    ]);
+
+    expect(fn () => app(ReminderService::class)->process())
+        ->toThrow(LogicException::class, 'The existing reminder log belongs to another workspace.');
+
+    expect(ReminderLog::query()->first()->workspace_id)->toBe($otherWorkspace->id);
 });

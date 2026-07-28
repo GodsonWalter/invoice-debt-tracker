@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class ReminderService
 {
@@ -117,16 +118,27 @@ class ReminderService
 
     private function createReminderLog(Invoice $invoice, ReminderSchedule $schedule): ?ReminderLog
     {
+        $workspaceId = (int) $schedule->workspace_id;
+
+        if ((int) $invoice->workspace_id !== $workspaceId) {
+            throw new LogicException('The invoice and reminder schedule must belong to the same workspace.');
+        }
+
         $reminderLog = ReminderLog::query()->firstOrCreate(
             [
                 'invoice_id' => $invoice->id,
                 'reminder_schedule_id' => $schedule->id,
             ],
             [
+                'workspace_id' => $workspaceId,
                 'recipient_email' => $invoice->client->email,
                 'status' => ReminderLog::STATUS_PENDING,
             ],
         );
+
+        if ((int) $reminderLog->workspace_id !== $workspaceId) {
+            throw new LogicException('The existing reminder log belongs to another workspace.');
+        }
 
         return $reminderLog->wasRecentlyCreated ? $reminderLog : null;
     }

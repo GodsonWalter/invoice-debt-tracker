@@ -52,6 +52,14 @@ class Workspace extends Model
             ->withTimestamps();
     }
 
+    public function canBeManagedBy(User $user): bool
+    {
+        return $this->users()
+            ->whereKey($user->getKey())
+            ->wherePivotIn('role', ['owner', 'admin'])
+            ->exists();
+    }
+
     public function clients()
     {
         return $this->hasMany(Client::class, 'workspace_id');

@@ -106,7 +106,7 @@
                                             <i class="bi bi-eye"></i>
                                         </a>
 
-                                        @if(optional($workspace->pivot)->role === 'owner')
+                                        @if ($workspace->canBeManagedBy(Auth::user()))
                                             <a href="{{ route('workspace.edit', $workspace->id) }}"
                                                 class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
                                                 <i class="bi bi-pencil-square"></i>
