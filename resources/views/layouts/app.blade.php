@@ -18,13 +18,15 @@
         }
 
         #wrapper {
+            --sidebar-expanded-width: 250px;
+            --sidebar-collapsed-width: 80px;
             transition: all 0.3s;
         }
 
         /* Sidebar Styles */
         #sidebar {
-            min-width: 250px;
-            max-width: 250px;
+            min-width: var(--sidebar-expanded-width);
+            max-width: var(--sidebar-expanded-width);
             height: 100vh;
             background: #0f172a;
             color: #fff;
@@ -53,8 +55,8 @@
         }
 
         #sidebar.collapsed {
-            min-width: 80px;
-            max-width: 80px;
+            min-width: var(--sidebar-collapsed-width);
+            max-width: var(--sidebar-collapsed-width);
         }
 
         /* Links */
@@ -174,17 +176,17 @@
 
         /* Content Styles */
         #content {
-            margin-left: 250px;
-            width: calc(100% - 250px);
+            margin-left: var(--sidebar-expanded-width);
+            width: calc(100% - var(--sidebar-expanded-width));
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            transition: all 0.3s;
+            transition: margin-left 0.3s ease, width 0.3s ease;
         }
 
-        #sidebar.collapsed+#content {
-            margin-left: 80px;
-            width: calc(100% - 80px);
+        #wrapper:has(#sidebar.collapsed) #content {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
         }
 
         .navbar {
@@ -217,7 +219,7 @@
                 width: 100% !important;
             }
 
-            #sidebar.collapsed+#content {
+            #wrapper:has(#sidebar.collapsed) #content {
                 margin-left: 0 !important;
                 width: 100% !important;
             }
@@ -253,6 +255,18 @@
             {{-- include sidebar --}}
             @include('layouts.sidebar')
         </aside>
+
+        <script>
+            (() => {
+                try {
+                    if (window.innerWidth > 768 && window.localStorage.getItem('idt.sidebar.collapsed') === 'true') {
+                        document.getElementById('sidebar')?.classList.add('collapsed');
+                    }
+                } catch (error) {
+                    // Sidebar state persistence is optional when storage is unavailable.
+                }
+            })();
+        </script>
 
 
         <div id="content">
@@ -393,6 +407,32 @@
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.getElementById('sidebarToggle');
         const backdrop = document.getElementById('sidebarBackdrop');
+        const sidebarStateKey = 'idt.sidebar.collapsed';
+
+        function restoreDesktopSidebarState() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('collapsed');
+
+                return;
+            }
+
+            try {
+                sidebar.classList.toggle('collapsed', window.localStorage.getItem(sidebarStateKey) === 'true');
+            } catch (error) {
+                // Sidebar state persistence is optional when storage is unavailable.
+            }
+        }
+
+        function persistSidebarState() {
+            try {
+                window.localStorage.setItem(sidebarStateKey, sidebar.classList.contains('collapsed') ? 'true' : 'false');
+            } catch (error) {
+                // Sidebar state persistence is optional when storage is unavailable.
+            }
+        }
+
+        restoreDesktopSidebarState();
+        window.addEventListener('resize', restoreDesktopSidebarState);
 
         function toggleSidebar() {
             if (window.innerWidth <= 768) {
@@ -400,6 +440,7 @@
                 backdrop.classList.toggle('show');
             } else {
                 sidebar.classList.toggle('collapsed');
+                persistSidebarState();
                 // If sidebar collapses, forcefully close any open dropdowns to prevent visual bugs
                 if (sidebar.classList.contains('collapsed')) {
                     document.querySelectorAll('.has-dropdown.open').forEach(el => {
