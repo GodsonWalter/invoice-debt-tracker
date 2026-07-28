@@ -12,13 +12,13 @@
     <div class="card border border-light shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <h5 class="fw-bold text-dark mb-0 fs-6">Workspace Details</h5>
-            <a href="{{ route('workspace.index') }}" class="btn btn-sm btn-secondary">
+            <a href="{{ route('workspace.index', [], false) }}" class="btn btn-sm btn-secondary">
                 <i class="bi bi-arrow-left"></i> Back to List
             </a>
         </div>
 
         <div class="card-body p-3 p-md-4">
-            <form action="{{ route('workspace.update', $workspace->id) }}" method="post">
+            <form action="{{ route('workspace.update', $workspace->id, false) }}" method="post">
                 @csrf
                 @method('PUT')
 

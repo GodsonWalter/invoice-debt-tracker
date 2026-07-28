@@ -18,7 +18,7 @@
 
         {{-- workspaces --}}
         <li class="nav-item">
-            <a href="{{ route('workspace.index') }}" class="nav-link">
+            <a href="{{ route('workspace.index', [], false) }}" class="nav-link">
                 <i class="fa-solid fa-building fa-fw"></i> <span>Workspaces</span>
             </a>
         </li>
@@ -44,7 +44,7 @@
 
             {{-- dashboard --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.dashboard', $workspace) }}" class="nav-link">
+                <a href="{{ route('workspace.dashboard', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
                 </a>
             </li>
@@ -58,7 +58,7 @@
 
             {{-- invoices --}}
             <li class="nav-item">
-                <a href="{{ route('invoices.index', $workspace) }}" class="nav-link">
+                <a href="{{ route('invoices.index', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
                 </a>
             </li>
@@ -67,14 +67,14 @@
             {{-- clients --}}
 
             <li class="nav-item">
-                <a href="{{ route('clients.index', $workspace) }}" class="nav-link">
+                <a href="{{ route('clients.index', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
                 </a>
             </li>
 
             {{-- users --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.users.index', $workspace) }}" class="nav-link">
+                <a href="{{ route('workspace.users.index', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
                 </a>
             </li>
@@ -106,7 +106,7 @@
 
             {{-- workspace settings --}}
             <li class="nav-item">
-                <a href="{{ route('workspace.edit', $workspace->id) }}" class="nav-link">
+                <a href="{{ route('workspace.edit', $workspace->id, false) }}" class="nav-link">
                     <i class="fa-solid fa-gear fa-fw"></i> <span>Workspace </span>
                 </a>
             </li>
@@ -119,13 +119,13 @@
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('email-templates.index', $workspace) }}" class="nav-link">
+                <a href="{{ route('email-templates.index', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-envelope-open-text fa-fw"></i> <span>Email Templates</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a href="{{ route('reminder-schedules.index', $workspace) }}" class="nav-link">
+                <a href="{{ route('reminder-schedules.index', $workspace, false) }}" class="nav-link">
                     <i class="fa-solid fa-bell fa-fw"></i> <span>Reminder Schedules</span>
                 </a>
             </li>

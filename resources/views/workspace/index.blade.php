@@ -3,6 +3,10 @@
 @section('page_title', 'Workspace Management')
 @section('content')
 
+    @php
+        $activeWorkspace = $currentWorkspace ?? null;
+    @endphp
+
     <div class="container-fluid py-2">
         <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
             <div>
@@ -101,35 +105,36 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <a href="{{ route('workspace.show', $workspace->id) }}"
-                                            class="btn btn-sm btn-outline-primary me-1" title="View workspace">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-
-                                        @if ($workspace->canBeManagedBy(Auth::user()))
-                                            <a href="{{ route('workspace.edit', $workspace->id) }}"
-                                                class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <form action="{{ route('workspace.destroy', $workspace->id) }}" method="POST"
-                                                class="d-inline-block"
-                                                onsubmit="return confirm('Are you sure you want to delete this workspace?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                    title="Delete workspace">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form action="{{ route('workspace.exit', $workspace->id) }}" method="POST"
-                                                class="d-inline-block"
-                                                onsubmit="return confirm('Are you sure you want to exit this workspace?');">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
-                                                    <i class="bi bi-box-arrow-right"></i>
-                                                </button>
-                                            </form>
+                                        @if ($activeWorkspace instanceof \App\Models\Workspace && $activeWorkspace->is($workspace))
+                                            @if ($workspace->canBeManagedBy(Auth::user()))
+                                                <a href="{{ route('workspace.show', $workspace->id, false) }}"
+                                                    class="btn btn-sm btn-outline-primary me-1" title="View workspace">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{{ route('workspace.edit', $workspace->id, false) }}"
+                                                    class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
+                                                    class="d-inline-block"
+                                                    onsubmit="return confirm('Are you sure you want to delete this workspace?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Delete workspace">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('workspace.exit', $workspace->id, false) }}" method="POST"
+                                                    class="d-inline-block"
+                                                    onsubmit="return confirm('Are you sure you want to exit this workspace?');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
+                                                        <i class="bi bi-box-arrow-right"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>

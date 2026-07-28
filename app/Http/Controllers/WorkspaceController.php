@@ -10,6 +10,23 @@ use Illuminate\Support\Facades\Auth;
 
 class WorkspaceController extends Controller
 {
+    private function authorizeActiveWorkspace(Workspace $workspace): void
+    {
+        $currentWorkspace = request()->currentWorkspace;
+
+        if (! $currentWorkspace instanceof Workspace) {
+            throw new HttpResponseException(
+                redirect()->route('workspace.index')->with('error', 'Please switch to a workspace before accessing it.')
+            );
+        }
+
+        if (! $currentWorkspace->is($workspace)) {
+            throw new HttpResponseException(
+                redirect()->route('workspace.index')->with('error', 'Please switch to this workspace before accessing it.')
+            );
+        }
+    }
+
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         if (! $workspace->canBeManagedBy(Auth::user())) {
@@ -77,6 +94,7 @@ class WorkspaceController extends Controller
      */
     public function show(Workspace $workspace)
     {
+        $this->authorizeActiveWorkspace($workspace);
         $this->authorizeWorkspaceUser($workspace);
 
         return view('workspace.show', [
@@ -90,6 +108,7 @@ class WorkspaceController extends Controller
      */
     public function edit(Workspace $workspace, CurrencyService $currencyService)
     {
+        $this->authorizeActiveWorkspace($workspace);
         $this->authorizeWorkspaceUser($workspace);
 
         return view('workspace.edit', [
@@ -104,6 +123,7 @@ class WorkspaceController extends Controller
      */
     public function update(Request $request, Workspace $workspace, CurrencyService $currencyService)
     {
+        $this->authorizeActiveWorkspace($workspace);
         $this->authorizeWorkspaceUser($workspace);
 
         $validated = $request->validate([
@@ -126,7 +146,8 @@ class WorkspaceController extends Controller
             'is_active' => $validated['is_active'],
         ]);
 
-        return redirect()->route('workspace.show', $workspace)->with('success', 'Workspace updated successfully.');
+        return redirect()->to($this->workspaceUrl($workspace, 'workspace.show', $workspace))
+            ->with('success', 'Workspace updated successfully.');
     }
 
     /**
@@ -166,9 +187,26 @@ class WorkspaceController extends Controller
      */
     public function switch(string $workspace)
     {
-        $workspace = Workspace::where('subdomain', $workspace)->firstOrFail();
+        $workspace = Auth::user()->workspaces()
+            ->where('workspaces.subdomain', $workspace)
+            ->where('workspaces.is_active', true)
+            ->first();
 
-        return redirect()->route('dashboard')->with('success', 'Switched to workspace: '.$workspace->name);
+        if (! $workspace) {
+            return redirect()->route('workspace.index')
+                ->with('error', 'You are not authorized to switch to this workspace.');
+        }
+
+        return redirect()->to($this->workspaceUrl($workspace, 'dashboard'))
+            ->with('success', 'Switched to workspace: '.$workspace->name);
+    }
+
+    private function workspaceUrl(Workspace $workspace, string $routeName, mixed $parameters = []): string
+    {
+        $path = route($routeName, $parameters, false);
+        $baseDomain = trim((string) config('app.base_domain'), '"');
+
+        return request()->getScheme().'://'.$workspace->subdomain.'.'.$baseDomain.$path;
     }
 
     // /**

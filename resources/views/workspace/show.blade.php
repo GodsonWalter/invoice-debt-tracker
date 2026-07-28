@@ -13,11 +13,11 @@
         <div class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <h5 class="fw-bold text-dark mb-0 fs-6">Workspace Information</h5>
             <div class="d-flex gap-2">
-                <a href="{{ route('workspace.index') }}" class="btn btn-sm btn-secondary">
+                <a href="{{ route('workspace.index', [], false) }}" class="btn btn-sm btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to List
                 </a>
-                @if ($workspace->canBeManagedBy(Auth::user()))
-                    <a href="{{ route('workspace.edit', $workspace->id) }}" class="btn btn-sm btn-warning">
+                @if (($currentWorkspace ?? null)?->is($workspace) && $workspace->canBeManagedBy(Auth::user()))
+                    <a href="{{ route('workspace.edit', $workspace->id, false) }}" class="btn btn-sm btn-warning">
                         <i class="bi bi-pencil-square"></i> Edit Workspace
                     </a>
                 @endif
