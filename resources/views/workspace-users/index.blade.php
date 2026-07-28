@@ -95,8 +95,7 @@
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
                                             <form action="{{ route('workspace.users.destroy', [$workspace, $user]) }}" method="POST"
-                                                class="d-inline-block"
-                                                onsubmit="return confirm('Remove this user from workspace?');">
+                                                class="d-inline-block" data-delete-confirm>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove user">

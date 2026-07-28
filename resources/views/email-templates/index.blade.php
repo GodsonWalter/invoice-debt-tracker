@@ -60,7 +60,7 @@
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
 
-                                            <form action="{{ route('email-templates.destroy', [$workspace, $emailTemplate]) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Delete this template?');">
+                                            <form action="{{ route('email-templates.destroy', [$workspace, $emailTemplate]) }}" method="POST" class="d-inline-block" data-delete-confirm>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">

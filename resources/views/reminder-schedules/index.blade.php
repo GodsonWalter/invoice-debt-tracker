@@ -66,7 +66,7 @@
                                                 </button>
                                             </form>
 
-                                            <form action="{{ route('reminder-schedules.destroy', [$workspace, $schedule]) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Delete this reminder schedule?');">
+                                            <form action="{{ route('reminder-schedules.destroy', [$workspace, $schedule]) }}" method="POST" class="d-inline-block" data-delete-confirm>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">

@@ -169,7 +169,7 @@
                         <h5 class="fw-bold text-danger mb-0 fs-6">Danger Zone</h5>
                     </div>
                     <div class="card-body p-3 p-md-4">
-                        <form method="POST" action="{{ route('profile.destroy') }}" onsubmit="return confirm('Delete your account permanently?');">
+                        <form method="POST" action="{{ route('profile.destroy') }}" data-delete-confirm>
                             @csrf
                             @method('DELETE')
 

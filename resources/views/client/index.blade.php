@@ -80,7 +80,7 @@
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
                                             <form action="{{ route('clients.destroy', [$workspace, $client]) }}" method="POST"
-                                                class="d-inline-block" onsubmit="return confirm('Delete this client?');">
+                                                class="d-inline-block" data-delete-confirm>
                                                 @csrf
                                                 
                                                 @method('DELETE')

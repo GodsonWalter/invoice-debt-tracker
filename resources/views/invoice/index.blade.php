@@ -93,7 +93,7 @@
                                                 </button>
                                             </form>
                                             <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST"
-                                                class="d-inline-block" onsubmit="return confirm('Delete this invoice?');">
+                                                class="d-inline-block" data-delete-confirm>
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i

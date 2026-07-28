@@ -80,7 +80,7 @@
                                             </form>
 
                                             @if ($currency->is_active)
-                                                <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline-block" onsubmit="return confirm('Deactivate this currency?');">
+                                                <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline-block" data-delete-confirm>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Deactivate">

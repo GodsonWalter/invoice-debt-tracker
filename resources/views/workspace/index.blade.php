@@ -116,8 +116,7 @@
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
                                                 <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
-                                                    class="d-inline-block"
-                                                    onsubmit="return confirm('Are you sure you want to delete this workspace?');">
+                                                    class="d-inline-block" data-delete-confirm>
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -127,8 +126,7 @@
                                                 </form>
                                             @else
                                                 <form action="{{ route('workspace.exit', $workspace->id, false) }}" method="POST"
-                                                    class="d-inline-block"
-                                                    onsubmit="return confirm('Are you sure you want to exit this workspace?');">
+                                                    class="d-inline-block" data-delete-confirm>
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
                                                         <i class="bi bi-box-arrow-right"></i>
