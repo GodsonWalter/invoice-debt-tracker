@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Carbon\CarbonImmutable;
+use App\WorkspaceDashboardPeriod;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,30 +16,26 @@ class WorkspaceDashboardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'range' => ['nullable', 'string', Rule::in([
-                'this_month',
-                'last_month',
-                'last_3_months',
-                'last_6_months',
-                'this_year',
-                'custom',
-            ])],
-            'start_date' => ['nullable', 'date_format:Y-m-d'],
-            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'period' => ['nullable', 'string', Rule::in($this->supportedPeriods())],
+            'range' => ['nullable', 'string'],
+            'start_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date', 'before_or_equal:today'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        if (! $this->filled('range')) {
-            $this->merge(['range' => 'last_6_months']);
+        if (! $this->filled('period')) {
+            $this->merge([
+                'period' => $this->filled('range') ? $this->input('range') : WorkspaceDashboardPeriod::DEFAULT,
+            ]);
         }
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
-            if ($this->string('range')->toString() !== 'custom') {
+            if ($this->string('period')->toString() !== WorkspaceDashboardPeriod::CUSTOM) {
                 return;
             }
 
@@ -49,36 +45,36 @@ class WorkspaceDashboardRequest extends FormRequest
                 return;
             }
 
-            $start = CarbonImmutable::createFromFormat('Y-m-d', $this->string('start_date')->toString());
-            $end = CarbonImmutable::createFromFormat('Y-m-d', $this->string('end_date')->toString());
+            $start = date_create_immutable($this->string('start_date')->toString());
+            $end = date_create_immutable($this->string('end_date')->toString());
 
-            if ($start && $end && $start->diffInDays($end) > 366) {
+            if ($start && $end && $start->diff($end)->days + 1 > WorkspaceDashboardPeriod::MAX_CUSTOM_RANGE_DAYS) {
                 $validator->errors()->add('end_date', 'Dashboard date ranges cannot exceed 366 days.');
             }
         });
     }
 
-    /**
-     * @return array{range: string, start: CarbonImmutable, end: CarbonImmutable, label: string}
-     */
-    public function dashboardFilters(): array
+    public function dashboardPeriod(): WorkspaceDashboardPeriod
     {
-        $range = $this->string('range')->toString() ?: 'last_6_months';
-        $now = CarbonImmutable::now();
+        return WorkspaceDashboardPeriod::fromInput(
+            period: $this->string('period')->toString() ?: WorkspaceDashboardPeriod::DEFAULT,
+            startDate: $this->string('start_date')->toString() ?: null,
+            endDate: $this->string('end_date')->toString() ?: null,
+        );
+    }
 
-        [$start, $end, $label] = match ($range) {
-            'this_month' => [$now->startOfMonth(), $now->endOfMonth(), 'This month'],
-            'last_month' => [$now->subMonth()->startOfMonth(), $now->subMonth()->endOfMonth(), 'Last month'],
-            'last_3_months' => [$now->subMonths(2)->startOfMonth(), $now->endOfMonth(), 'Last 3 months'],
-            'this_year' => [$now->startOfYear(), $now->endOfYear(), 'This year'],
-            'custom' => [
-                CarbonImmutable::createFromFormat('Y-m-d', $this->string('start_date')->toString())->startOfDay(),
-                CarbonImmutable::createFromFormat('Y-m-d', $this->string('end_date')->toString())->endOfDay(),
-                $this->string('start_date')->toString().' to '.$this->string('end_date')->toString(),
-            ],
-            default => [$now->subMonths(5)->startOfMonth(), $now->endOfMonth(), 'Last 6 months'],
-        };
-
-        return compact('range', 'start', 'end', 'label');
+    /**
+     * @return array<int, string>
+     */
+    private function supportedPeriods(): array
+    {
+        return [
+            WorkspaceDashboardPeriod::THIS_MONTH,
+            WorkspaceDashboardPeriod::LAST_MONTH,
+            WorkspaceDashboardPeriod::LAST_3_MONTHS,
+            WorkspaceDashboardPeriod::LAST_6_MONTHS,
+            WorkspaceDashboardPeriod::THIS_YEAR,
+            WorkspaceDashboardPeriod::CUSTOM,
+        ];
     }
 }

@@ -4,7 +4,7 @@
 
 @php
     $kpis = $dashboard['kpis'];
-    $filters = $dashboard['filters'];
+    $period = $dashboard['period'];
     $money = fn ($amount) => $workspace->formatMoney($amount);
     $statusBadge = fn ($status) => match ($status) {
         'draft' => 'secondary',
@@ -38,8 +38,8 @@
             <div class="card-body p-3">
                 <form method="GET" action="{{ url()->current() }}" class="row g-2 align-items-end">
                     <div class="col-12 col-md-4 col-lg-3">
-                        <label for="dashboard-range" class="form-label small fw-semibold mb-1">Analytics period</label>
-                        <select id="dashboard-range" name="range" class="form-select form-select-sm">
+                        <label for="dashboard-period" class="form-label small fw-semibold mb-1">Analytics period</label>
+                        <select id="dashboard-period" name="period" class="form-select form-select-sm">
                             @foreach ([
                                 'this_month' => 'This month',
                                 'last_month' => 'Last month',
@@ -48,7 +48,7 @@
                                 'this_year' => 'This year',
                                 'custom' => 'Custom range',
                             ] as $value => $label)
-                                <option value="{{ $value }}" @selected($filters['range'] === $value)>{{ $label }}</option>
+                                <option value="{{ $value }}" @selected($period->period === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -66,7 +66,7 @@
                         <button type="submit" class="btn btn-sm btn-dark">Apply</button>
                     </div>
                     <div class="col-12 col-lg-auto ms-lg-auto text-muted small">
-                        Showing {{ $filters['label'] }}. Revenue total is all-time; activity cards use the current month.
+                        Showing {{ $period->label }}. Current-state cards are labelled separately; period metrics use business dates.
                     </div>
                 </form>
             </div>
@@ -89,7 +89,7 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small">Outstanding debt</span>
+                            <span class="text-muted small">Outstanding debt · Current</span>
                             <span class="icon-circle bg-warning-subtle text-warning"><i class="bi bi-wallet2"></i></span>
                         </div>
                         <h2 class="h5 fw-bold mb-1">{{ $money($kpis['outstanding_debt']) }}</h2>
@@ -101,7 +101,7 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small">Overdue amount</span>
+                            <span class="text-muted small">Overdue amount · As of today</span>
                             <span class="icon-circle bg-danger-subtle text-danger"><i class="bi bi-exclamation-triangle"></i></span>
                         </div>
                         <h2 class="h5 fw-bold mb-1">{{ $money($kpis['overdue_amount']) }}</h2>
@@ -117,13 +117,13 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small">Payments this month</span>
+                            <span class="text-muted small">Payments received · Selected period</span>
                             <span class="icon-circle bg-primary-subtle text-primary"><i class="bi bi-cash-stack"></i></span>
                         </div>
-                        <h2 class="h5 fw-bold mb-1">{{ $money($kpis['payments_month']) }}</h2>
-                        <p class="text-muted small mb-0">{{ $kpis['payment_transactions_month'] }} payment transactions
+                        <h2 class="h5 fw-bold mb-1">{{ $money($kpis['payments_period']) }}</h2>
+                        <p class="text-muted small mb-0">{{ $kpis['payment_transactions_period'] }} payment transactions
                             @if ($kpis['revenue_change_percent'] !== null)
-                                · {{ $kpis['revenue_change_percent'] >= 0 ? '+' : '' }}{{ $kpis['revenue_change_percent'] }}% vs last month
+                                · {{ $kpis['revenue_change_percent'] >= 0 ? '+' : '' }}{{ $kpis['revenue_change_percent'] }}% vs {{ $period->comparisonLabel }}
                             @endif
                         </p>
                     </div>
@@ -133,7 +133,7 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small">Pending invoices</span>
+                            <span class="text-muted small">Pending invoices · Current</span>
                             <span class="icon-circle bg-info-subtle text-info"><i class="bi bi-file-earmark-text"></i></span>
                         </div>
                         <h2 class="h5 fw-bold mb-1">{{ $kpis['pending_invoice_count'] }}</h2>
@@ -149,7 +149,7 @@
                             <span class="icon-circle bg-secondary-subtle text-secondary"><i class="bi bi-bell"></i></span>
                         </div>
                         <h2 class="h5 fw-bold mb-1">{{ number_format($kpis['reminder_success_rate'], 1) }}%</h2>
-                        <p class="text-muted small mb-0">{{ $kpis['reminders_sent_month'] }} sent · {{ $kpis['reminders_failed_month'] }} failed</p>
+                        <p class="text-muted small mb-0">{{ $kpis['reminders_sent_period'] }} sent · {{ $kpis['reminders_failed_period'] }} failed</p>
                     </div>
                 </div>
             </div>
@@ -178,7 +178,7 @@
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-header bg-white border-0 pt-4 px-4">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div><h2 class="h5 fw-bold mb-1">Revenue and collections</h2><p class="text-muted small mb-0">Monthly invoice and payment movement.</p></div>
+                            <div><h2 class="h5 fw-bold mb-1">Revenue and collections</h2><p class="text-muted small mb-0">{{ ucfirst($period->granularity) }} invoice and payment movement.</p></div>
                             <span class="badge bg-light text-dark">{{ $dashboard['currency']['code'] ?? 'Workspace currency' }}</span>
                         </div>
                     </div>
@@ -248,7 +248,7 @@
             </div>
             <div class="col-12 col-xl-5">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white border-0 pt-4 px-4"><h2 class="h5 fw-bold mb-1">Reminder activity</h2><p class="text-muted small mb-0">Reminder delivery health for {{ $filters['label'] }}.</p></div>
+                    <div class="card-header bg-white border-0 pt-4 px-4"><h2 class="h5 fw-bold mb-1">Reminder activity</h2><p class="text-muted small mb-0">Sent and failed attempts for {{ $period->label }}; pending reminders are current.</p></div>
                     <div class="card-body px-4"><div class="row g-3 text-center mb-3"><div class="col-4"><div class="h4 fw-bold mb-0">{{ $dashboard['reminders']['sent'] }}</div><small class="text-muted">Sent</small></div><div class="col-4"><div class="h4 fw-bold text-danger mb-0">{{ $dashboard['reminders']['failed'] }}</div><small class="text-muted">Failed</small></div><div class="col-4"><div class="h4 fw-bold text-warning mb-0">{{ $dashboard['reminders']['pending'] }}</div><small class="text-muted">Pending</small></div></div><ul class="list-group list-group-flush small"><li class="list-group-item px-0 d-flex justify-content-between"><span>Invoices without a schedule</span><strong>{{ $dashboard['reminders']['without_schedule'] }}</strong></li><li class="list-group-item px-0 d-flex justify-content-between"><span>Last reminder activity</span><span>{{ $dashboard['reminders']['last_activity_at']?->diffForHumans() ?? 'No activity' }}</span></li></ul>@if ($dashboard['reminders']['failed'] > 0)<a href="{{ route('reminders.failed', [], false) }}" class="btn btn-sm btn-outline-danger mt-3">Review failed reminders</a>@endif</div>
                 </div>
             </div>
@@ -287,7 +287,6 @@
     <style>
         .icon-circle { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
         .dashboard-custom-date { display: none; }
-        #dashboard-range[value="custom"] ~ .dashboard-custom-date { display: block; }
     </style>
 @endpush
 
@@ -295,10 +294,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const rangeSelect = document.getElementById('dashboard-range');
+            const periodSelect = document.getElementById('dashboard-period');
             const dateFields = document.querySelectorAll('.dashboard-custom-date');
-            const toggleCustomDates = () => dateFields.forEach((field) => field.style.display = rangeSelect.value === 'custom' ? 'block' : 'none');
-            rangeSelect?.addEventListener('change', toggleCustomDates);
+            if (!periodSelect) {
+                return;
+            }
+
+            const toggleCustomDates = () => dateFields.forEach((field) => field.style.display = periodSelect.value === 'custom' ? 'block' : 'none');
+            periodSelect.addEventListener('change', toggleCustomDates);
             toggleCustomDates();
 
             const collectionCanvas = document.getElementById('collectionChart');

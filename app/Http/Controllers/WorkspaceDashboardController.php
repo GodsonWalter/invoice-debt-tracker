@@ -34,7 +34,7 @@ class WorkspaceDashboardController extends Controller
 
         return view('dashboard.workspace', [
             'workspace' => $workspace,
-            'dashboard' => $dashboardService->dashboard($workspace, Auth::user(), $request->dashboardFilters()),
+            'dashboard' => $dashboardService->dashboard($workspace, Auth::user(), $request->dashboardPeriod()),
         ]);
     }
 

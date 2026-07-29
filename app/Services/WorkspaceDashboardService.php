@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\ReminderLog;
 use App\Models\User;
 use App\Models\Workspace;
+use App\WorkspaceDashboardPeriod;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,27 +25,27 @@ class WorkspaceDashboardService
     ];
 
     /**
-     * @param  array{range: string, start: CarbonImmutable, end: CarbonImmutable, label: string}  $filters
      * @return array<string, mixed>
      */
-    public function dashboard(Workspace $workspace, User $user, array $filters): array
+    public function dashboard(Workspace $workspace, User $user, WorkspaceDashboardPeriod $period): array
     {
         if (! $workspace->canBeManagedBy($user)) {
             throw new AuthorizationException('You are not authorized to view this workspace dashboard.');
         }
 
         $workspace->loadMissing(['currency', 'businessProfile']);
+        $reminders = $this->reminderSummary($workspace, $period);
 
         return [
-            'filters' => $filters,
-            'kpis' => $this->kpis($workspace, $filters),
-            'chart' => $this->collectionChart($workspace, $filters),
-            'invoiceStatuses' => $this->invoiceStatuses($workspace, $filters),
+            'period' => $period,
+            'kpis' => $this->kpis($workspace, $period, $reminders),
+            'chart' => $this->collectionChart($workspace, $period),
+            'invoiceStatuses' => $this->invoiceStatuses($workspace, $period),
             'topDebtors' => $this->topDebtors($workspace),
             'recentInvoices' => $this->recentInvoices($workspace),
             'recentPayments' => $this->recentPayments($workspace),
             'overdueInvoices' => $this->overdueInvoices($workspace),
-            'reminders' => $this->reminderSummary($workspace, $filters),
+            'reminders' => $reminders,
             'activities' => $this->recentActivities($workspace),
             'alerts' => $this->alerts($workspace),
             'quickActions' => $this->quickActions($workspace),
@@ -56,35 +57,27 @@ class WorkspaceDashboardService
     }
 
     /**
-     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $filters
+     * @param  array{sent: int, failed: int, pending: int, upcoming: int, without_schedule: int, success_rate: float, last_activity_at: ?CarbonImmutable}  $reminders
      * @return array<string, mixed>
      */
-    private function kpis(Workspace $workspace, array $filters): array
+    private function kpis(Workspace $workspace, WorkspaceDashboardPeriod $period, array $reminders): array
     {
-        $now = CarbonImmutable::now();
-        $monthStart = $now->startOfMonth()->toDateString();
-        $monthEnd = $now->endOfMonth()->toDateString();
-        $previousMonthStart = $now->subMonth()->startOfMonth()->toDateString();
-        $previousMonthEnd = $now->subMonth()->endOfMonth()->toDateString();
+        $now = CarbonImmutable::now(config('app.timezone', 'UTC'));
 
         $paymentStats = Payment::query()
             ->where('workspace_id', $workspace->id)
             ->selectRaw('COALESCE(SUM(amount), 0) as all_time_revenue')
             ->selectRaw('COALESCE(SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) as period_revenue', [
-                $filters['start']->toDateString(),
-                $filters['end']->toDateString(),
+                $period->start->toDateTimeString(),
+                $period->end->toDateTimeString(),
             ])
-            ->selectRaw('COALESCE(SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) as month_revenue', [
-                $monthStart,
-                $monthEnd,
+            ->selectRaw('COALESCE(SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) as comparison_revenue', [
+                $period->comparisonStart->toDateTimeString(),
+                $period->comparisonEnd->toDateTimeString(),
             ])
-            ->selectRaw('COALESCE(SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) as previous_month_revenue', [
-                $previousMonthStart,
-                $previousMonthEnd,
-            ])
-            ->selectRaw('SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_payment_count', [
-                $monthStart,
-                $monthEnd,
+            ->selectRaw('SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as period_payment_count', [
+                $period->start->toDateTimeString(),
+                $period->end->toDateTimeString(),
             ])
             ->first();
 
@@ -116,120 +109,115 @@ class WorkspaceDashboardService
             ->selectRaw('COALESCE(SUM(total_amount), 0) as value')
             ->first();
 
-        $reminders = $this->reminderSummary($workspace, $filters);
-
         return [
             'revenue_all_time' => (float) ($paymentStats->all_time_revenue ?? 0),
             'revenue_period' => (float) ($paymentStats->period_revenue ?? 0),
-            'revenue_month' => (float) ($paymentStats->month_revenue ?? 0),
-            'revenue_previous_month' => (float) ($paymentStats->previous_month_revenue ?? 0),
             'revenue_change_percent' => $this->percentageChange(
-                (float) ($paymentStats->previous_month_revenue ?? 0),
-                (float) ($paymentStats->month_revenue ?? 0),
+                (float) ($paymentStats->comparison_revenue ?? 0),
+                (float) ($paymentStats->period_revenue ?? 0),
             ),
-            'payments_month' => (float) ($paymentStats->month_revenue ?? 0),
-            'payment_transactions_month' => (int) ($paymentStats->month_payment_count ?? 0),
+            'payments_period' => (float) ($paymentStats->period_revenue ?? 0),
+            'payment_transactions_period' => (int) ($paymentStats->period_payment_count ?? 0),
             'outstanding_debt' => (float) ($debt->total_debt ?? 0),
             'unpaid_count' => (int) ($debt->unpaid_count ?? 0),
             'customers_owing' => (int) $customersOwing,
             'overdue_amount' => (float) ($overdue->amount ?? 0),
             'overdue_count' => (int) ($overdue->count ?? 0),
             'oldest_overdue_age' => $overdue->oldest_due_date
-                ? CarbonImmutable::parse($overdue->oldest_due_date)->diffInDays($now)
+                ? CarbonImmutable::parse($overdue->oldest_due_date)->startOfDay()->diffInDays($now->startOfDay())
                 : null,
             'pending_invoice_count' => (int) ($pending->count ?? 0),
             'pending_invoice_value' => (float) ($pending->value ?? 0),
-            'reminders_sent_month' => $reminders['sent'],
-            'reminders_failed_month' => $reminders['failed'],
+            'reminders_sent_period' => $reminders['sent'],
+            'reminders_failed_period' => $reminders['failed'],
             'reminder_success_rate' => $reminders['success_rate'],
         ];
     }
 
     /**
-     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $filters
      * @return array{labels: array<int, string>, invoiced: array<int, float>, payments: array<int, float>, outstanding: array<int, float>}
      */
-    private function collectionChart(Workspace $workspace, array $filters): array
+    private function collectionChart(Workspace $workspace, WorkspaceDashboardPeriod $period): array
     {
-        $firstMonth = $filters['start']->startOfMonth();
-        $lastMonth = $filters['end']->startOfMonth();
-        $months = [];
-        for ($month = $firstMonth; $month->lessThanOrEqualTo($lastMonth); $month = $month->addMonth()) {
-            $key = $month->format('Y-m');
-            $months[$key] = [
-                'label' => $month->format('M Y'),
+        $isDaily = $period->granularity === 'day';
+        $bucketStart = $isDaily ? $period->start->startOfDay() : $period->start->startOfMonth();
+        $bucketEnd = $isDaily ? $period->end->startOfDay() : $period->end->startOfMonth();
+        $buckets = [];
+
+        for ($bucket = $bucketStart; $bucket->lessThanOrEqualTo($bucketEnd); $bucket = $isDaily ? $bucket->addDay() : $bucket->addMonth()) {
+            $key = $this->bucketKey($bucket, $isDaily);
+            $buckets[$key] = [
+                'label' => $isDaily ? $bucket->format('d M') : $bucket->format('M Y'),
                 'invoiced' => 0.0,
                 'payments' => 0.0,
             ];
         }
 
-        [$yearExpression, $monthExpression] = $this->dateParts('issue_date');
-        $invoiceRows = Invoice::query()
-            ->where('workspace_id', $workspace->id)
-            ->whereBetween('issue_date', [$filters['start']->toDateString(), $filters['end']->toDateString()])
-            ->selectRaw("{$yearExpression} as dashboard_year, {$monthExpression} as dashboard_month")
-            ->selectRaw('COALESCE(SUM(total_amount), 0) as total')
-            ->groupByRaw("{$yearExpression}, {$monthExpression}")
-            ->get();
-
-        [$yearExpression, $monthExpression] = $this->dateParts('payment_date');
-        $paymentRows = Payment::query()
-            ->where('workspace_id', $workspace->id)
-            ->whereBetween('payment_date', [$filters['start']->toDateString(), $filters['end']->toDateString()])
-            ->selectRaw("{$yearExpression} as dashboard_year, {$monthExpression} as dashboard_month")
-            ->selectRaw('COALESCE(SUM(amount), 0) as total')
-            ->groupByRaw("{$yearExpression}, {$monthExpression}")
-            ->get();
+        $invoiceRows = $this->groupedAmountRows(
+            Invoice::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereBetween('issue_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()]),
+            'issue_date',
+            'total_amount',
+            $isDaily,
+        );
+        $paymentRows = $this->groupedAmountRows(
+            Payment::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereBetween('payment_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()]),
+            'payment_date',
+            'amount',
+            $isDaily,
+        );
 
         foreach ($invoiceRows as $row) {
-            $key = sprintf('%04d-%02d', $row->dashboard_year, $row->dashboard_month);
-            if (isset($months[$key])) {
-                $months[$key]['invoiced'] = (float) $row->total;
+            $key = $this->rowBucketKey($row, $isDaily);
+            if (isset($buckets[$key])) {
+                $buckets[$key]['invoiced'] = (float) $row->total;
             }
         }
 
         foreach ($paymentRows as $row) {
-            $key = sprintf('%04d-%02d', $row->dashboard_year, $row->dashboard_month);
-            if (isset($months[$key])) {
-                $months[$key]['payments'] = (float) $row->total;
+            $key = $this->rowBucketKey($row, $isDaily);
+            if (isset($buckets[$key])) {
+                $buckets[$key]['payments'] = (float) $row->total;
             }
         }
 
         $runningOutstanding = max(
             (float) Invoice::query()
                 ->where('workspace_id', $workspace->id)
-                ->where('issue_date', '<', $firstMonth->toDateString())
+                ->where('issue_date', '<', $bucketStart->toDateTimeString())
                 ->sum('total_amount')
             - (float) Payment::query()
                 ->where('workspace_id', $workspace->id)
-                ->where('payment_date', '<', $firstMonth->toDateString())
+                ->where('payment_date', '<', $bucketStart->toDateTimeString())
                 ->sum('amount'),
             0.0,
         );
 
-        foreach ($months as &$month) {
-            $runningOutstanding = max($runningOutstanding + $month['invoiced'] - $month['payments'], 0.0);
-            $month['outstanding'] = $runningOutstanding;
+        foreach ($buckets as &$bucket) {
+            $runningOutstanding = max($runningOutstanding + $bucket['invoiced'] - $bucket['payments'], 0.0);
+            $bucket['outstanding'] = $runningOutstanding;
         }
-        unset($month);
+        unset($bucket);
 
         return [
-            'labels' => array_column($months, 'label'),
-            'invoiced' => array_column($months, 'invoiced'),
-            'payments' => array_column($months, 'payments'),
-            'outstanding' => array_column($months, 'outstanding'),
+            'labels' => array_column($buckets, 'label'),
+            'invoiced' => array_column($buckets, 'invoiced'),
+            'payments' => array_column($buckets, 'payments'),
+            'outstanding' => array_column($buckets, 'outstanding'),
         ];
     }
 
     /**
-     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $filters
      * @return Collection<int, object>
      */
-    private function invoiceStatuses(Workspace $workspace, array $filters): Collection
+    private function invoiceStatuses(Workspace $workspace, WorkspaceDashboardPeriod $period): Collection
     {
         return Invoice::query()
             ->where('workspace_id', $workspace->id)
-            ->whereBetween('issue_date', [$filters['start']->toDateString(), $filters['end']->toDateString()])
+            ->whereBetween('issue_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()])
             ->select('status')
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('COALESCE(SUM(total_amount), 0) as value')
@@ -313,22 +301,21 @@ class WorkspaceDashboardService
     }
 
     /**
-     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $filters
      * @return array{sent: int, failed: int, pending: int, upcoming: int, without_schedule: int, success_rate: float, last_activity_at: ?CarbonImmutable}
      */
-    private function reminderSummary(Workspace $workspace, array $filters): array
+    private function reminderSummary(Workspace $workspace, WorkspaceDashboardPeriod $period): array
     {
         $stats = ReminderLog::query()
             ->where('workspace_id', $workspace->id)
             ->selectRaw('SUM(CASE WHEN status = ? AND sent_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as sent', [
                 ReminderLog::STATUS_SENT,
-                $filters['start']->toDateTimeString(),
-                $filters['end']->toDateTimeString(),
+                $period->start->toDateTimeString(),
+                $period->end->toDateTimeString(),
             ])
             ->selectRaw('SUM(CASE WHEN status = ? AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as failed', [
                 ReminderLog::STATUS_FAILED,
-                $filters['start']->toDateTimeString(),
-                $filters['end']->toDateTimeString(),
+                $period->start->toDateTimeString(),
+                $period->end->toDateTimeString(),
             ])
             ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending', [ReminderLog::STATUS_PENDING])
             ->selectRaw('MAX(updated_at) as last_activity_at')
@@ -532,21 +519,55 @@ class WorkspaceDashboardService
             ->groupBy('invoice_id');
     }
 
+    private function groupedAmountRows(Builder $query, string $dateColumn, string $amountColumn, bool $daily): Collection
+    {
+        [$yearExpression, $monthExpression, $dayExpression] = $this->dateParts($dateColumn);
+        $select = $query
+            ->selectRaw("{$yearExpression} as dashboard_year, {$monthExpression} as dashboard_month")
+            ->selectRaw('COALESCE(SUM('.$amountColumn.'), 0) as total');
+
+        if ($daily) {
+            $select
+                ->selectRaw("{$dayExpression} as dashboard_day")
+                ->groupByRaw("{$yearExpression}, {$monthExpression}, {$dayExpression}");
+        } else {
+            $select->groupByRaw("{$yearExpression}, {$monthExpression}");
+        }
+
+        return $select->get();
+    }
+
     private function remainingBalanceExpression(): string
     {
         return 'invoices.total_amount - COALESCE(dashboard_payment_totals.paid_amount, 0)';
     }
 
     /**
-     * @return array{0: string, 1: string}
+     * @return array{0: string, 1: string, 2: string}
      */
     private function dateParts(string $column): array
     {
         $driver = DB::connection()->getDriverName();
 
         return $driver === 'sqlite'
-            ? ["CAST(strftime('%Y', {$column}) AS INTEGER)", "CAST(strftime('%m', {$column}) AS INTEGER)"]
-            : ["YEAR({$column})", "MONTH({$column})"];
+            ? [
+                "CAST(strftime('%Y', {$column}) AS INTEGER)",
+                "CAST(strftime('%m', {$column}) AS INTEGER)",
+                "CAST(strftime('%d', {$column}) AS INTEGER)",
+            ]
+            : ["YEAR({$column})", "MONTH({$column})", "DAY({$column})"];
+    }
+
+    private function bucketKey(CarbonImmutable $bucket, bool $daily): string
+    {
+        return $daily ? $bucket->format('Y-m-d') : $bucket->format('Y-m');
+    }
+
+    private function rowBucketKey(object $row, bool $daily): string
+    {
+        return $daily
+            ? sprintf('%04d-%02d-%02d', $row->dashboard_year, $row->dashboard_month, $row->dashboard_day)
+            : sprintf('%04d-%02d', $row->dashboard_year, $row->dashboard_month);
     }
 
     private function percentageChange(float $previous, float $current): ?float
