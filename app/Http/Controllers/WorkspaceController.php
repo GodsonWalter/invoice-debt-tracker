@@ -128,8 +128,8 @@ class WorkspaceController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,' . $workspace->id],
-            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,' . $workspace->id],
+            'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,'.$workspace->id],
+            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,'.$workspace->id],
             'metadata' => ['nullable', 'json'],
             'invoice_prefix' => ['nullable', 'string', 'max:50'],
             'currency_id' => ['required', $currencyService->activeCurrencyRule()],
@@ -153,15 +153,33 @@ class WorkspaceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Workspace $workspace)
+    public function destroy(Request $request, Workspace $workspace)
     {
-        $this->authorizeWorkspaceUser($workspace);
+        if ($workspace->trashed()) {
+            abort(404);
+        }
+
+        $this->authorizeActiveWorkspace($workspace);
 
         if ($workspace->owner_id !== Auth::id()) {
-            return redirect()->route('workspace.index')->with('error', 'Only the workspace owner can delete the workspace.');
+            throw new HttpResponseException(
+                redirect()->route('dashboard')->with('error', 'Only the workspace owner can delete the workspace.')
+            );
         }
+
+        $validated = $request->validate([
+            'workspace_name' => ['required', 'string'],
+        ]);
+
+        if ($validated['workspace_name'] !== $workspace->name) {
+            return back()->withErrors([
+                'workspace_name' => 'The workspace name must match exactly.',
+            ]);
+        }
+
         $workspace->delete();
-        return redirect()->route('workspace.index')->with('success', 'Workspace deleted successfully');
+
+        return redirect()->route('dashboard')->with('success', 'Workspace moved to recovery status.');
     }
 
     /**
@@ -200,7 +218,7 @@ class WorkspaceController extends Controller
         }
 
         return redirect()->to($this->workspaceUrl($workspace, 'dashboard'))
-            ->with('success', 'Switched to workspace: ' . $workspace->name);
+            ->with('success', 'Switched to workspace: '.$workspace->name);
     }
 
     private function workspaceUrl(Workspace $workspace, string $routeName, mixed $parameters = []): string
@@ -208,7 +226,7 @@ class WorkspaceController extends Controller
         $path = route($routeName, $parameters, false);
         $baseDomain = trim((string) config('app.base_domain'), '"');
 
-        return request()->getScheme() . '://' . $workspace->subdomain . '.' . $baseDomain . $path;
+        return request()->getScheme().'://'.$workspace->subdomain.'.'.$baseDomain.$path;
     }
 
     // /**

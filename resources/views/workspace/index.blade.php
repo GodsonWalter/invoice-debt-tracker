@@ -115,15 +115,19 @@
                                                     class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
-                                                <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
-                                                    class="d-inline-block" data-delete-confirm>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                        title="Delete workspace">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
+                                                @if ($workspace->owner_id === Auth::id())
+                                                    <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
+                                                        class="d-inline-block" data-delete-confirm
+                                                        data-delete-confirm-name="{{ $workspace->name }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <input type="hidden" name="workspace_name" data-delete-confirm-name-input>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            title="Delete workspace">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             @else
                                                 <form action="{{ route('workspace.exit', $workspace->id, false) }}" method="POST"
                                                     class="d-inline-block" data-delete-confirm>

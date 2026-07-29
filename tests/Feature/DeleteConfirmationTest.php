@@ -33,7 +33,10 @@ test('all delete confirmations use the shared SweetAlert2 implementation', funct
     expect($handler)
         ->toContain('Swal.fire')
         ->toContain("title: 'Delete Record?'")
-        ->toContain("text: 'This action cannot be undone.'")
+        ->toContain("'This action cannot be undone.'")
+        ->toContain('data-delete-confirm-name')
+        ->toContain('The workspace name must match exactly.')
+        ->toContain('This workspace will be deactivated and moved to recovery status.')
         ->toContain("confirmButtonText: 'Yes, Delete'")
         ->toContain("cancelButtonText: 'Cancel'")
         ->toContain('requestSubmit');
