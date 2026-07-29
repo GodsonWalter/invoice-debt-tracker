@@ -3,6 +3,26 @@
 @section('page_title', 'Currencies')
 
 @section('content')
+    @php
+        $sortColumn = $filters['sort'];
+        $sortDirection = $filters['direction'];
+        $sortUrl = function (string $column) use ($filters): string {
+            $direction = $filters['sort'] === $column && $filters['direction'] === 'asc' ? 'desc' : 'asc';
+
+            return route('currencies.index', array_merge($filters, [
+                'sort' => $column,
+                'direction' => $direction,
+            ]));
+        };
+        $sortIndicator = function (string $column) use ($sortColumn, $sortDirection): string {
+            if ($sortColumn !== $column) {
+                return '';
+            }
+
+            return $sortDirection === 'asc' ? ' ↑' : ' ↓';
+        };
+    @endphp
+
     <div class="container-fluid py-2">
         <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
             <div>
@@ -19,18 +39,26 @@
             <div class="card-header bg-white p-4 border-bottom">
                 <form class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center" method="GET" action="{{ route('currencies.index') }}">
                     <h5 class="fw-bold text-dark mb-0 fs-6">Currency List</h5>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-column flex-sm-row gap-2">
                         <input
                             type="text"
                             name="search"
-                            value="{{ $search }}"
+                            value="{{ $filters['search'] ?? '' }}"
                             class="form-control form-control-sm"
                             placeholder="Search currencies..."
                             style="max-width: 320px;"
                         >
+                        <select name="status" class="form-select form-select-sm" aria-label="Filter by status">
+                            <option value="all" @selected($filters['status'] === 'all')>All statuses</option>
+                            <option value="active" @selected($filters['status'] === 'active')>Active</option>
+                            <option value="inactive" @selected($filters['status'] === 'inactive')>Inactive</option>
+                        </select>
+                        <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
+                        <input type="hidden" name="direction" value="{{ $filters['direction'] }}">
                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-search"></i>
                         </button>
+                        <a href="{{ route('currencies.index') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
                     </div>
                 </form>
             </div>
@@ -46,11 +74,11 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Symbol</th>
-                                    <th>Name</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
+                                    <th><a href="{{ $sortUrl('code') }}" class="text-decoration-none text-dark">Code{{ $sortIndicator('code') }}</a></th>
+                                    <th><a href="{{ $sortUrl('symbol') }}" class="text-decoration-none text-dark">Symbol{{ $sortIndicator('symbol') }}</a></th>
+                                    <th><a href="{{ $sortUrl('name') }}" class="text-decoration-none text-dark">Name{{ $sortIndicator('name') }}</a></th>
+                                    <th><a href="{{ $sortUrl('is_active') }}" class="text-decoration-none text-dark">Status{{ $sortIndicator('is_active') }}</a></th>
+                                    <th><a href="{{ $sortUrl('created_at') }}" class="text-decoration-none text-dark">Created{{ $sortIndicator('created_at') }}</a></th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>

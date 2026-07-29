@@ -62,6 +62,59 @@ test('non system managers cannot manage currencies', function () {
         ->assertSessionHas('error');
 });
 
+test('currency index can filter by status and sort safely', function () {
+    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+
+    $admin = User::factory()->create([
+        'role' => 'admin',
+    ]);
+
+    $activeAlpha = Currency::create([
+        'code' => 'ALP',
+        'symbol' => 'A$',
+        'name' => 'Alpha Dollar',
+        'is_active' => true,
+    ]);
+    $inactive = Currency::create([
+        'code' => 'BET',
+        'symbol' => 'B$',
+        'name' => 'Beta Dollar',
+        'is_active' => false,
+    ]);
+    $activeGamma = Currency::create([
+        'code' => 'GAM',
+        'symbol' => 'G$',
+        'name' => 'Gamma Dollar',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('currencies.index', [
+        'search' => 'Dollar',
+        'status' => 'active',
+        'sort' => 'name',
+        'direction' => 'desc',
+    ]));
+
+    $response->assertOk()
+        ->assertViewHas('filters', [
+            'search' => 'Dollar',
+            'status' => 'active',
+            'sort' => 'name',
+            'direction' => 'desc',
+        ]);
+
+    expect($response->viewData('currencies')->pluck('id')->all())
+        ->toBe([$activeGamma->id, $activeAlpha->id]);
+
+    expect($response->viewData('currencies')->contains($inactive))->toBeFalse();
+    $response->assertSee(e(route('currencies.index', [
+        'search' => 'Dollar',
+        'status' => 'active',
+        'sort' => 'name',
+        'direction' => 'asc',
+    ])), false);
+});
+
 test('currency code must be unique uppercase iso style code', function () {
     $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
 

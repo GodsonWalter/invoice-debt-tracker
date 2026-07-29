@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CurrencyIndexRequest;
 use App\Http\Requests\StoreCurrencyRequest;
 use App\Http\Requests\UpdateCurrencyRequest;
 use App\Models\Currency;
 use App\Services\CurrencyService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -23,13 +23,15 @@ class CurrencyController extends Controller
         }
     }
 
-    public function index(Request $request, CurrencyService $currencyService): View
+    public function index(CurrencyIndexRequest $request, CurrencyService $currencyService): View
     {
         $this->authorizeCurrencyManager();
 
+        $filters = $request->validated();
+
         return view('currencies.index', [
-            'currencies' => $currencyService->paginatedCurrencies($request->string('search')->toString()),
-            'search' => $request->string('search')->toString(),
+            'currencies' => $currencyService->paginatedCurrencies($filters),
+            'filters' => $filters,
         ]);
     }
 

@@ -11,8 +11,19 @@ use Illuminate\Validation\Rule;
 
 class CurrencyService
 {
-    public function paginatedCurrencies(?string $search = null): LengthAwarePaginator
+    /**
+     * @param  array{search?: ?string, status?: string, sort?: string, direction?: string}  $filters
+     */
+    public function paginatedCurrencies(array $filters = []): LengthAwarePaginator
     {
+        $sortableColumns = ['code', 'symbol', 'name', 'is_active', 'created_at'];
+        $sort = in_array($filters['sort'] ?? null, $sortableColumns, true)
+            ? $filters['sort']
+            : 'code';
+        $direction = ($filters['direction'] ?? null) === 'desc' ? 'desc' : 'asc';
+        $status = $filters['status'] ?? 'all';
+        $search = $filters['search'] ?? null;
+
         return Currency::query()
             ->when($search, function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
@@ -22,7 +33,11 @@ class CurrencyService
                         ->orWhere('symbol', 'like', '%'.$search.'%');
                 });
             })
-            ->orderBy('code')
+            ->when(in_array($status, ['active', 'inactive'], true), function ($query) use ($status): void {
+                $query->where('is_active', $status === 'active');
+            })
+            ->orderBy($sort, $direction)
+            ->orderBy('id', $direction)
             ->paginate(10)
             ->withQueryString();
     }
