@@ -218,6 +218,30 @@ test('workspace details and editing require an active workspace', function () {
     expect($workspace->refresh()->name)->toBe('Owner Authorization Workspace');
 });
 
+test('workspace actions include a switch link for another active workspace', function () {
+    [$user, $activeWorkspace] = createWorkspaceAuthorizationFixture('owner');
+    $otherWorkspace = Workspace::create([
+        'owner_id' => User::factory()->create()->id,
+        'name' => 'Other Switch Workspace',
+        'slug' => 'other-switch-workspace-'.fake()->unique()->numerify('####'),
+        'subdomain' => 'other-switch-workspace-'.fake()->unique()->numerify('####'),
+        'invoice_prefix' => 'SWI',
+        'is_active' => true,
+    ]);
+    $otherWorkspace->users()->attach($user->id, [
+        'role' => 'member',
+        'is_active' => true,
+    ]);
+
+    $switchUrl = route('workspace.switch', ['workspace' => $otherWorkspace->subdomain]);
+
+    $this->actingAs($user)
+        ->get(activeWorkspaceRoute('workspace.index', $activeWorkspace))
+        ->assertOk()
+        ->assertSee($switchUrl, false)
+        ->assertSee('Switch', false);
+});
+
 test('switching workspaces changes which workspace can be viewed and edited', function () {
     [$user, $firstWorkspace] = createWorkspaceAuthorizationFixture('owner');
     $secondOwner = User::factory()->create();
