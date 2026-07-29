@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceDashboardController;
 use App\Http\Controllers\WorkspaceRecoveryController;
@@ -105,6 +106,18 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
 
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Workspace-scoped reports. The active workspace is resolved from the host, never from a request parameter.
+    Route::middleware('authorized-workspace-user')->prefix('reports')->name('reports.')->group(function () {
+        Route::get('/exports/{reportExport}/download', [ReportController::class, 'download'])->name('exports.download');
+        Route::post('/{report}/export/{format}/queue', [ReportController::class, 'queue'])
+            ->whereIn('format', ['csv', 'xlsx', 'pdf'])
+            ->name('export.queue');
+        Route::get('/{report}/export/{format}', [ReportController::class, 'export'])
+            ->whereIn('format', ['csv', 'xlsx', 'pdf'])
+            ->name('export');
+        Route::get('/{report?}', [ReportController::class, 'index'])->name('index');
+    });
 
     // Reminder Dashboard Routes - Only for workspace owners and admins
     Route::middleware('authorized-workspace-user')->prefix('reminders/')->name('reminders.')->group(function () {

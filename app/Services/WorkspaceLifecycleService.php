@@ -357,6 +357,15 @@ class WorkspaceLifecycleService
         DB::table('ai_queries')->where('workspace_id', $workspace->id)->delete();
         DB::table('activity_logs')->where('workspace_id', $workspace->id)->delete();
 
+        $reportExportPaths = DB::table('report_exports')
+            ->where('workspace_id', $workspace->id)
+            ->whereNotNull('path')
+            ->pluck('path');
+        foreach ($reportExportPaths as $path) {
+            Storage::disk((string) config('reports.export_disk', 'local'))->delete($path);
+        }
+        DB::table('report_exports')->where('workspace_id', $workspace->id)->delete();
+
         $profile = BusinessProfile::query()->where('workspace_id', $workspace->id)->first();
         if ($profile?->logo) {
             Storage::disk('public')->delete($profile->logo);

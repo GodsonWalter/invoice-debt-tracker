@@ -94,6 +94,12 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-chart-column fa-fw"></i> <span>Reports</span>
+                </a>
+            </li>
+
 
             {{-- invoices --}}
             <li class="nav-item">
