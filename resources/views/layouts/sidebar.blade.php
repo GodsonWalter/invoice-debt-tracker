@@ -1,4 +1,11 @@
 <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
+    @php
+        $workspace = $currentWorkspace ?? null;
+        $canViewWorkspaceDashboard = Auth::check()
+            && $workspace instanceof \App\Models\Workspace
+            && $workspace->canBeManagedBy(Auth::user());
+    @endphp
+
     <div class="p-3 fs-4 fw-bold border-bottom border-secondary text-center d-flex justify-content-center align-items-center"
         style="height: 73px;">
 
@@ -11,7 +18,7 @@
 
     <ul class="nav flex-column mt-2 pb-4">
         <li class="nav-item">
-            <a href="{{ route('dashboard') }}" class="nav-link active">
+            <a href="{{ $canViewWorkspaceDashboard ? route('workspace.dashboard', $workspace, false) : route('dashboard') }}" class="nav-link active">
                 <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
             </a>
         </li>
@@ -67,11 +74,7 @@
             </li>
         @endif
 
-        @php
-            $workspace = $currentWorkspace ?? null;
-        @endphp
-
-        @if (Auth::check() && $workspace instanceof \App\Models\Workspace && $workspace->canBeManagedBy(Auth::user()))
+        @if ($canViewWorkspaceDashboard)
 
 
             <li class="nav-divider"></li>

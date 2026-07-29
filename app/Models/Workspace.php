@@ -57,7 +57,16 @@ class Workspace extends Model
     {
         return $this->users()
             ->whereKey($user->getKey())
+            ->wherePivot('is_active', true)
             ->wherePivotIn('role', ['owner', 'admin'])
+            ->exists();
+    }
+
+    public function hasActiveMember(User $user): bool
+    {
+        return $this->users()
+            ->whereKey($user->getKey())
+            ->wherePivot('is_active', true)
             ->exists();
     }
 

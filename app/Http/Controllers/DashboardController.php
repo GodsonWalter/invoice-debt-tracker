@@ -2,50 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\DashboardService;
-use Illuminate\Http\Request;
+use App\Http\Requests\WorkspaceDashboardRequest;
+use App\Models\Workspace;
+use App\Services\WorkspaceDashboardService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(WorkspaceDashboardRequest $request, WorkspaceDashboardService $dashboardService): View
     {
-        $currentWorkspace = request()->currentWorkspace;
-        $clientCount = $currentWorkspace?->clients()->count() ?? 0;
-
-        return view('dashboard.index', compact('clientCount'));
-    }
-
-
-    public function __invoke(DashboardService $dashboardService) {
         $workspace = request()->currentWorkspace;
 
+        if ($workspace instanceof Workspace && $workspace->canBeManagedBy(Auth::user())) {
+            return view('dashboard.workspace', [
+                'workspace' => $workspace,
+                'dashboard' => $dashboardService->dashboard($workspace, Auth::user(), $request->dashboardFilters()),
+            ]);
+        }
+
         return view('dashboard.index', [
-            
-
-            'revenue' => $dashboardService->revenueSummary($workspace->id),
-
-            'debt' => $dashboardService->outstandingDebt($workspace->id),
-
-            'overdue' => $dashboardService->overdueSummary($workspace->id),
-
-            'activities' => $dashboardService->recentActivities($workspace->id),
-
-            'topDebtors' => $dashboardService->topDebtors($workspace->id),
-
-            // 'reminderStats' => $dashboardService->reminderStats($workspace->id),
-
-            'outstandingInvoices' => $dashboardService->outstandingInvoices($workspace->id),
-            /*
-             'revenue' => $dashboardService->revenueSummary($workspace->id),
-    'debt' => $dashboardService->outstandingDebt($workspace->id),
-    'overdue' => $dashboardService->overdueSummary($workspace->id),
-
-    'monthlyRevenue' => $dashboardService->monthlyRevenue($workspace->id),
-             */
+            'workspace' => $workspace,
+            'hasAuthorizedWorkspace' => false,
         ]);
     }
-
 }
