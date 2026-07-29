@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Workspace;
 use App\Services\CurrencyService;
+use App\Services\WorkspaceLifecycleService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WorkspaceController extends Controller
 {
+    public function __construct(private WorkspaceLifecycleService $lifecycleService) {}
+
     private function authorizeActiveWorkspace(Workspace $workspace): void
     {
         $currentWorkspace = request()->currentWorkspace;
@@ -177,9 +180,10 @@ class WorkspaceController extends Controller
             ]);
         }
 
-        $workspace->delete();
+        $this->lifecycleService->softDelete($workspace, Auth::user());
 
-        return redirect()->route('dashboard')->with('success', 'Workspace moved to recovery status.');
+        return redirect()->away($this->baseDomainUrl('dashboard'))
+            ->with('success', 'Workspace moved to recovery status.');
     }
 
     /**
@@ -227,6 +231,14 @@ class WorkspaceController extends Controller
         $baseDomain = trim((string) config('app.base_domain'), '"');
 
         return request()->getScheme().'://'.$workspace->subdomain.'.'.$baseDomain.$path;
+    }
+
+    private function baseDomainUrl(string $routeName, mixed $parameters = []): string
+    {
+        $path = route($routeName, $parameters, false);
+        $baseDomain = trim((string) config('app.base_domain'), '"');
+
+        return request()->getScheme().'://'.$baseDomain.$path;
     }
 
     // /**

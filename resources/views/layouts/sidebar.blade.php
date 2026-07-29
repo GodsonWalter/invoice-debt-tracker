@@ -23,6 +23,42 @@
             </a>
         </li>
 
+        @php
+            $sidebarUser = Auth::user();
+            $recoverableWorkspaceCount = $sidebarUser
+                ? $sidebarUser->ownedDeletedWorkspaces()
+                    ->where('deleted_at', '>=', now()->subDays((int) config('workspace-lifecycle.self_service_restore_days')))
+                    ->count()
+                : 0;
+        @endphp
+
+        @if ($sidebarUser && ($sidebarUser->ownedDeletedWorkspaces()->exists() || $sidebarUser->isPlatformOwner()))
+            <li class="nav-item">
+                <a href="{{ route('workspace.recovery.index') }}" class="nav-link">
+                    <i class="fa-solid fa-recycle fa-fw"></i>
+                    <span>Recovery Center</span>
+                    @if ($recoverableWorkspaceCount > 0)
+                        <span class="badge bg-warning text-dark ms-auto">{{ $recoverableWorkspaceCount }}</span>
+                    @endif
+                </a>
+            </li>
+        @endif
+
+        @if ($sidebarUser?->isPlatformOwner())
+            <li class="nav-divider"></li>
+            <li class="nav-section-title">Platform Management</li>
+            <li class="nav-item">
+                <a href="{{ route('platform.recovery.index') }}" class="nav-link">
+                    <i class="fa-solid fa-shield-halved fa-fw"></i> <span>Deleted Workspaces</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('platform.recovery.audits') }}" class="nav-link">
+                    <i class="fa-solid fa-clipboard-list fa-fw"></i> <span>Lifecycle Audit</span>
+                </a>
+            </li>
+        @endif
+
         @if (in_array(Auth::user()?->role, ['owner', 'admin'], true))
             <li class="nav-item">
                 <a href="{{ route('currencies.index') }}" class="nav-link">

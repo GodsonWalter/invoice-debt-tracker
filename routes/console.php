@@ -2,7 +2,6 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -12,4 +11,8 @@ Artisan::command('inspire', function () {
 Schedule::command('reminders:process')
     ->daily()
     // ->everyMinute()
+    ->withoutOverlapping();
+
+Schedule::command('workspaces:lifecycle')
+    ->dailyAt('01:30')
     ->withoutOverlapping();

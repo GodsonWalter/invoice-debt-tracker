@@ -42,6 +42,11 @@ function requestedWorkspaceOnActiveHostUrl(string $routeName, Workspace $activeW
     return 'http://'.$activeWorkspace->subdomain.'.'.config('app.base_domain').route($routeName, $requestedWorkspace, false);
 }
 
+function baseDomainWorkspaceDeletionUrl(string $routeName): string
+{
+    return 'http://'.config('app.base_domain').route($routeName, [], false);
+}
+
 test('the owner can soft delete the active workspace and retain its related data', function () {
     [$user, $workspace] = createWorkspaceDeletionFixture();
     $client = Client::create([
@@ -53,7 +58,7 @@ test('the owner can soft delete the active workspace and retain its related data
         ->delete(activeWorkspaceDeletionUrl('workspace.destroy', $workspace), [
             'workspace_name' => $workspace->name,
         ])
-        ->assertRedirect(route('dashboard'))
+        ->assertRedirect(baseDomainWorkspaceDeletionUrl('dashboard'))
         ->assertSessionHas('success', 'Workspace moved to recovery status.');
 
     expect(Workspace::find($workspace->id))->toBeNull()
@@ -164,7 +169,7 @@ test('deleted workspaces are excluded from normal access and switching', functio
         ->delete(activeWorkspaceDeletionUrl('workspace.destroy', $workspace), [
             'workspace_name' => $workspace->name,
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(baseDomainWorkspaceDeletionUrl('dashboard'));
 
     $this->actingAs($user)
         ->get(route('workspace.show', $workspace))

@@ -11,6 +11,8 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
+    public const PLATFORM_ROLE_OWNER = 'owner';
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -49,6 +51,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Workspace::class, 'workspace_user')
             ->withPivot(['role', 'is_active', 'activation_token'])
             ->withTimestamps();
+    }
+
+    public function ownedDeletedWorkspaces()
+    {
+        return $this->hasMany(Workspace::class, 'owner_id')->onlyTrashed();
+    }
+
+    public function isPlatformOwner(): bool
+    {
+        return $this->role === self::PLATFORM_ROLE_OWNER;
     }
 
     public function defaultCurrency(): BelongsTo

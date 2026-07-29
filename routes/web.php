@@ -8,12 +8,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceDashboardController;
+use App\Http\Controllers\WorkspaceRecoveryController;
 use App\Http\Controllers\WorkspaceUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,17 +65,6 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     // business profiles routes
     Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
     Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])->name('business-profile.update');
-
-    // system currency management routes
-    Route::prefix('currencies')->name('currencies.')->group(function () {
-        Route::get('/', [CurrencyController::class, 'index'])->name('index');
-        Route::get('/create', [CurrencyController::class, 'create'])->name('create');
-        Route::post('/', [CurrencyController::class, 'store'])->name('store');
-        Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
-        Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
-        Route::patch('/{currency}/toggle', [CurrencyController::class, 'toggle'])->name('toggle');
-        Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
-    });
 
     // clients routes (workspace scoped)
     Route::prefix('workspace/{workspace}/clients')->name('clients.')->group(function () {
@@ -126,6 +117,31 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     });
 });
 
+Route::domain(config('app.base_domain'))->middleware(['auth', 'verified'])->prefix('recovery')->name('workspace.recovery.')->group(function () {
+    Route::get('/', [WorkspaceRecoveryController::class, 'index'])->name('index');
+    Route::get('/{workspaceId}', [WorkspaceRecoveryController::class, 'show'])->name('show');
+    Route::get('/{workspaceId}/audit', [WorkspaceRecoveryController::class, 'audit'])->name('audit');
+    Route::post('/{workspaceId}/restore', [WorkspaceRecoveryController::class, 'restore'])->name('restore');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'verified', 'can:manage-platform-workspace-recovery'])->prefix('platform/workspace-recovery')->name('platform.recovery.')->group(function () {
+    Route::get('/', [PlatformWorkspaceRecoveryController::class, 'index'])->name('index');
+    Route::get('/audits', [PlatformWorkspaceRecoveryController::class, 'audits'])->name('audits');
+    Route::get('/{workspaceId}', [PlatformWorkspaceRecoveryController::class, 'show'])->name('show');
+    Route::post('/{workspaceId}/restore', [PlatformWorkspaceRecoveryController::class, 'restore'])->name('restore');
+});
+
+// system currency management routes
+Route::domain(config('app.base_domain'))->prefix('currencies')->name('currencies.')->group(function () {
+    Route::get('/', [CurrencyController::class, 'index'])->name('index');
+    Route::get('/create', [CurrencyController::class, 'create'])->name('create');
+    Route::post('/', [CurrencyController::class, 'store'])->name('store');
+    Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
+    Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+    Route::patch('/{currency}/toggle', [CurrencyController::class, 'toggle'])->name('toggle');
+    Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
+});
+
 // Join workspace via shareable link (requires login)
 // Route::get('/workspace/join/{workspace:slug}', [WorkspaceController::class, 'join'])
 //     ->name('workspace.join')
@@ -135,7 +151,5 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
 Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acceptInvitation'])
     ->name('workspace.users.accept')
     ->middleware('auth');
-
-
 
 require __DIR__.'/auth.php';

@@ -190,6 +190,19 @@ Open to:
 
 #Laravel #PHP #WebDevelopment #SaaS #BuildInPublic #MySQL #BootstrapCSS #JavaScript #SoftwareEngineer #SoftwareDeveloper #FullStackDeveloper #Tech
 
+## Workspace lifecycle operations
+
+Workspace lifecycle processing is configuration-driven. The defaults are 30 days for owner self-service recovery, 120 days before permanent deletion, and permanent-deletion warnings at 30, 7, and 1 day(s). These can be changed with `WORKSPACE_SELF_SERVICE_RESTORE_DAYS`, `WORKSPACE_PERMANENT_DELETION_DAYS`, `WORKSPACE_OWNER_RESTORE_WARNING_DAYS`, and `WORKSPACE_PERMANENT_DELETION_WARNING_DAYS`.
+
+Production must run both a queue worker and Laravel’s scheduler. For example:
+
+```text
+php artisan queue:work --tries=3
+php artisan schedule:work
+```
+
+Alternatively, configure cron to run `php artisan schedule:run` every minute. The scheduler runs `workspaces:lifecycle` daily, which queues retention notifications and permanent-deletion jobs. Keep the queue worker running so deletion, restoration, and retention emails are delivered.
+
 Connect with me:
 
 * [LinkedIn](https://www.linkedin.com/in/walter-godson)

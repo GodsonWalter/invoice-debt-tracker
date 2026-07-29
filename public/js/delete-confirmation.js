@@ -84,4 +84,79 @@
             HTMLFormElement.prototype.submit.call(form);
         });
     });
+
+    document.addEventListener('submit', function (event) {
+        const form = event.target.closest('form[data-lifecycle-confirm]');
+
+        if (!form) {
+            return;
+        }
+
+        if (form.dataset.lifecycleConfirmed === 'true') {
+            delete form.dataset.lifecycleConfirmed;
+
+            return;
+        }
+
+        event.preventDefault();
+
+        if (typeof window.Swal === 'undefined') {
+            console.error('SweetAlert2 is unavailable; the lifecycle request was cancelled.');
+
+            return;
+        }
+
+        const requiresReason = form.dataset.lifecycleReason === 'true';
+        const options = {
+            title: form.dataset.lifecycleTitle || 'Confirm action?',
+            text: form.dataset.lifecycleText || 'Please confirm this action.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: form.dataset.lifecycleConfirmText || 'Confirm',
+            cancelButtonText: 'Cancel',
+            focusCancel: true,
+            allowEscapeKey: true,
+            allowOutsideClick: true,
+            reverseButtons: true,
+        };
+
+        if (requiresReason) {
+            options.input = 'textarea';
+            options.inputLabel = 'Reason';
+            options.inputPlaceholder = 'Enter the recovery reason';
+            options.inputValidator = function (value) {
+                if (! value || ! value.trim()) {
+                    return 'A reason is required.';
+                }
+            };
+        }
+
+        window.Swal.fire(options).then(function (result) {
+            if (! result.isConfirmed) {
+                return;
+            }
+
+            if (requiresReason) {
+                const reasonInput = form.querySelector('[data-lifecycle-reason-input]');
+
+                if (! reasonInput) {
+                    console.error('The lifecycle reason field is unavailable; the request was cancelled.');
+
+                    return;
+                }
+
+                reasonInput.value = result.value.trim();
+            }
+
+            form.dataset.lifecycleConfirmed = 'true';
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+
+                return;
+            }
+
+            HTMLFormElement.prototype.submit.call(form);
+        });
+    });
 })();
