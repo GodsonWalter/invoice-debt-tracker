@@ -49,7 +49,7 @@ class CurrencyController extends Controller
         $currency = $currencyService->createCurrency($request->validated());
 
         return redirect()
-            ->route('currencies.edit', $currency)
+            ->route('currencies.index', $currency)
             ->with('success', 'Currency created successfully.');
     }
 
