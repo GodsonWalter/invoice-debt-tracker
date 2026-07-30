@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\ReminderSchedule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class StoreReminderScheduleRequest extends FormRequest
@@ -13,11 +12,7 @@ class StoreReminderScheduleRequest extends FormRequest
     {
         $workspace = $this->route('workspace');
 
-        return $workspace?->users()
-            ->where('user_id', Auth::id())
-            ->where('workspace_user.is_active', true)
-            ->whereIn('workspace_user.role', ['owner', 'admin'])
-            ->exists() ?? false;
+        return $workspace?->canBeManagedBy($this->user()) ?? false;
     }
 
     public function rules(): array

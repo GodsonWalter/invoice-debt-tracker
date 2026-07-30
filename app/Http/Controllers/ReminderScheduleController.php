@@ -8,14 +8,15 @@ use App\Models\ReminderSchedule;
 use App\Models\Workspace;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ReminderScheduleController extends Controller
 {
     public function index(Workspace $workspace): View
     {
         $this->authorizeWorkspaceUser($workspace);
+
         return view('reminder-schedules.index', [
             'workspace' => $workspace,
             'reminderSchedules' => $workspace->reminderSchedules()
@@ -90,19 +91,17 @@ class ReminderScheduleController extends Controller
         $this->authorizeWorkspaceUser($workspace);
         $reminderSchedule = $this->workspaceSchedule($workspace, $reminderSchedule);
 
-        $reminderSchedule->update(['is_active' => !$reminderSchedule->is_active]);
+        $reminderSchedule->update(['is_active' => ! $reminderSchedule->is_active]);
 
         return redirect()
             ->route('reminder-schedules.index', $workspace)
             ->with('success', 'Reminder schedule status updated successfully.');
     }
 
-
-
-        private function authorizeWorkspaceUser(Workspace $workspace): void
+    private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );

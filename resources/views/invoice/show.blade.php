@@ -381,6 +381,7 @@
                     <div class="card-body p-3 p-md-4">
                         <form action="{{ route('invoices.payments.store', [$workspace, $invoice]) }}" method="POST">
                             @csrf
+                            <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
                             <div class="mb-3">
                                 <label for="amount" class="form-label">Amount</label>
@@ -465,6 +466,7 @@
 
                         <form action="{{ route('invoices.payments.store', [$workspace, $invoice]) }}" method="POST" class="mt-2">
                             @csrf
+                            <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                             <input type="hidden" name="amount" value="{{ number_format((float) $invoice->remaining_balance, 2, '.', '') }}">
                             <input type="hidden" name="payment_date" value="{{ now()->toDateString() }}">
                             <input type="hidden" name="payment_method" value="Manual">

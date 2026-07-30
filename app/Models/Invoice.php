@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MoneyCalculator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -102,8 +103,6 @@ class Invoice extends Model
         return $this->belongsTo(Client::class, 'client_id');
     }
 
-    
-
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_id');
@@ -141,16 +140,21 @@ class Invoice extends Model
 
     public function getTotalPaidAttribute(): float
     {
+        $money = app(MoneyCalculator::class);
+
         if ($this->relationLoaded('payments')) {
-            return (float) $this->payments->sum('amount');
+            return $money->toFloat($money->normalize($this->payments->sum('amount')));
         }
 
-        return (float) $this->payments()->sum('amount');
+        return $money->toFloat($money->normalize($this->payments()->sum('amount')));
     }
 
     public function getRemainingBalanceAttribute(): float
     {
-        return max(round((float) $this->total_amount - $this->total_paid, 2), 0.0);
+        $money = app(MoneyCalculator::class);
+        $remaining = $money->subtract($this->total_amount, $this->total_paid);
+
+        return $remaining->isNegative() ? 0.0 : $money->toFloat($remaining);
     }
 
     public function getIsPaidAttribute(): bool

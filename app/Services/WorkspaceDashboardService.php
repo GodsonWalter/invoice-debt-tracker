@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 
 class WorkspaceDashboardService
 {
+    public function __construct(private readonly MoneyCalculator $money) {}
+
     private const DEBT_STATUSES = [
         Invoice::STATUS_SENT,
         Invoice::STATUS_PARTIAL,
@@ -184,21 +186,28 @@ class WorkspaceDashboardService
             }
         }
 
-        $runningOutstanding = max(
-            (float) Invoice::query()
+        $runningOutstanding = $this->money->subtract(
+            Invoice::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('issue_date', '<', $bucketStart->toDateTimeString())
-                ->sum('total_amount')
-            - (float) Payment::query()
+                ->sum('total_amount'),
+            Payment::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('payment_date', '<', $bucketStart->toDateTimeString())
                 ->sum('amount'),
-            0.0,
         );
+        if ($runningOutstanding->isNegative()) {
+            $runningOutstanding = $this->money->normalize(0);
+        }
 
         foreach ($buckets as &$bucket) {
-            $runningOutstanding = max($runningOutstanding + $bucket['invoiced'] - $bucket['payments'], 0.0);
-            $bucket['outstanding'] = $runningOutstanding;
+            $runningOutstanding = $runningOutstanding
+                ->plus($this->money->normalize($bucket['invoiced']))
+                ->minus($this->money->normalize($bucket['payments']));
+            if ($runningOutstanding->isNegative()) {
+                $runningOutstanding = $this->money->normalize(0);
+            }
+            $bucket['outstanding'] = $this->money->toFloat($runningOutstanding);
         }
         unset($bucket);
 

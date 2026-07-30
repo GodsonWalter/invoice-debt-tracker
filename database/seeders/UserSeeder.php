@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Currency;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -13,6 +14,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $seedPassword = config('seeding.user_password');
+
+        if (app()->environment('production') && blank($seedPassword)) {
+            throw new \RuntimeException('SEED_USER_PASSWORD must be set before seeding a production environment.');
+        }
+
+        $seedPassword ??= 'password';
+
         $users = [
             [
                 'name' => 'Amina Bello',
@@ -50,7 +59,7 @@ class UserSeeder extends Seeder
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'password' => 'password',
+                    'password' => Hash::make($seedPassword),
                     'role' => $userData['role'],
                     'default_currency_id' => $defaultCurrency?->id,
                 ],

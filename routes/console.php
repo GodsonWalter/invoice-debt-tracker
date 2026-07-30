@@ -10,9 +10,15 @@ Artisan::command('inspire', function () {
 
 Schedule::command('reminders:process')
     ->daily()
-    // ->everyMinute()
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->onOneServer();
 
 Schedule::command('workspaces:lifecycle')
     ->dailyAt('01:30')
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('reports:cleanup-exports')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onOneServer();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Models\Client;
@@ -42,7 +43,11 @@ test('new workspaces inherit the authenticated user default currency', function 
 });
 
 test('invoice currency can be selected from active database currencies', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     $usd = Currency::create([
         'code' => 'USD',

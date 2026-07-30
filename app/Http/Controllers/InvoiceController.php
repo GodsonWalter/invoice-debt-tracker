@@ -19,7 +19,7 @@ class InvoiceController extends Controller
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
@@ -144,7 +144,6 @@ class InvoiceController extends Controller
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        
         try {
             $invoiceEmailService->queueInvoice($workspace, $invoice, Auth::user());
         } catch (ValidationException $exception) {

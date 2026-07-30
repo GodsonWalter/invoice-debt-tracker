@@ -25,6 +25,9 @@ class CurrencyService
         $search = $filters['search'] ?? null;
 
         return Currency::query()
+            ->when($status === 'deleted', function ($query): void {
+                $query->onlyTrashed();
+            })
             ->when($search, function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -92,6 +95,18 @@ class CurrencyService
         ]);
 
         return $currency;
+    }
+
+    public function deleteCurrency(Currency $currency): void
+    {
+        $currency->delete();
+    }
+
+    public function restoreCurrency(Currency $currency): Currency
+    {
+        $currency->restore();
+
+        return $currency->refresh();
     }
 
     public function defaultCurrency(): ?Currency

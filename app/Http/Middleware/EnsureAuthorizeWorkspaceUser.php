@@ -20,7 +20,6 @@ class EnsureAuthorizeWorkspaceUser
     public function handle(Request $request, Closure $next): Response
     {
         $workspace = app('currentWorkspace');
-       
 
         // Deny access if no workspace is found
         if (! $workspace) {
@@ -30,16 +29,13 @@ class EnsureAuthorizeWorkspaceUser
         }
 
         // Check if user is owner or admin of the workspace
-        $isAuthorized = $workspace->users()
-            ->where('user_id', Auth::id())
-            ->whereIn('workspace_user.role', ['owner', 'admin'])
-            ->exists();
+        $isAuthorized = $workspace->canBeManagedBy(Auth::user());
 
         if (! $isAuthorized) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
-        }      
+        }
 
         return $next($request);
     }

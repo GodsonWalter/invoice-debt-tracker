@@ -393,7 +393,7 @@
 
             <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">                
                 <div class="m-0">                 
-                    <h2 class=" fw-bold text-muted mb-1">{{ $currentWorkspace->name ?? '' }}</h2>
+                    <h1 class="h2 fw-bold mb-1">{{ $currentWorkspace->name ?? '' }}</h1>
                 </div>
                 @yield('content')
             </main>

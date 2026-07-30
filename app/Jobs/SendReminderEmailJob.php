@@ -18,6 +18,10 @@ class SendReminderEmailJob implements ShouldQueue
 
     public int $tries = 3;
 
+    public int $backoff = 10;
+
+    public int $timeout = 120;
+
     /**
      * Create a new job instance.
      */
@@ -32,6 +36,14 @@ class SendReminderEmailJob implements ShouldQueue
 
         try {
             $invoice = $reminderLog->invoice;
+            $workspace = $invoice?->workspace;
+
+            if (! $workspace || ! $workspace->is_active) {
+                $reminderService->markFailed($reminderLog, new \RuntimeException('The workspace is no longer active.'));
+
+                return;
+            }
+
             $invoice->ensurePublicToken();
             [$subject, $body] = $this->renderTemplate($reminderLog, $templateRenderer);
 

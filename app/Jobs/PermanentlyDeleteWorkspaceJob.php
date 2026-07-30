@@ -14,6 +14,10 @@ class PermanentlyDeleteWorkspaceJob implements ShouldBeUnique, ShouldQueue
 
     public int $tries = 3;
 
+    public int $backoff = 10;
+
+    public int $timeout = 120;
+
     public int $uniqueFor = 3600;
 
     public function __construct(public int $workspaceId) {}

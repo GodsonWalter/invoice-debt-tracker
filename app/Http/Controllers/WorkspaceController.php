@@ -196,7 +196,10 @@ class WorkspaceController extends Controller
                 ->with('error', 'Workspace owners cannot exit their own workspace.');
         }
 
-        if (! $workspace->users()->where('user_id', Auth::id())->exists()) {
+        if (! $workspace->users()
+            ->whereKey(Auth::id())
+            ->wherePivot('is_active', true)
+            ->exists()) {
             return redirect()->route('workspace.index')
                 ->with('error', 'You are not a member of this workspace.');
         }
@@ -212,6 +215,7 @@ class WorkspaceController extends Controller
     public function switch(string $workspace)
     {
         $workspace = Auth::user()->workspaces()
+            ->wherePivot('is_active', true)
             ->where('workspaces.subdomain', $workspace)
             ->where('workspaces.is_active', true)
             ->first();

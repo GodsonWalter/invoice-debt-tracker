@@ -36,7 +36,7 @@ class CurrencyIndexRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:all,active,inactive'],
+            'status' => ['required', 'in:all,active,inactive,deleted'],
             'sort' => ['required', 'in:code,symbol,name,is_active,created_at'],
             'direction' => ['required', 'in:asc,desc'],
         ];

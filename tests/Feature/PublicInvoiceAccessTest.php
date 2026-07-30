@@ -125,3 +125,18 @@ test('public invoice routes reject unsigned or tampered URLs', function () {
 
     $this->get($tamperedUrl)->assertForbidden();
 });
+
+test('public invoice access is disabled when its workspace is deleted or inactive', function () {
+    [$workspace, $invoice] = createPublicInvoiceFixture();
+    $signedUrl = fn (): string => URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => $invoice->public_token]);
+
+    $workspace->delete();
+    $this->get($signedUrl())->assertNotFound();
+    $workspace->forceDelete();
+
+    [$inactiveWorkspace, $inactiveInvoice] = createPublicInvoiceFixture();
+    $inactiveWorkspace->update(['is_active' => false]);
+
+    $this->get(URL::temporarySignedRoute('public.invoice.show', now()->addDays(30), ['token' => $inactiveInvoice->public_token]))
+        ->assertNotFound();
+});

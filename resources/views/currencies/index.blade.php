@@ -49,9 +49,10 @@
                             style="max-width: 320px;"
                         >
                         <select name="status" class="form-select form-select-sm" aria-label="Filter by status">
-                            <option value="all" @selected($filters['status'] === 'all')>All statuses</option>
+                            <option value="all" @selected($filters['status'] === 'all')>All statuses (not deleted)</option>
                             <option value="active" @selected($filters['status'] === 'active')>Active</option>
                             <option value="inactive" @selected($filters['status'] === 'inactive')>Inactive</option>
+                            <option value="deleted" @selected($filters['status'] === 'deleted')>Deleted</option>
                         </select>
                         <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
                         <input type="hidden" name="direction" value="{{ $filters['direction'] }}">
@@ -95,26 +96,36 @@
                                         </td>
                                         <td>{{ $currency->created_at?->format('Y-m-d') }}</td>
                                         <td class="text-end">
-                                            <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-
-                                            <form action="{{ route('currencies.toggle', $currency) }}" method="POST" class="d-inline-block">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-sm btn-outline-{{ $currency->is_active ? 'warning' : 'success' }}" title="{{ $currency->is_active ? 'Deactivate' : 'Activate' }}">
-                                                    <i class="bi bi-{{ $currency->is_active ? 'pause-circle' : 'check2-circle' }}"></i>
-                                                </button>
-                                            </form>
-
-                                            @if ($currency->is_active)
-                                                <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline-block" data-delete-confirm>
+                                            @if ($currency->trashed())
+                                                <form action="{{ route('currencies.restore', $currency->id) }}" method="POST" class="d-inline-block">
                                                     @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Deactivate">
-                                                        <i class="bi bi-trash"></i>
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Restore">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
                                                     </button>
                                                 </form>
+                                            @else
+                                                <a href="{{ route('currencies.edit', $currency) }}" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+
+                                                <form action="{{ route('currencies.toggle', $currency) }}" method="POST" class="d-inline-block">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-sm btn-outline-{{ $currency->is_active ? 'warning' : 'success' }}" title="{{ $currency->is_active ? 'Deactivate' : 'Activate' }}">
+                                                        <i class="bi bi-{{ $currency->is_active ? 'pause-circle' : 'check2-circle' }}"></i>
+                                                    </button>
+                                                </form>
+
+                                                @if ($currency->is_active)
+                                                    <form action="{{ route('currencies.destroy', $currency) }}" method="POST" class="d-inline-block" data-delete-confirm>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             @endif
                                         </td>
                                     </tr>

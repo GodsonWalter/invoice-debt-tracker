@@ -14,6 +14,10 @@ class SendInvoiceMailJob implements ShouldQueue
 
     public int $tries = 3;
 
+    public int $backoff = 10;
+
+    public int $timeout = 120;
+
     /**
      * Create a new job instance.
      */

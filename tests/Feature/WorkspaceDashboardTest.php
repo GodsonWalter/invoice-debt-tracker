@@ -351,16 +351,18 @@ test('workspace dashboard rejects a mismatched or unauthorized workspace', funct
 
     $this->actingAs($user)
         ->get('http://'.$workspace->subdomain.'.'.config('app.base_domain').route('workspace.dashboard', $otherWorkspace, false))
-        ->assertRedirect('http://'.$workspace->subdomain.'.'.config('app.base_domain').route('workspace.dashboard', $workspace, false));
+        ->assertRedirect(route('workspace.index'));
 
     $this->actingAs($otherUser)
         ->get(dashboardTestUrl('workspace.dashboard', $workspace))
-        ->assertForbidden();
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('error', 'You are not authorized to access this workspace.');
 
     $workspace->users()->updateExistingPivot($user->id, ['is_active' => false]);
     $this->actingAs($user)
         ->get(dashboardTestUrl('workspace.dashboard', $workspace))
-        ->assertForbidden();
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('error', 'You are not authorized to access this workspace.');
 });
 
 test('base dashboard remains safe when no active workspace is available', function () {

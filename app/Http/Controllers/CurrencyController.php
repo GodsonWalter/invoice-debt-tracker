@@ -86,8 +86,20 @@ class CurrencyController extends Controller
     {
         $this->authorizeCurrencyManager();
 
-        $currencyService->deactivateCurrency($currency);
+        $currencyService->deleteCurrency($currency);
 
-        return back()->with('success', 'Currency deactivated successfully.');
+        return back()->with('success', 'Currency deleted successfully.');
+    }
+
+    public function restore(string $currency, CurrencyService $currencyService): RedirectResponse
+    {
+        $this->authorizeCurrencyManager();
+
+        $deletedCurrency = Currency::onlyTrashed()->findOrFail($currency);
+        $currencyService->restoreCurrency($deletedCurrency);
+
+        return redirect()
+            ->route('currencies.index', ['status' => 'deleted'])
+            ->with('success', 'Currency restored successfully.');
     }
 }

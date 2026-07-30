@@ -46,6 +46,8 @@ class EmailTemplateController extends Controller
 
     public function store(StoreEmailTemplateRequest $request, Workspace $workspace): RedirectResponse
     {
+        $this->authorizeWorkspaceUser($workspace);
+
         $emailTemplate = $workspace->emailTemplates()->create([
             ...$request->validated(),
             'is_default' => false,
@@ -73,6 +75,7 @@ class EmailTemplateController extends Controller
 
     public function update(UpdateEmailTemplateRequest $request, Workspace $workspace, EmailTemplate $emailTemplate): RedirectResponse
     {
+        $this->authorizeWorkspaceUser($workspace);
         $emailTemplate = $this->workspaceTemplate($workspace, $emailTemplate);
 
         $emailTemplate->update([
@@ -99,6 +102,8 @@ class EmailTemplateController extends Controller
 
     public function preview(PreviewEmailTemplateRequest $request, Workspace $workspace, TemplateRenderer $templateRenderer): RedirectResponse
     {
+        $this->authorizeWorkspaceUser($workspace);
+
         $invoice = $workspace->invoices()
             ->with(['client', 'payments', 'currency', 'workspace.businessProfile', 'workspace.currency'])
             ->findOrFail($request->integer('invoice_id'));
@@ -123,19 +128,15 @@ class EmailTemplateController extends Controller
             ]);
     }
 
-
-
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
         }
     }
-
-
 
     private function workspaceTemplate(Workspace $workspace, EmailTemplate $emailTemplate): EmailTemplate
     {

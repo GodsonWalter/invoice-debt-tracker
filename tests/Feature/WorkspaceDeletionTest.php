@@ -118,7 +118,7 @@ test('a non-member cannot delete a workspace', function () {
             'workspace_name' => $workspace->name,
         ])
         ->assertRedirect(route('dashboard'))
-        ->assertSessionHas('error', 'Only the workspace owner can delete the workspace.');
+        ->assertSessionHas('error', 'You are not authorized to access this workspace.');
 
     expect($workspace->refresh()->trashed())->toBeFalse();
 });

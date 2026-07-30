@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Models\Client;
+use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Support\Str;
 
 /**
  * @return array{0: User, 1: Workspace, 2: Invoice}
@@ -50,7 +53,11 @@ function createInvoiceForPaymentTest(string $status = 'draft'): array
 }
 
 test('a workspace user can record partial and final invoice payments', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     [$user, $workspace, $invoice] = createInvoiceForPaymentTest();
 
@@ -91,7 +98,11 @@ test('a workspace user can record partial and final invoice payments', function 
 });
 
 test('payment amount cannot exceed the invoice remaining balance', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     [$user, $workspace, $invoice] = createInvoiceForPaymentTest('sent');
 
@@ -110,8 +121,86 @@ test('payment amount cannot exceed the invoice remaining balance', function () {
         ->remaining_balance->toBe(1000.0);
 });
 
+test('repeated browser payment submissions are idempotent', function () {
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
+
+    [$user, $workspace, $invoice] = createInvoiceForPaymentTest('sent');
+    $idempotencyKey = (string) Str::uuid();
+    $payload = [
+        'amount' => 400,
+        'payment_date' => now()->toDateString(),
+        'payment_method' => 'Bank transfer',
+        'idempotency_key' => $idempotencyKey,
+    ];
+
+    $this->actingAs($user)
+        ->post(route('invoices.payments.store', [$workspace, $invoice]), $payload)
+        ->assertSessionHasNoErrors();
+    $this->actingAs($user)
+        ->post(route('invoices.payments.store', [$workspace, $invoice]), $payload)
+        ->assertSessionHasNoErrors();
+
+    expect($invoice->payments()->where('idempotency_key', $idempotencyKey)->count())->toBe(1)
+        ->and($invoice->refresh()->total_paid)->toBe(400.0)
+        ->and($invoice->payments()->count())->toBe(1);
+});
+
+test('invoice updates cannot create a total below payments already recorded', function () {
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
+
+    [$user, $workspace, $invoice] = createInvoiceForPaymentTest('sent');
+    $currency = Currency::create([
+        'code' => 'USD',
+        'symbol' => '$',
+        'name' => 'US Dollar',
+        'is_active' => true,
+    ]);
+    $invoice->update(['currency_id' => $currency->id]);
+    $invoice->payments()->create([
+        'workspace_id' => $workspace->id,
+        'amount' => 600,
+        'payment_date' => now()->toDateString(),
+    ]);
+
+    $this->actingAs($user)
+        ->from(route('invoices.edit', [$workspace, $invoice]))
+        ->put(route('invoices.update', [$workspace, $invoice]), [
+            'invoice_number' => $invoice->invoice_number,
+            'client_id' => $invoice->client_id,
+            'currency_id' => $currency->id,
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'status' => 'sent',
+            'tax_amount' => 0,
+            'discount_amount' => 500,
+            'items' => [[
+                'item_name' => 'Reduced total',
+                'description' => '',
+                'quantity' => 1,
+                'unit_price' => 500,
+            ]],
+        ])
+        ->assertRedirect(route('invoices.edit', [$workspace, $invoice]))
+        ->assertSessionHas('error', 'Failed to update invoice: The invoice total cannot be lower than payments already recorded.');
+
+    expect($invoice->refresh()->total_amount)->toBe('1000.00')
+        ->and($invoice->items()->count())->toBe(0);
+});
+
 test('invoice payment history shows payment audit details', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     [$user, $workspace, $invoice] = createInvoiceForPaymentTest('sent');
 

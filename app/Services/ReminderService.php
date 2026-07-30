@@ -28,6 +28,7 @@ class ReminderService
 
         ReminderSchedule::query()
             ->where('is_active', true)
+            ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->orderBy('workspace_id')
             ->orderBy('direction')
             ->orderBy('days_offset')
@@ -96,6 +97,7 @@ class ReminderService
                 Invoice::STATUS_PARTIAL,
                 Invoice::STATUS_OVERDUE,
             ])
+            ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->whereHas('client', function ($query): void {
                 $query->whereNotNull('email')
                     ->where('email', '!=', '');

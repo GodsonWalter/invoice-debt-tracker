@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Workspace;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ClientController extends Controller
 {
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
@@ -76,7 +76,6 @@ class ClientController extends Controller
             'address' => $validated['address'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
-
 
         return redirect()->route('clients.index', $workspace)->with('success', 'Client created successfully.');
     }
@@ -144,7 +143,6 @@ class ClientController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-
         return redirect()->route('clients.show', [$workspace, $client])
             ->with('success', 'Client updated successfully.');
     }
@@ -160,4 +158,3 @@ class ClientController extends Controller
         return redirect()->route('clients.index', $workspace)->with('success', 'Client deleted successfully.');
     }
 }
-

@@ -12,7 +12,7 @@ class WorkspaceUserPolicy
      */
     public function delete(User $authUser, Workspace $workspace, User $workspaceUser): bool
     {
-        if ($authUser->id !== $workspace->owner_id) {
+        if (! $workspace->canBeManagedBy($authUser)) {
             return false;
         }
 
@@ -20,6 +20,9 @@ class WorkspaceUserPolicy
             return false;
         }
 
-        return $workspace->users()->where('user_id', $workspaceUser->id)->exists();
+        return $workspace->users()
+            ->whereKey($workspaceUser->getKey())
+            ->wherePivot('is_active', true)
+            ->exists();
     }
 }

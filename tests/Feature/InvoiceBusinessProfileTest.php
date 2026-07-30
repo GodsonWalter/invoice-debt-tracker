@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Models\BusinessProfile;
@@ -9,7 +10,11 @@ use App\Models\User;
 use App\Models\Workspace;
 
 test('invoice show page displays the workspace business profile branding', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     $user = User::factory()->create();
 
@@ -84,7 +89,11 @@ test('invoice show page displays the workspace business profile branding', funct
 });
 
 test('invoice show page renders when the workspace has no business profile', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     $user = User::factory()->create();
 

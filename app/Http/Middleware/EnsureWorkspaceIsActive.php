@@ -16,7 +16,7 @@ class EnsureWorkspaceIsActive
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $baseDomain = env('BASE_DOMAIN');
+        $baseDomain = config('app.base_domain');
         $host = $request->getHost();
 
         if ($baseDomain && strcasecmp($host, trim($baseDomain, '"')) === 0) {
@@ -26,9 +26,10 @@ class EnsureWorkspaceIsActive
         $subdomain = explode('.', $host)[0];
         $workspace = Workspace::where('subdomain', $subdomain)->where('is_active', true)->first();
 
-        if (!$workspace) {
-            $baseDomain = env('BASE_DOMAIN');
+        if (! $workspace) {
+            $baseDomain = config('app.base_domain');
             $baseDomain = $baseDomain ? trim($baseDomain, '"') : $request->getHost();
+
             return redirect()->away($request->getScheme().'://'.$baseDomain);
         }
 

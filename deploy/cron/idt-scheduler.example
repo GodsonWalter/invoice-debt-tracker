@@ -1,0 +1,2 @@
+# Run Laravel's scheduler once per minute as the same user that owns the release.
+* * * * * cd /var/www/idt/current && /usr/bin/php artisan schedule:run >> /dev/null 2>&1

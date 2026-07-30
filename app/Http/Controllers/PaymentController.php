@@ -14,7 +14,7 @@ class PaymentController extends Controller
 {
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
@@ -32,6 +32,7 @@ class PaymentController extends Controller
             'payment_date' => ['required', 'date'],
             'payment_method' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'idempotency_key' => ['nullable', 'uuid'],
             'notes' => ['nullable', 'string'],
         ]);
 

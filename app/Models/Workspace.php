@@ -55,6 +55,10 @@ class Workspace extends Model
 
     public function canBeManagedBy(User $user): bool
     {
+        if ($this->trashed() || ! $this->is_active) {
+            return false;
+        }
+
         return $this->users()
             ->whereKey($user->getKey())
             ->wherePivot('is_active', true)
@@ -64,6 +68,10 @@ class Workspace extends Model
 
     public function hasActiveMember(User $user): bool
     {
+        if ($this->trashed() || ! $this->is_active) {
+            return false;
+        }
+
         return $this->users()
             ->whereKey($user->getKey())
             ->wherePivot('is_active', true)

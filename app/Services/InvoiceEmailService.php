@@ -93,6 +93,7 @@ class InvoiceEmailService
                 'workspace.currency',
             ])
             ->where('id', $invoice->id)
+            ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->firstOrFail();
     }
 
@@ -105,6 +106,12 @@ class InvoiceEmailService
 
     private function validateCanEmail(Invoice $invoice, bool $allowDraft = false): void
     {
+        if (! $invoice->workspace || ! $invoice->workspace->is_active) {
+            throw ValidationException::withMessages([
+                'invoice' => 'This invoice belongs to an inactive workspace.',
+            ]);
+        }
+
         if (! $invoice->client) {
             throw ValidationException::withMessages([
                 'invoice' => 'This invoice does not have a client.',

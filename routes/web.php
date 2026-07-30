@@ -11,6 +11,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\ReadinessController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\ReportController;
@@ -24,6 +25,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/ready', ReadinessController::class)
+    ->middleware('throttle:60,1')
+    ->name('health.ready');
+
 Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
     Route::get('/{token}', [PublicInvoiceController::class, 'show'])->middleware('signed')->name('show');
     Route::get('/{token}/pdf', [PublicInvoiceController::class, 'downloadPdf'])->middleware('signed')->name('pdf');
@@ -34,7 +39,7 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // AI Query routes
-    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::prefix('dashboard')->middleware('authorized-workspace-user')->name('dashboard.')->group(function () {
         Route::get('/ai-query', [AiQueryController::class, 'index'])->name('ai-query');
         Route::post('/ai-query', [AiQueryController::class, 'search'])->name('ai-query.search');
     });
@@ -43,64 +48,91 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     Route::get('/workspace', [WorkspaceController::class, 'index'])->name('workspace.index');
     Route::get('/workspace/create', [WorkspaceController::class, 'create'])->name('workspace.create');
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
-    Route::get('/workspace/{workspace}', [WorkspaceController::class, 'show'])->name('workspace.show');
-    Route::get('/workspace/{workspace}/edit', [WorkspaceController::class, 'edit'])->name('workspace.edit');
-    Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
-    Route::delete('/workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.destroy');
-    Route::post('/workspace/{workspace}/exit', [WorkspaceController::class, 'exitWorkspace'])->name('workspace.exit');
+    Route::get('/workspace/{workspace}', [WorkspaceController::class, 'show'])
+        ->middleware('active.route.workspace')
+        ->name('workspace.show');
+    Route::get('/workspace/{workspace}/edit', [WorkspaceController::class, 'edit'])
+        ->middleware('active.route.workspace')
+        ->name('workspace.edit');
+    Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])
+        ->middleware('active.route.workspace')
+        ->name('workspace.update');
+    Route::delete('/workspace/{workspace}', [WorkspaceController::class, 'destroy'])
+        ->middleware('active.route.workspace')
+        ->name('workspace.destroy');
+    Route::post('/workspace/{workspace}/exit', [WorkspaceController::class, 'exitWorkspace'])
+        ->middleware('active.route.workspace')
+        ->name('workspace.exit');
 
-    Route::prefix('workspace/{workspace}/user')->name('workspace.users.')->group(function () {
-        Route::get('/', [WorkspaceUserController::class, 'index'])->name('index');
-        Route::get('/create', [WorkspaceUserController::class, 'create'])->name('create');
-        Route::post('/', [WorkspaceUserController::class, 'store'])->name('store');
-        Route::get('/lookup', [WorkspaceUserController::class, 'lookup'])->name('lookup');
-        Route::get('/{user}', [WorkspaceUserController::class, 'show'])->name('show');
-        Route::get('/{user}/edit', [WorkspaceUserController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [WorkspaceUserController::class, 'update'])->name('update');
-        // Route::put('/workspaces/{workspace}/users/{user}', ...)
-        Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
-    });
+    Route::prefix('workspace/{workspace}/user')
+        ->middleware('active.route.workspace')
+        ->name('workspace.users.')
+        ->group(function () {
+            Route::get('/', [WorkspaceUserController::class, 'index'])->name('index');
+            Route::get('/create', [WorkspaceUserController::class, 'create'])->name('create');
+            Route::post('/', [WorkspaceUserController::class, 'store'])->name('store');
+            Route::get('/lookup', [WorkspaceUserController::class, 'lookup'])
+                ->middleware('throttle:30,1')
+                ->name('lookup');
+            Route::get('/{user}', [WorkspaceUserController::class, 'show'])->name('show');
+            Route::get('/{user}/edit', [WorkspaceUserController::class, 'edit'])->name('edit');
+            Route::put('/{user}', [WorkspaceUserController::class, 'update'])->name('update');
+            // Route::put('/workspaces/{workspace}/users/{user}', ...)
+            Route::delete('/{user}', [WorkspaceUserController::class, 'destroy'])->name('destroy');
+        });
 
     Route::domain('{workspace}.'.config('app.base_domain'))->get('/switch', [WorkspaceController::class, 'switch'])->name('workspace.switch');
 
     // business profiles routes
-    Route::get('/business-profile', [BusinessProfileController::class, 'index'])->name('business-profile.index');
-    Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])->name('business-profile.update');
+    Route::get('/business-profile', [BusinessProfileController::class, 'index'])
+        ->middleware('authorized-workspace-user')
+        ->name('business-profile.index');
+    Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])
+        ->middleware('authorized-workspace-user')
+        ->name('business-profile.update');
 
     // clients routes (workspace scoped)
-    Route::prefix('workspace/{workspace}/clients')->name('clients.')->group(function () {
-        Route::get('/', [ClientController::class, 'index'])->name('index');
-        Route::get('/create', [ClientController::class, 'create'])->name('create');
-        Route::post('/', [ClientController::class, 'store'])->name('store');
-        Route::get('/{client}', [ClientController::class, 'show'])->name('show');
-        Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
-        Route::put('/{client}', [ClientController::class, 'update'])->name('update');
-        Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
-    });
+    Route::prefix('workspace/{workspace}/clients')
+        ->middleware('active.route.workspace')
+        ->name('clients.')
+        ->group(function () {
+            Route::get('/', [ClientController::class, 'index'])->name('index');
+            Route::get('/create', [ClientController::class, 'create'])->name('create');
+            Route::post('/', [ClientController::class, 'store'])->name('store');
+            Route::get('/{client}', [ClientController::class, 'show'])->name('show');
+            Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
+            Route::put('/{client}', [ClientController::class, 'update'])->name('update');
+            Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
+        });
 
-    Route::prefix('workspace/{workspace}')->group(function () {
-        Route::get('/dashboard', WorkspaceDashboardController::class)->name('workspace.dashboard');
+    Route::prefix('workspace/{workspace}')
+        ->middleware('active.route.workspace')
+        ->group(function () {
+            Route::get('/dashboard', WorkspaceDashboardController::class)->name('workspace.dashboard');
 
-        Route::post('email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
-        Route::resource('email-templates', EmailTemplateController::class)->except(['show']);
+            Route::post('email-templates/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+            Route::resource('email-templates', EmailTemplateController::class)->except(['show']);
 
-        Route::resource('reminder-schedules', ReminderScheduleController::class)->except(['show']);
-        Route::patch('reminder-schedules/{reminderSchedule}/toggle', [ReminderScheduleController::class, 'toggle'])->name('reminder-schedules.toggle');
-    });
+            Route::resource('reminder-schedules', ReminderScheduleController::class)->except(['show']);
+            Route::patch('reminder-schedules/{reminderSchedule}/toggle', [ReminderScheduleController::class, 'toggle'])->name('reminder-schedules.toggle');
+        });
 
     // invoices routes (workspace scoped)
-    Route::prefix('workspace/{workspace}/invoices')->name('invoices.')->group(function () {
-        Route::get('/', [InvoiceController::class, 'index'])->name('index');
-        Route::get('/create', [InvoiceController::class, 'create'])->name('create');
-        Route::post('/', [InvoiceController::class, 'store'])->name('store');
-        Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
-        Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
-        Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
-        Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
-        Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
-        Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
-        Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
-    });
+    Route::prefix('workspace/{workspace}/invoices')
+        ->middleware('active.route.workspace')
+        ->name('invoices.')
+        ->group(function () {
+            Route::get('/', [InvoiceController::class, 'index'])->name('index');
+            Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+            Route::post('/', [InvoiceController::class, 'store'])->name('store');
+            Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
+            Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
+            Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+            Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+            Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
+            Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
+            Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
+        });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 
@@ -152,6 +184,7 @@ Route::domain(config('app.base_domain'))->prefix('currencies')->name('currencies
     Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
     Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
     Route::patch('/{currency}/toggle', [CurrencyController::class, 'toggle'])->name('toggle');
+    Route::patch('/{currency}/restore', [CurrencyController::class, 'restore'])->name('restore');
     Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
 });
 

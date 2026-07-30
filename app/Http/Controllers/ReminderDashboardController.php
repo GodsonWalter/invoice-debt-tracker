@@ -22,7 +22,7 @@ class ReminderDashboardController extends Controller
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {
         // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
 
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
@@ -84,10 +84,12 @@ class ReminderDashboardController extends Controller
 
         // Search filters
         if ($search = request('search')) {
-            $query->whereHas('invoice', function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%");
-            })->orWhereHas('invoice.client', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($query) use ($search): void {
+                $query->whereHas('invoice', function ($q) use ($search): void {
+                    $q->where('invoice_number', 'like', "%{$search}%");
+                })->orWhereHas('invoice.client', function ($q) use ($search): void {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -124,10 +126,12 @@ class ReminderDashboardController extends Controller
 
         // Search filters
         if ($search = request('search')) {
-            $query->where('invoice_number', 'like', "%{$search}%")
-                ->orWhereHas('client', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+            $query->where(function ($query) use ($search): void {
+                $query->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('client', function ($q) use ($search): void {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
         }
 
         // Sort by nearest due date
@@ -152,10 +156,12 @@ class ReminderDashboardController extends Controller
 
         // Search filters
         if ($search = request('search')) {
-            $query->whereHas('invoice', function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%");
-            })->orWhereHas('invoice.client', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($query) use ($search): void {
+                $query->whereHas('invoice', function ($q) use ($search): void {
+                    $q->where('invoice_number', 'like', "%{$search}%");
+                })->orWhereHas('invoice.client', function ($q) use ($search): void {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -190,10 +196,12 @@ class ReminderDashboardController extends Controller
 
         // Search filters
         if ($search = request('search')) {
-            $query->whereHas('invoice', function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%");
-            })->orWhereHas('invoice.client', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($query) use ($search): void {
+                $query->whereHas('invoice', function ($q) use ($search): void {
+                    $q->where('invoice_number', 'like', "%{$search}%");
+                })->orWhereHas('invoice.client', function ($q) use ($search): void {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 

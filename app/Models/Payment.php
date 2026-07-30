@@ -14,6 +14,7 @@ class Payment extends Model
         'payment_date',
         'payment_method',
         'reference',
+        'idempotency_key',
         'notes',
     ];
 

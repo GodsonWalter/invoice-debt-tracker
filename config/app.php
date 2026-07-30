@@ -2,10 +2,10 @@
 
 return [
 
-// This file is part of Invoice Debt Tracker, a Laravel-based application for managing invoices and tracking debts.
-'base_domain' => env('BASE_DOMAIN', 'localhost'),
+    // This file is part of Invoice Debt Tracker, a Laravel-based application for managing invoices and tracking debts.
+    'base_domain' => env('BASE_DOMAIN', 'localhost'),
 
-'app_url' => env('APP_URL', 'http://localhost'),
+    'app_url' => env('APP_URL', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -70,7 +70,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

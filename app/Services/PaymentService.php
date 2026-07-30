@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
+    public function __construct(private readonly MoneyCalculator $money) {}
+
     /**
      * @param  array{amount: numeric, payment_date: string, payment_method?: ?string, reference?: ?string, notes?: ?string}  $validated
      */
@@ -24,10 +26,34 @@ class PaymentService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $remainingBalance = round((float) $invoice->remaining_balance, 2);
-            $paymentAmount = round((float) $validated['amount'], 2);
+            if (! empty($validated['idempotency_key'])) {
+                $existingPayment = Payment::query()
+                    ->where('workspace_id', $workspace->id)
+                    ->where('idempotency_key', $validated['idempotency_key'])
+                    ->first();
 
-            if ($paymentAmount > $remainingBalance) {
+                if ($existingPayment) {
+                    if ((int) $existingPayment->invoice_id !== (int) $invoice->id) {
+                        throw ValidationException::withMessages([
+                            'idempotency_key' => 'This payment submission key has already been used.',
+                        ]);
+                    }
+
+                    return $existingPayment;
+                }
+            }
+
+            $totalPaid = $this->money->normalize($invoice->payments()->sum('amount'));
+            $remainingBalance = $this->money->subtract($invoice->total_amount, $totalPaid);
+            $paymentAmount = $this->money->normalize($validated['amount']);
+
+            if ($paymentAmount->isNegativeOrZero()) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Payment amount must be greater than zero.',
+                ]);
+            }
+
+            if ($paymentAmount->isGreaterThan($remainingBalance)) {
                 throw ValidationException::withMessages([
                     'amount' => 'Payment amount cannot exceed the invoice remaining balance.',
                 ]);
@@ -35,10 +61,11 @@ class PaymentService
 
             $payment = $invoice->payments()->create([
                 'workspace_id' => $workspace->id,
-                'amount' => $paymentAmount,
+                'amount' => $this->money->toFloat($paymentAmount),
                 'payment_date' => $validated['payment_date'],
                 'payment_method' => $validated['payment_method'] ?? null,
                 'reference' => $validated['reference'] ?? null,
+                'idempotency_key' => $validated['idempotency_key'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
@@ -51,34 +78,34 @@ class PaymentService
     public function calculateTotalPaid(Invoice $invoice): float
     {
         if ($invoice->relationLoaded('payments')) {
-            return round((float) $invoice->payments->sum('amount'), 2);
+            return $this->money->toFloat($this->money->normalize($invoice->payments->sum('amount')));
         }
 
-        return round((float) $invoice->payments()->sum('amount'), 2);
+        return $this->money->toFloat($this->money->normalize($invoice->payments()->sum('amount')));
     }
 
     public function calculateRemainingBalance(Invoice $invoice): float
     {
-        return max(round((float) $invoice->total_amount - $this->calculateTotalPaid($invoice), 2), 0.0);
+        $remaining = $this->money->subtract($invoice->total_amount, $this->calculateTotalPaid($invoice));
+
+        return $remaining->isNegative() ? 0.0 : $this->money->toFloat($remaining);
     }
 
     public function updateInvoicePaymentStatus(Invoice $invoice): Invoice
     {
-        $invoice->load('payments');
-
-        $totalPaid = $this->calculateTotalPaid($invoice);
-        $remainingBalance = $this->calculateRemainingBalance($invoice);
+        $totalPaid = $this->money->normalize($invoice->payments()->sum('amount'));
+        $remainingBalance = $this->money->subtract($invoice->total_amount, $totalPaid);
 
         $status = match (true) {
-            $remainingBalance <= 0 && (float) $invoice->total_amount > 0 => Invoice::STATUS_PAID,
-            $totalPaid > 0 => Invoice::STATUS_PARTIAL,
+            $remainingBalance->isNegativeOrZero() && ! $this->money->normalize($invoice->total_amount)->isNegativeOrZero() => Invoice::STATUS_PAID,
+            $totalPaid->isGreaterThan(0) => Invoice::STATUS_PARTIAL,
             $invoice->due_date?->isPast() => Invoice::STATUS_OVERDUE,
             default => Invoice::STATUS_SENT,
         };
 
         // if invoice is fully paid, set paid_at to the latest payment date, otherwise set it to null
         if ($status === Invoice::STATUS_PAID) {
-            $paid_at =  now();
+            $paid_at = now();
         } else {
             $paid_at = null;
         }
@@ -92,7 +119,7 @@ class PaymentService
      */
     public function paymentTimeline(Invoice $invoice): Collection
     {
-        $runningPaid = 0.0;
+        $runningPaid = $this->money->normalize(0);
 
         $paymentEvents = $invoice->payments
             ->sortBy([
@@ -101,8 +128,9 @@ class PaymentService
                 ['id', 'asc'],
             ])
             ->map(function (Payment $payment) use ($invoice, &$runningPaid): array {
-                $runningPaid = round($runningPaid + (float) $payment->amount, 2);
-                $remainingBalance = max(round((float) $invoice->total_amount - $runningPaid, 2), 0.0);
+                $runningPaid = $runningPaid->plus($this->money->normalize($payment->amount));
+                $remaining = $this->money->subtract($invoice->total_amount, $runningPaid);
+                $remainingBalance = $remaining->isNegative() ? 0.0 : $this->money->toFloat($remaining);
 
                 return [
                     'type' => 'payment',
@@ -123,7 +151,7 @@ class PaymentService
 
                 return [
                     'type' => 'email',
-                    'title' => $status === InvoiceEmailLog::STATUS_SENT ? 'Invoice Sent' : 'Invoice Email ' . ucfirst($status),
+                    'title' => $status === InvoiceEmailLog::STATUS_SENT ? 'Invoice Sent' : 'Invoice Email '.ucfirst($status),
                     'date' => $emailLog->sent_at ?? $emailLog->created_at,
                     'badge' => match ($status) {
                         InvoiceEmailLog::STATUS_SENT => 'info',
@@ -157,7 +185,7 @@ class PaymentService
                 'date' => $invoice->printed_at,
                 'badge' => 'secondary',
             ],
-        ])->filter(fn(array $event): bool => filled($event['date']));
+        ])->filter(fn (array $event): bool => filled($event['date']));
 
         $events = collect([
             [

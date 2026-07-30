@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Jobs\SendReminderEmailJob;
@@ -84,7 +85,11 @@ test('template renderer replaces supported placeholders', function () {
 });
 
 test('workspace user can create an email template', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        ResolveWorkspace::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+    ]);
 
     [$user, $workspace] = createEmailTemplateFixture();
 
@@ -103,7 +108,11 @@ test('workspace user can create an email template', function () {
 });
 
 test('duplicate template types are rejected per workspace', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        ResolveWorkspace::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+    ]);
 
     [$user, $workspace] = createEmailTemplateFixture();
 
@@ -130,7 +139,11 @@ test('duplicate template types are rejected per workspace', function () {
 });
 
 test('template preview renders selected invoice without sending mail', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        ResolveWorkspace::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+    ]);
     Mail::fake();
 
     [$user, $workspace, , $invoice] = createEmailTemplateFixture();
@@ -155,6 +168,46 @@ test('template preview renders selected invoice without sending mail', function 
 
     expect($preview['subject'])->toBe('Invoice TPL-2026-0001 preview');
     expect($preview['body'])->toContain('Template Client');
+});
+
+test('workspace members cannot create or update email templates', function () {
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        ResolveWorkspace::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+    ]);
+
+    [, $workspace] = createEmailTemplateFixture();
+    $member = User::factory()->create();
+    $workspace->users()->attach($member->id, [
+        'role' => 'member',
+        'is_active' => true,
+    ]);
+
+    $payload = [
+        'name' => 'Member Template',
+        'type' => EmailTemplate::TYPE_BEFORE_DUE,
+        'subject' => 'Member subject',
+        'body' => 'Member body',
+        'is_active' => '1',
+    ];
+
+    $this->actingAs($member)
+        ->post(route('email-templates.store', $workspace), $payload)
+        ->assertForbidden();
+
+    $template = EmailTemplate::create([
+        'workspace_id' => $workspace->id,
+        'name' => 'Existing Template',
+        'type' => EmailTemplate::TYPE_BEFORE_DUE,
+        'subject' => 'Existing subject',
+        'body' => 'Existing body',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($member)
+        ->put(route('email-templates.update', [$workspace, $template]), $payload)
+        ->assertForbidden();
 });
 
 test('reminder email job uses workspace email template', function () {

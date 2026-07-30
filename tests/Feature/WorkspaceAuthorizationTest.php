@@ -292,3 +292,12 @@ test('switching workspaces changes which workspace can be viewed and edited', fu
         ->assertRedirect(route('workspace.index'))
         ->assertSessionHas('error', 'Please switch to this workspace before accessing it.');
 });
+
+test('workspace members cannot use the financial AI query endpoint', function () {
+    [$user, $workspace] = createWorkspaceAuthorizationFixture('member');
+
+    $this->actingAs($user)
+        ->get('http://'.$workspace->subdomain.'.'.config('app.base_domain').'/dashboard/ai-query')
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('error', 'You are not authorized to manage this workspace.');
+});

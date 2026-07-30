@@ -5,18 +5,17 @@ namespace App\Http\Controllers;
 use App\Mail\WorkspaceUserInvitation;
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class WorkspaceUserController extends Controller
 {
     private function authorizeWorkspaceUser(Workspace $workspace): void
     {      // deny access if the user is not the workspace owner or admin
-        if (! $workspace->users()->where('user_id', Auth::id())->whereIn('workspace_user.role', ['owner', 'admin'])->exists()) {
+        if (! $workspace->canBeManagedBy(Auth::user())) {
             throw new HttpResponseException(
                 redirect()->route('dashboard')->with('error', 'You are not authorized to manage this workspace.')
             );
@@ -89,8 +88,8 @@ class WorkspaceUserController extends Controller
         Mail::to($user->email)->send(new WorkspaceUserInvitation($workspace, $user, $validated['role'], $activationToken));
 
         $message = $isNewUser
-            ? 'User created successfully. Verification and invitation emails have been sent to ' . $user->email
-            : 'User invited to workspace successfully. Invitation email has been sent to ' . $user->email;
+            ? 'User created successfully. Verification and invitation emails have been sent to '.$user->email
+            : 'User invited to workspace successfully. Invitation email has been sent to '.$user->email;
 
         return redirect()->route('workspace.users.index', $workspace)
             ->with('success', $message);
@@ -112,13 +111,13 @@ class WorkspaceUserController extends Controller
 
         $data['user'] = $workspace->users()->where('user_id', $user->id)->firstOrFail();
         $data['workspace'] = $workspace;
+
         return view('workspace-users.edit', $data);
     }
 
     public function update(Request $request, Workspace $workspace, User $user)
     {
         $this->authorizeWorkspaceUser($workspace);
-
 
         if ($user->id === $workspace->owner_id) {
             return back()->with('error', 'The workspace owner cannot be modified.');
@@ -128,13 +127,11 @@ class WorkspaceUserController extends Controller
         if ($workspaceUser->pivot->activation_token) {
             return back()->with('error', 'The invited user must accept the workspace invitation before their role can be updated.');
         }
-     
 
         $validated = $request->validate([
             'role' => ['required', 'in:admin,member,viewer'],
             'is_active' => ['required', 'boolean'],
         ]);
-
 
         $workspace->users()->updateExistingPivot($user->id, [
             'role' => $validated['role'],
@@ -162,10 +159,15 @@ class WorkspaceUserController extends Controller
     public function lookup(Request $request, Workspace $workspace)
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email', 'max:255'],
         ]);
 
-        $user = User::firstWhere('email', $request->email);
+        $this->authorizeWorkspaceUser($workspace);
+
+        $user = User::query()
+            ->select(['id', 'name', 'email', 'email_verified_at'])
+            ->where('email', $request->string('email')->toString())
+            ->first();
 
         if (! $user) {
             return response()->json(['exists' => false]);

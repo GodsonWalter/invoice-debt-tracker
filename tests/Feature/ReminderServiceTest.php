@@ -208,6 +208,54 @@ test('paid invoices are skipped', function () {
     Queue::assertNothingPushed();
 });
 
+test('inactive workspaces are skipped by reminder processing', function () {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Queue::fake();
+
+    [$workspace] = createReminderInvoiceFixture('2026-06-20');
+    createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+    $workspace->update(['is_active' => false]);
+
+    $summary = app(ReminderService::class)->process();
+
+    expect($summary['schedules_processed'])->toBe(0)
+        ->and($summary['reminders_created'])->toBe(0)
+        ->and(ReminderLog::query()->count())->toBe(0);
+
+    Queue::assertNothingPushed();
+});
+
+test('queued reminder jobs do not send after the workspace is deactivated', function () {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Mail::fake();
+
+    [$workspace, $client, $invoice] = createReminderInvoiceFixture('2026-06-20');
+    $schedule = createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+    $reminderLog = ReminderLog::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $invoice->id,
+        'reminder_schedule_id' => $schedule->id,
+        'recipient_email' => $client->email,
+        'status' => ReminderLog::STATUS_PENDING,
+    ]);
+    $workspace->update(['is_active' => false]);
+
+    (new SendReminderEmailJob($reminderLog->id))->handle(app(ReminderService::class), app(TemplateRenderer::class));
+
+    Mail::assertNothingSent();
+    expect($reminderLog->refresh())
+        ->status->toBe(ReminderLog::STATUS_FAILED)
+        ->error_message->toBe('The workspace is no longer active.');
+});
+
 test('reminder email job sends mail and marks log as sent', function () {
     Carbon::setTestNow('2026-06-17 09:00:00');
     Mail::fake();

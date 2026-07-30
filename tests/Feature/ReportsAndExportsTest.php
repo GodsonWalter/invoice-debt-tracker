@@ -34,7 +34,7 @@ function createReportsFixture(string $key = 'reports'): array
 {
     $user = User::factory()->create();
     $currency = Currency::create([
-        'code' => strtoupper(substr($key, 0, 3)).fake()->unique()->numerify('##'),
+        'code' => strtoupper(substr($key, 0, 2)).fake()->unique()->randomLetter(),
         'symbol' => '$',
         'name' => ucfirst($key).' currency',
         'is_active' => true,
@@ -259,6 +259,25 @@ test('report exports are workspace scoped in csv, xlsx, and pdf formats', functi
     'pdf' => ['pdf', 'application/pdf'],
 ]);
 
+test('csv exports neutralize spreadsheet formulas in user-controlled text', function (): void {
+    [$user, $workspace, $client, $invoice] = createReportsFixture('formula-report');
+    $client->update(['name' => '=HYPERLINK("https://evil.test","Open")']);
+    $invoice->update(['invoice_number' => '+SUM(1,1)']);
+
+    $url = 'http://'.$workspace->subdomain.'.'.config('app.base_domain').route('reports.export', [
+        'report' => 'payments',
+        'format' => 'csv',
+    ], false);
+
+    $csv = $this->actingAs($user)->get($url)->streamedContent();
+
+    expect($csv)
+        ->toContain("'=HYPERLINK(")
+        ->toContain("'+SUM(1,1)")
+        ->not->toContain(',=HYPERLINK(')
+        ->not->toContain(',+SUM(');
+});
+
 test('queued exports are recorded and dispatched for later download', function (): void {
     Queue::fake();
     [$user, $workspace] = array_values(array_slice(createReportsFixture('queued-report'), 0, 2));
@@ -308,6 +327,28 @@ test('queued export jobs write a workspace-scoped file and mark it complete', fu
     expect($zip->open(Storage::disk('local')->path($export->path)))->toBeTrue()
         ->and($zip->locateName('xl/worksheets/sheet1.xml'))->not->toBeFalse();
     $zip->close();
+});
+
+test('queued export jobs reject a requester whose workspace membership is deactivated', function (): void {
+    [$user, $workspace] = array_values(array_slice(createReportsFixture('inactive-job-report'), 0, 2));
+    $workspace->users()->updateExistingPivot($user->id, ['is_active' => false]);
+    $export = ReportExport::create([
+        'workspace_id' => $workspace->id,
+        'user_id' => $user->id,
+        'report_type' => ReportType::PAYMENTS->value,
+        'format' => 'csv',
+        'filters' => [
+            'report' => ReportType::PAYMENTS->value,
+            'period' => WorkspaceDashboardPeriod::THIS_MONTH,
+        ],
+        'status' => ReportExport::STATUS_PENDING,
+    ]);
+
+    (new GenerateReportExport($export->id))->handle(app(ReportExportService::class));
+
+    expect($export->refresh())
+        ->status->toBe(ReportExport::STATUS_FAILED)
+        ->error_message->toBe('The export requester is no longer authorized for this workspace.');
 });
 
 test('members and users outside the active workspace cannot access reports', function (): void {

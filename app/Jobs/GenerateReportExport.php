@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Data\ReportFilters;
 use App\Models\ReportExport;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Report\ReportExportService;
 use App\ReportType;
@@ -18,6 +19,10 @@ class GenerateReportExport implements ShouldQueue
 
     public int $tries = 3;
 
+    public int $backoff = 10;
+
+    public int $timeout = 120;
+
     public function __construct(public int $reportExportId) {}
 
     public function handle(ReportExportService $exportService): void
@@ -31,6 +36,13 @@ class GenerateReportExport implements ShouldQueue
         $workspace = Workspace::query()->find($export->workspace_id);
         if (! $workspace || $workspace->trashed()) {
             $this->failExport($export, 'The workspace is no longer available.');
+
+            return;
+        }
+
+        $actor = User::query()->find($export->user_id);
+        if (! $actor || ! $workspace->canBeManagedBy($actor)) {
+            $this->failExport($export, 'The export requester is no longer authorized for this workspace.');
 
             return;
         }

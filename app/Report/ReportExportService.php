@@ -93,10 +93,21 @@ class ReportExportService
         fputcsv($handle, array_values($this->reportService->columns($filters->type)));
 
         foreach ($this->reportService->exportRows($workspace, $filters) as $row) {
-            fputcsv($handle, array_values($row));
+            fputcsv($handle, array_map(fn (mixed $value): string => $this->csvValue($value), array_values($row)));
         }
 
         fclose($handle);
+    }
+
+    private function csvValue(mixed $value): string
+    {
+        $value = (string) ($value ?? '');
+
+        if ($value !== '' && ! is_numeric($value) && str_contains('=+-@', $value[0])) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 
     private function writeXlsx(Workspace $workspace, ReportFilters $filters, string $path): void

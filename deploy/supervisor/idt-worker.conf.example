@@ -1,0 +1,17 @@
+; Replace the paths and user before installing under Supervisor.
+; DB_QUEUE_RETRY_AFTER must remain greater than the worker timeout (180 > 120).
+
+[program:idt-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=/usr/bin/php /var/www/idt/current/artisan queue:work database --queue=default --sleep=3 --tries=3 --backoff=10 --timeout=120 --memory=256
+directory=/var/www/idt/current
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/idt-worker.log
+stopwaitsecs=180
+stopsignal=TERM

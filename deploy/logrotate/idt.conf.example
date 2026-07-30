@@ -1,0 +1,9 @@
+/var/www/idt/current/storage/logs/*.log /var/log/supervisor/idt-worker.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

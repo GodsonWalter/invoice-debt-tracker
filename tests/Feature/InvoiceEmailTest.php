@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Jobs\SendInvoiceMailJob;
@@ -14,6 +15,7 @@ use App\Services\InvoiceEmailService;
 use App\Services\InvoicePdfService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @return array{0: User, 1: Workspace, 2: Invoice}
@@ -68,7 +70,11 @@ function createInvoiceEmailFixture(string $status = Invoice::STATUS_SENT, ?strin
 }
 
 test('workspace user can queue an invoice email', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
     Queue::fake();
 
     [$user, $workspace, $invoice] = createInvoiceEmailFixture();
@@ -136,7 +142,11 @@ test('invoice email job sends mail and marks log as sent', function () {
 });
 
 test('draft invoices are not queued from the send action', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
     Queue::fake();
 
     [$user, $workspace, $invoice] = createInvoiceEmailFixture(Invoice::STATUS_DRAFT);
@@ -150,4 +160,24 @@ test('draft invoices are not queued from the send action', function () {
     expect(InvoiceEmailLog::query()->count())->toBe(0);
 
     Queue::assertNothingPushed();
+});
+
+test('queued invoice emails do not send after the workspace is deactivated', function () {
+    Mail::fake();
+
+    [$user, $workspace, $invoice] = createInvoiceEmailFixture();
+    $workspace->update(['is_active' => false]);
+    $emailLog = InvoiceEmailLog::create([
+        'invoice_id' => $invoice->id,
+        'workspace_id' => $workspace->id,
+        'sent_by' => $user->id,
+        'recipient_email' => $invoice->client->email,
+        'subject' => 'Invoice '.$invoice->invoice_number,
+        'status' => InvoiceEmailLog::STATUS_PENDING,
+    ]);
+
+    expect(fn () => (new SendInvoiceMailJob($emailLog->id))->handle(app(InvoiceEmailService::class)))
+        ->toThrow(ValidationException::class);
+
+    Mail::assertNothingSent();
 });

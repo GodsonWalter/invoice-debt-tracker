@@ -18,6 +18,10 @@ class SendWorkspaceLifecycleNotificationJob implements ShouldQueue
 
     public int $tries = 3;
 
+    public int $backoff = 10;
+
+    public int $timeout = 120;
+
     public function __construct(public int $notificationId) {}
 
     public function handle(WorkspaceLifecycleService $lifecycleService): void

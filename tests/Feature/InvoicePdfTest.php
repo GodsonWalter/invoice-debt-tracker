@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use App\Models\BusinessProfile;
@@ -72,7 +73,11 @@ function createInvoicePdfFixture(): array
 }
 
 test('workspace user can download invoice pdf', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     [$user, $workspace, $invoice] = createInvoicePdfFixture();
 
@@ -84,7 +89,11 @@ test('workspace user can download invoice pdf', function () {
 });
 
 test('invoice pdf cannot be downloaded from another workspace', function () {
-    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+    $this->withoutMiddleware([
+        EnsureWorkspaceIsActive::class,
+        EnsureRouteWorkspaceMatchesActiveWorkspace::class,
+        ResolveWorkspace::class,
+    ]);
 
     [$user, , $invoice] = createInvoicePdfFixture();
 

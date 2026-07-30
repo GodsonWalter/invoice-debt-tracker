@@ -21,7 +21,7 @@
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center mb-4">
             <div>
                 <p class="text-primary text-uppercase small fw-semibold mb-1">Workspace overview</p>
-                <h1 class="h3 fw-bold text-dark mb-1">{{ $workspace->name }}</h1>
+
                 <p class="text-muted mb-0">Daily invoicing, collections, and reminder performance.</p>
             </div>
             <div class="d-flex flex-wrap gap-2">

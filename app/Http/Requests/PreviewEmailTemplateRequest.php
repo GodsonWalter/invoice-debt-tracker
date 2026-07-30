@@ -17,10 +17,7 @@ class PreviewEmailTemplateRequest extends FormRequest
     {
         $workspace = $this->route('workspace');
 
-        return $workspace?->users()
-            ->where('user_id', Auth::id())
-            ->where('workspace_user.is_active', true)
-            ->exists() ?? false;
+        return $workspace?->canBeManagedBy(Auth::user()) ?? false;
     }
 
     /**

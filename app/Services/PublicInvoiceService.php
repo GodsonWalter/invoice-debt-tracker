@@ -21,6 +21,7 @@ class PublicInvoiceService
                 'workspace.currency',
             ])
             ->where('public_token', $token)
+            ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->firstOrFail();
 
         if ($invoice->status === Invoice::STATUS_DRAFT) {
