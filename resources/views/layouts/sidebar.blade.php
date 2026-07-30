@@ -64,6 +64,11 @@
                     <i class="fa-solid fa-clipboard-list fa-fw"></i> <span>Lifecycle Audit</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ route('platform.user-recovery.index') }}" class="nav-link">
+                    <i class="fa-solid fa-user-shield fa-fw"></i> <span>Deleted User Accounts</span>
+                </a>
+            </li>
         @endif
 
         @if (in_array(Auth::user()?->role, ['owner', 'admin'], true))

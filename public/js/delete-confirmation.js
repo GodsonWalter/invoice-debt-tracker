@@ -28,9 +28,9 @@
         const isWorkspaceDeletion = requiredWorkspaceName !== undefined;
         const dialogOptions = {
             title: 'Delete Record?',
-            text: isWorkspaceDeletion
+            text: form.dataset.deleteConfirmMessage || (isWorkspaceDeletion
                 ? 'This workspace will be deactivated and moved to recovery status.'
-                : 'This action cannot be undone.',
+                : 'This action cannot be undone.'),
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, Delete',

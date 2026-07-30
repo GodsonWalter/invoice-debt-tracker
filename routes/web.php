@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformUserRecoveryController;
 use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
@@ -174,6 +175,14 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'verified', 'can:m
     Route::get('/audits', [PlatformWorkspaceRecoveryController::class, 'audits'])->name('audits');
     Route::get('/{workspaceId}', [PlatformWorkspaceRecoveryController::class, 'show'])->name('show');
     Route::post('/{workspaceId}/restore', [PlatformWorkspaceRecoveryController::class, 'restore'])->name('restore');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'verified', 'can:manage-platform-user-recovery'])->prefix('platform/user-recovery')->name('platform.user-recovery.')->group(function () {
+    Route::get('/', [PlatformUserRecoveryController::class, 'index'])->name('index');
+    Route::get('/{userId}', [PlatformUserRecoveryController::class, 'show'])->name('show');
+    Route::post('/{userId}/restore', [PlatformUserRecoveryController::class, 'restore'])
+        ->middleware('throttle:10,1')
+        ->name('restore');
 });
 
 // system currency management routes

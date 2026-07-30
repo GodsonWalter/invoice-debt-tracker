@@ -6,6 +6,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -14,7 +16,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public const PLATFORM_ROLE_OWNER = 'owner';
 
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     // fillable and hidden attributes
     protected $fillable = [
@@ -56,6 +58,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ownedDeletedWorkspaces()
     {
         return $this->hasMany(Workspace::class, 'owner_id')->onlyTrashed();
+    }
+
+    public function ownedWorkspaces(): HasMany
+    {
+        return $this->hasMany(Workspace::class, 'owner_id');
     }
 
     public function isPlatformOwner(): bool

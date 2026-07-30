@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AccountDeletionBlocked;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\CurrencyService;
+use App\Services\UserAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,7 +58,7 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, UserAccountService $userAccountService): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
@@ -64,9 +66,19 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        if (! $userAccountService->canDeleteAccount($user)) {
+            abort(403, 'Platform-level accounts cannot be deleted through self-service.');
+        }
 
-        $user->delete();
+        try {
+            $userAccountService->softDelete($user);
+        } catch (AccountDeletionBlocked $exception) {
+            return back()
+                ->withInput()
+                ->withErrors(['account' => $exception->getMessage()], 'userDeletion');
+        }
+
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

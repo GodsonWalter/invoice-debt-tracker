@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\InvoiceEmailLog;
+use App\Models\User;
 use App\Services\InvoiceEmailService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -29,6 +30,12 @@ class SendInvoiceMailJob implements ShouldQueue
     public function handle(InvoiceEmailService $invoiceEmailService): void
     {
         $emailLog = InvoiceEmailLog::query()->findOrFail($this->invoiceEmailLogId);
+
+        if ($emailLog->sent_by !== null && ! User::query()->whereKey($emailLog->sent_by)->exists()) {
+            $invoiceEmailService->markFailed($emailLog, new \RuntimeException('The invoice email requester is no longer active.'));
+
+            return;
+        }
 
         $invoiceEmailService->sendQueuedInvoice($emailLog);
     }

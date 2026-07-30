@@ -14,6 +14,7 @@ use App\Models\Workspace;
 use App\Report\ReportExportService;
 use App\Report\ReportService;
 use App\ReportType;
+use App\Services\UserAccountService;
 use App\WorkspaceDashboardPeriod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Queue;
@@ -344,6 +345,30 @@ test('queued export jobs reject a requester whose workspace membership is deacti
         'status' => ReportExport::STATUS_PENDING,
     ]);
 
+    (new GenerateReportExport($export->id))->handle(app(ReportExportService::class));
+
+    expect($export->refresh())
+        ->status->toBe(ReportExport::STATUS_FAILED)
+        ->error_message->toBe('The export requester is no longer authorized for this workspace.');
+});
+
+test('queued export jobs reject a requester whose account is soft deleted', function (): void {
+    [$owner, $workspace] = array_values(array_slice(createReportsFixture('deleted-requester-report'), 0, 2));
+    $requester = User::factory()->create();
+    $workspace->users()->attach($requester->id, ['role' => 'admin', 'is_active' => true]);
+    $export = ReportExport::create([
+        'workspace_id' => $workspace->id,
+        'user_id' => $requester->id,
+        'report_type' => ReportType::PAYMENTS->value,
+        'format' => 'csv',
+        'filters' => [
+            'report' => ReportType::PAYMENTS->value,
+            'period' => WorkspaceDashboardPeriod::THIS_MONTH,
+        ],
+        'status' => ReportExport::STATUS_PENDING,
+    ]);
+
+    app(UserAccountService::class)->softDelete($requester);
     (new GenerateReportExport($export->id))->handle(app(ReportExportService::class));
 
     expect($export->refresh())

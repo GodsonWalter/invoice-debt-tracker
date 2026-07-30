@@ -164,31 +164,37 @@
                     </div>
                 </div>
 
-                <div class="card border-light shadow-sm rounded-4 overflow-hidden mt-3">
-                    <div class="card-header bg-white p-4 border-bottom">
-                        <h5 class="fw-bold text-danger mb-0 fs-6">Danger Zone</h5>
-                    </div>
-                    <div class="card-body p-3 p-md-4">
-                        <form method="POST" action="{{ route('profile.destroy') }}" data-delete-confirm>
-                            @csrf
-                            @method('DELETE')
+                @can('delete-own-account')
+                    <div class="card border-light shadow-sm rounded-4 overflow-hidden mt-3">
+                        <div class="card-header bg-white p-4 border-bottom">
+                            <h5 class="fw-bold text-danger mb-0 fs-6">Danger Zone</h5>
+                        </div>
+                        <div class="card-body p-3 p-md-4">
+                            <form method="POST" action="{{ route('profile.destroy') }}" data-delete-confirm
+                                data-delete-confirm-message="Your account will be deactivated and signed out. Platform support may restore it later.">
+                                @csrf
+                                @method('DELETE')
 
-                            <div class="mb-3">
-                                <label for="delete_password" class="form-label">Confirm Password</label>
-                                <input id="delete_password" name="password" type="password"
-                                    class="form-control {{ $errors->userDeletion->has('password') ? 'is-invalid' : '' }}"
-                                    autocomplete="current-password">
-                                @if ($errors->userDeletion->has('password'))
-                                    <div class="invalid-feedback">{{ $errors->userDeletion->first('password') }}</div>
-                                @endif
-                            </div>
+                                <div class="mb-3">
+                                    <label for="delete_password" class="form-label">Confirm Password</label>
+                                    <input id="delete_password" name="password" type="password"
+                                        class="form-control {{ $errors->userDeletion->has('password') ? 'is-invalid' : '' }}"
+                                        autocomplete="current-password">
+                                    @if ($errors->userDeletion->has('password'))
+                                        <div class="invalid-feedback">{{ $errors->userDeletion->first('password') }}</div>
+                                    @endif
+                                    @if ($errors->userDeletion->has('account'))
+                                        <div class="invalid-feedback d-block">{{ $errors->userDeletion->first('account') }}</div>
+                                    @endif
+                                </div>
 
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                <i class="bi bi-trash"></i> Delete Account
-                            </button>
-                        </form>
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                    <i class="bi bi-trash"></i> Delete Account
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                @endcan
             </div>
         </div>
     </div>

@@ -1,5 +1,7 @@
+@can('delete-own-account')
 <section class="space-y-6">
-    <form method="post" action="{{ route('profile.destroy') }}" class="p-6" data-delete-confirm>
+    <form method="post" action="{{ route('profile.destroy') }}" class="p-6" data-delete-confirm
+        data-delete-confirm-message="Your account will be deactivated and signed out. Platform support may restore it later.">
         @csrf
         @method('delete')
 
@@ -9,7 +11,7 @@
             </h2>
 
             <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+                {{ __('Your account will be deactivated and soft deleted. You will be signed out and must contact platform support if it needs to be restored. Workspaces you own must be transferred before deletion.') }}
             </p>
         </header>
 
@@ -25,6 +27,7 @@
             />
 
             <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
+            <x-input-error :messages="$errors->userDeletion->get('account')" class="mt-2" />
         </div>
 
         <div class="mt-6 flex justify-end">
@@ -34,3 +37,4 @@
         </div>
     </form>
 </section>
+@endcan
