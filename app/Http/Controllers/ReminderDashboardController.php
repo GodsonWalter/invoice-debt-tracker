@@ -103,7 +103,7 @@ class ReminderDashboardController extends Controller
         // Sort
         $query->orderByDesc('created_at');
 
-        $reminders = $query->paginate(20);
+        $reminders = $query->paginate(20)->withQueryString();
 
         return view('reminders.dashboard.activity', [
             'reminders' => $reminders,
@@ -137,7 +137,7 @@ class ReminderDashboardController extends Controller
         // Sort by nearest due date
         $query->orderBy('due_date');
 
-        $invoices = $query->paginate(20);
+        $invoices = $query->paginate(20)->withQueryString();
 
         return view('reminders.dashboard.upcoming', [
             'invoices' => $invoices,
@@ -177,7 +177,7 @@ class ReminderDashboardController extends Controller
         // Sort
         $query->orderByDesc('sent_at');
 
-        $reminders = $query->paginate(20);
+        $reminders = $query->paginate(20)->withQueryString();
 
         return view('reminders.dashboard.sent', [
             'reminders' => $reminders,
@@ -217,7 +217,7 @@ class ReminderDashboardController extends Controller
         // Sort
         $query->orderByDesc('created_at');
 
-        $reminders = $query->paginate(20);
+        $reminders = $query->paginate(20)->withQueryString();
 
         return view('reminders.dashboard.failed', [
             'reminders' => $reminders,

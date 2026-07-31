@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ReminderSchedule;
+use App\Models\Workspace;
 use Illuminate\Database\Seeder;
 
 class ReminderScheduleSeeder extends Seeder
@@ -35,18 +36,20 @@ class ReminderScheduleSeeder extends Seeder
             ],
         ];
 
-        foreach ($reminderSchedules as $reminderSchedule) {
-            ReminderSchedule::updateOrCreate(
-                [
-                    'workspace_id' => 1,
-                    'direction' => $reminderSchedule['direction'],
-                    'days_offset' => $reminderSchedule['days_offset'],
-                ],
-                [
-                    'name' => $reminderSchedule['name'],
-                    'is_active' => true,
-                ],
-            );
-        }
+        Workspace::query()->each(function (Workspace $workspace) use ($reminderSchedules): void {
+            foreach ($reminderSchedules as $reminderSchedule) {
+                ReminderSchedule::updateOrCreate(
+                    [
+                        'workspace_id' => $workspace->id,
+                        'direction' => $reminderSchedule['direction'],
+                        'days_offset' => $reminderSchedule['days_offset'],
+                    ],
+                    [
+                        'name' => $reminderSchedule['name'],
+                        'is_active' => true,
+                    ],
+                );
+            }
+        });
     }
 }

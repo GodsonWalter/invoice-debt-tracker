@@ -311,6 +311,7 @@ class PlatformDashboardService
             ->latest()
             ->limit(8)
             ->get()
+            ->toBase()
             ->map(fn (WorkspaceLifecycleAudit $audit): array => [
                 'type' => 'workspace',
                 'event' => $audit->event,
@@ -325,6 +326,7 @@ class PlatformDashboardService
             ->latest()
             ->limit(8)
             ->get()
+            ->toBase()
             ->map(fn (UserAccountAudit $audit): array => [
                 'type' => 'user',
                 'event' => $audit->event,

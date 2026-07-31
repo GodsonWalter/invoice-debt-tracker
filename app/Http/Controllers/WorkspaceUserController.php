@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WorkspaceUserIndexRequest;
 use App\Mail\WorkspaceUserInvitation;
 use App\Models\User;
 use App\Models\Workspace;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,13 +24,45 @@ class WorkspaceUserController extends Controller
         }
     }
 
-    public function index(Workspace $workspace)
+    public function index(WorkspaceUserIndexRequest $request, Workspace $workspace)
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $users = $workspace->users()->orderBy('name')->paginate(10);
+        $filters = array_merge([
+            'search' => null,
+            'role' => null,
+            'status' => 'all',
+            'sort' => 'name',
+            'direction' => 'asc',
+            'per_page' => 10,
+        ], $request->validated());
 
-        return view('workspace-users.index', compact('workspace', 'users'));
+        $users = $workspace->users()
+            ->when($filters['search'], function (Builder $query, string $search): void {
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('users.name', 'like', '%'.$search.'%')
+                        ->orWhere('users.email', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($filters['role'], fn (Builder $query, string $role): Builder => $query->where('workspace_user.role', $role))
+            ->when($filters['status'] === 'active', fn (Builder $query): Builder => $query->where('workspace_user.is_active', true))
+            ->when($filters['status'] === 'inactive', fn (Builder $query): Builder => $query->where('workspace_user.is_active', false));
+
+        $sortColumn = match ($filters['sort']) {
+            'role' => 'workspace_user.role',
+            'is_active' => 'workspace_user.is_active',
+            'created_at' => 'users.created_at',
+            default => 'users.'.$filters['sort'],
+        };
+
+        $users = $users
+            ->orderBy($sortColumn, $filters['direction'])
+            ->orderBy('users.id', $filters['direction'])
+            ->paginate($filters['per_page'])
+            ->withQueryString();
+
+        return view('workspace-users.index', compact('workspace', 'users', 'filters'));
     }
 
     public function create(Workspace $workspace)

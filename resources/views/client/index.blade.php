@@ -23,10 +23,25 @@
             <div
                 class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0 fs-6">Client List</h5>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <input type="text" id="search-box" class="form-control form-control-sm w-auto"
-                        placeholder="Search clients..." style="max-width: 320px;">
-                </div>
+                <form method="GET" action="{{ route('clients.index', $workspace) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                    <label class="visually-hidden" for="client-search">Search clients</label>
+                    <input type="search" id="client-search" name="search" value="{{ $filters['search'] }}"
+                        class="form-control form-control-sm" placeholder="Search clients..." style="max-width: 220px;">
+                    <select name="sort" class="form-select form-select-sm" aria-label="Sort clients">
+                        <option value="created_at" @selected($filters['sort'] === 'created_at')>Newest</option>
+                        <option value="name" @selected($filters['sort'] === 'name')>Name</option>
+                        <option value="email" @selected($filters['sort'] === 'email')>Email</option>
+                        <option value="phone" @selected($filters['sort'] === 'phone')>Phone</option>
+                    </select>
+                    <select name="direction" class="form-select form-select-sm" aria-label="Sort direction">
+                        <option value="desc" @selected($filters['direction'] === 'desc')>Descending</option>
+                        <option value="asc" @selected($filters['direction'] === 'asc')>Ascending</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-search"></i> Apply</button>
+                    @if ($filters['search'] || $filters['sort'] !== 'created_at' || $filters['direction'] !== 'desc')
+                        <a href="{{ route('clients.index', $workspace) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    @endif
+                </form>
             </div>
 
             <div class="card-body p-3 p-md-4">
@@ -62,7 +77,7 @@
                             <tbody>
                                 @foreach ($clients as $key => $client)
                                     <tr>
-                                        <th scope="row">{{ $key + 1 }}</th>
+                                        <th scope="row">{{ $clients->firstItem() + $key }}</th>
                                         <td>
                                             {{ $client->name }}
                                         </td>                                       

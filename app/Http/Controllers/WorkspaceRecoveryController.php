@@ -18,7 +18,8 @@ class WorkspaceRecoveryController extends Controller
         $workspaces = Workspace::onlyTrashed()
             ->where('owner_id', Auth::id())
             ->latest('deleted_at')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         $workspaces->getCollection()->transform(fn (Workspace $workspace): array => [
             'workspace' => $workspace,
@@ -64,7 +65,8 @@ class WorkspaceRecoveryController extends Controller
             'audits' => WorkspaceLifecycleAudit::query()
                 ->where('workspace_id', $workspace->id)
                 ->latest()
-                ->paginate(25),
+                ->paginate(25)
+                ->withQueryString(),
         ]);
     }
 

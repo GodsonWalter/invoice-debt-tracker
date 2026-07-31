@@ -203,6 +203,81 @@
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
 
+        /*
+         * Shared application table system.
+         * Individual modules may add table-hover, table-sm, or table-bordered,
+         * but spacing, headers, borders, and responsive treatment remain consistent.
+         */
+        #wrapper .table-responsive {
+            border: 1px solid #e7edf4;
+            border-radius: 0.85rem;
+            background: #fff;
+        }
+
+        #wrapper .table-responsive.card {
+            border: 1px solid #e7edf4;
+            overflow: hidden;
+        }
+
+        #wrapper .table {
+            --bs-table-bg: #fff;
+            --bs-table-border-color: #edf1f5;
+            margin-bottom: 0;
+        }
+
+        #wrapper .table > :not(caption) > * > * {
+            padding: 0.85rem 1rem;
+            vertical-align: middle;
+            border-bottom-color: var(--bs-table-border-color);
+        }
+
+        #wrapper .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.045em;
+            line-height: 1.25;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        #wrapper .table thead th a {
+            color: inherit;
+        }
+
+        #wrapper .table tbody tr:last-child > * {
+            border-bottom: 0;
+        }
+
+        #wrapper .table-hover > tbody > tr:hover > * {
+            --bs-table-bg-state: #f8fafc;
+            color: inherit;
+        }
+
+        #wrapper .table .badge {
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        #wrapper .table .btn {
+            white-space: nowrap;
+        }
+
+        #wrapper .pagination {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            #wrapper .table > :not(caption) > * > * {
+                padding: 0.7rem 0.75rem;
+            }
+
+            #wrapper .table thead th {
+                font-size: 0.67rem;
+            }
+        }
+
         /* --- Mobile Responsiveness --- */
         @media (max-width: 768px) {
             #sidebar {

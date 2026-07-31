@@ -6,7 +6,9 @@ use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\UserAccountAudit;
 use App\Models\Workspace;
+use App\Models\WorkspaceLifecycleAudit;
 use App\Services\PlatformDashboardService;
 use App\WorkspaceDashboardPeriod;
 use Carbon\Carbon;
@@ -193,6 +195,37 @@ test('the platform dashboard reports operational alerts', function (): void {
         ->assertSee('Failed queue jobs')
         ->assertSee('Deleted user accounts')
         ->assertSee('Deleted workspaces');
+});
+
+test('platform dashboard loads when lifecycle audit records exist', function (): void {
+    [$owner, $workspace] = array_values(array_slice(platformDashboardFixture('audit-activity'), 0, 2));
+
+    WorkspaceLifecycleAudit::create([
+        'workspace_id' => $workspace->id,
+        'workspace_name' => $workspace->name,
+        'workspace_owner_id' => $owner->id,
+        'actor_user_id' => $owner->id,
+        'actor_global_role' => $owner->role,
+        'actor_type' => 'workspace_owner',
+        'event' => 'workspace_deletion_requested',
+    ]);
+
+    UserAccountAudit::create([
+        'target_user_id' => $owner->id,
+        'target_name' => $owner->name,
+        'target_email' => $owner->email,
+        'actor_user_id' => $owner->id,
+        'actor_global_role' => $owner->role,
+        'actor_type' => 'platform_owner',
+        'event' => 'user_account_restored',
+    ]);
+
+    $this->actingAs($owner)
+        ->get(platformDashboardUrl())
+        ->assertOk()
+        ->assertSee('Recent platform activity')
+        ->assertSee($workspace->name)
+        ->assertSee($owner->email);
 });
 
 test('platform dashboard lists active workspaces without business profiles', function (): void {

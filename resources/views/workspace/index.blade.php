@@ -1,257 +1,218 @@
 @extends('layouts.app')
-{{-- page title --}}
-@section('page_title', 'Workspace Management')
-@section('content')
 
+@section('page_title', 'Workspace Management')
+
+@section('content')
     @php
         $activeWorkspace = $currentWorkspace ?? null;
+        $statusOptions = [
+            'all' => 'Active and inactive',
+            'active' => 'Active only',
+            'inactive' => 'Inactive only',
+        ];
+        $sortOptions = [
+            'created_at' => 'Created date',
+            'name' => 'Name',
+            'slug' => 'Slug',
+            'subdomain' => 'Subdomain',
+            'role' => 'Role',
+            'is_active' => 'Status',
+        ];
     @endphp
 
     <div class="container-fluid py-2">
-        <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-                <div class="col-12 my-3 bg-secondary bg-opacity-10 p-4 rounded-4 border border-secondary shadow-sm">
-                    <h2 class="fs-4 fw-bold text-dark mb-1">
-                        <i class="bi bi-diagram-3-fill me-2"></i> Workspaces
-                    </h2>
-                    <p class="text-muted small mb-0">Manage and view all workspaces in the system.</p>
-                    <p class="text-muted small mb-0 mt-2">Current workspace: <span
-                            class="badge bg-secondary">{{ $currentWorkspace ? $currentWorkspace->name : 'None' }}</span>
-                        total workspaces: <span class="badge bg-secondary">{{ $workspaces->total() }}</span></p>
+                <h1 class="fs-4 fw-bold mb-1">Workspaces</h1>
+                <p class="text-muted mb-0">Manage your workspaces and switch between active workspaces.</p>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <span class="badge text-bg-light border">
+                        Current: {{ $activeWorkspace?->name ?? 'None selected' }}
+                    </span>
+                    <span class="badge text-bg-light border">
+                        {{ number_format($workspaces->total()) }} total workspaces
+                    </span>
                 </div>
             </div>
-            <div class="d-flex gap-2 align-items-center">
-                <a href="{{ route('workspace.create') }}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Create New Workspace
+
+            <div class="d-flex flex-wrap gap-2">
+                <div>
+                    <label for="workspace-switcher" class="visually-hidden">Switch workspace</label>
+                    <select id="workspace-switcher" class="form-select"
+                        onchange="if (this.value) window.location.href = this.value">
+                        <option value="">Switch workspace</option>
+                        @foreach ($activeWorkSpaces as $activeWorkSpace)
+                            <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
+                                {{ $activeWorkSpace->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <a href="{{ route('workspace.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add workspace
                 </a>
-                <select class="form-select form-select-sm w-auto"
-                    onchange="if (this.value) window.location.href = this.value">
-                    <option value="">Switch Workspace</option>
-                    @foreach ($activeWorkSpaces as $activeWorkSpace)
-                        <option value="{{ route('workspace.switch', ['workspace' => $activeWorkSpace->subdomain]) }}">
-                            {{ $activeWorkSpace->name }}
-                        </option>
-                    @endforeach
-                </select>
             </div>
         </div>
 
-        <div class="card border border-light shadow-sm rounded-4 overflow-hidden">
-            <div
-                class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0 fs-6">Workspace List</h5>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <input type="text" id="search-box" class="form-control form-control-sm w-auto"
-                        placeholder="Search workspaces..." style="max-width: 300px;">
-                </div>
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ route('workspace.index') }}" class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label for="workspace-search" class="form-label">Search</label>
+                        <input id="workspace-search" type="search" name="search"
+                            value="{{ $filters['search'] ?? '' }}" class="form-control" maxlength="100"
+                            placeholder="Name, slug, or subdomain">
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="workspace-status" class="form-label">Status</label>
+                        <select id="workspace-status" name="status" class="form-select">
+                            @foreach ($statusOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['status'] ?? 'all') === $value)>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="workspace-sort" class="form-label">Sort by</label>
+                        <select id="workspace-sort" name="sort" class="form-select">
+                            @foreach ($sortOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['sort'] ?? 'created_at') === $value)>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="workspace-direction" class="form-label">Order</label>
+                        <select id="workspace-direction" name="direction" class="form-select">
+                            <option value="desc" @selected(($filters['direction'] ?? 'desc') === 'desc')>Desc</option>
+                            <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2 d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-grow-1" type="submit">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        @if (($filters['search'] ?? '') || ($filters['status'] ?? 'all') !== 'all' || ($filters['sort'] ?? 'created_at') !== 'created_at' || ($filters['direction'] ?? 'desc') !== 'desc')
+                            <a href="{{ route('workspace.index') }}" class="btn btn-outline-secondary">Reset</a>
+                        @endif
+                    </div>
+                </form>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light">
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h6 fw-bold mb-1">Workspace list</h2>
+                    <p class="text-muted small mb-0">View workspace membership, status, and available actions.</p>
+                </div>
+                @if ($workspaces->total() > 0)
+                    <span class="text-muted small">Showing {{ $workspaces->firstItem() }}–{{ $workspaces->lastItem() }} of {{ $workspaces->total() }}</span>
+                @endif
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Workspace</th>
+                            <th scope="col">Subdomain</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($workspaces as $workspace)
                             <tr>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="sn"
-                                    style="cursor: pointer;">SN
-                                    <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                </th>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="name"
-                                    style="cursor: pointer;">
-                                    Name <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-
-                                </th>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="subdomain"
-                                    style="cursor: pointer;">
-                                    Subdomain <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                </th>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="role"
-                                    style="cursor: pointer;">
-                                    Role <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                </th>
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="status"
-                                    style="cursor:pointer">
-                                    Status <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                </th>
-
-                                <th scope="col" class="px-4 py-3 text-start">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if ($workspaces->isEmpty())
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">No workspaces found. Create a new workspace to get
-                                        started.</td>
-                                </tr>
-                            @endif
-                            @foreach ($workspaces as $key => $workspace)
-                                <tr>
-                                    <th scope="row" class="px-4 py-3">{{ $key + 1 }}</th>
-                                    <td class="px-4 py-3">
-                                        {{ $workspace->name }}
-                                        @if (optional($workspace->pivot)->role === 'owner')<br>
-                                            <span class="badge bg-info text-dark ms-2">Own by you</span>
-                                        @endif
-
-                                    </td>
-                                    <td class="px-4 py-3">{{ $workspace->subdomain }}</td>
-                                    <td class="px-4 py-3">
+                                <th scope="row">{{ ($workspaces->firstItem() ?? 1) + $loop->index }}</th>
+                                <td>
+                                    <div class="fw-semibold">{{ $workspace->name }}</div>
+                                    @if (optional($workspace->pivot)->role === 'owner')
+                                        <span class="badge text-bg-info">Owned by you</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ $workspace->subdomain ?: 'Not configured' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge text-bg-light border text-capitalize">
                                         {{ $workspace->pivot->role ?? 'Member' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            class="badge rounded-pill {{ $workspace->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}">
-
-                                            {{ $workspace->is_active ? 'Active' : 'Inactive' }}
-
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        @if ($activeWorkspace instanceof \App\Models\Workspace && $activeWorkspace->is($workspace))
-                                            @if ($workspace->canBeManagedBy(Auth::user()))
-                                                <a href="{{ route('workspace.show', $workspace->id, false) }}"
-                                                    class="btn btn-sm btn-outline-primary me-1" title="View workspace">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="{{ route('workspace.edit', $workspace->id, false) }}"
-                                                    class="btn btn-sm btn-outline-secondary me-1" title="Edit workspace">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </a>
-                                                @if ($workspace->owner_id === Auth::id())
-                                                    <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
-                                                        class="d-inline-block" data-delete-confirm
-                                                        data-delete-confirm-name="{{ $workspace->name }}">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <input type="hidden" name="workspace_name" data-delete-confirm-name-input>
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                            title="Delete workspace">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            @else
-                                                <form action="{{ route('workspace.exit', $workspace->id, false) }}" method="POST"
-                                                    class="d-inline-block" data-delete-confirm>
+                                    </span>
+                                </td>
+                                <td>
+                                    @if ($workspace->is_active)
+                                        <span class="badge text-bg-success">Active</span>
+                                    @else
+                                        <span class="badge text-bg-secondary">Inactive</span>
+                                    @endif
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    @if ($activeWorkspace instanceof \App\Models\Workspace && $activeWorkspace->is($workspace))
+                                        @if ($workspace->canBeManagedBy(Auth::user()))
+                                            <a href="{{ route('workspace.show', $workspace->id, false) }}"
+                                                class="btn btn-sm btn-outline-primary" title="View workspace">
+                                                <i class="bi bi-eye me-1"></i> View
+                                            </a>
+                                            <a href="{{ route('workspace.edit', $workspace->id, false) }}"
+                                                class="btn btn-sm btn-outline-secondary" title="Edit workspace">
+                                                <i class="bi bi-pencil-square me-1"></i> Edit
+                                            </a>
+                                            @if ($workspace->owner_id === Auth::id())
+                                                <form action="{{ route('workspace.destroy', $workspace->id, false) }}" method="POST"
+                                                    class="d-inline" data-delete-confirm
+                                                    data-delete-confirm-name="{{ $workspace->name }}">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
-                                                        <i class="bi bi-box-arrow-right"></i>
+                                                    @method('DELETE')
+                                                    <input type="hidden" name="workspace_name" data-delete-confirm-name-input>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete workspace">
+                                                        <i class="bi bi-trash me-1"></i> Delete
                                                     </button>
                                                 </form>
                                             @endif
-                                        @elseif ($workspace->is_active && filled($workspace->subdomain))
-                                            <a href="{{ route('workspace.switch', ['workspace' => $workspace->subdomain]) }}"
-                                                class="btn btn-sm btn-outline-primary" title="Switch to workspace">
-                                                <i class="bi bi-arrow-repeat me-1"></i>Switch
-                                            </a>
+                                        @else
+                                            <form action="{{ route('workspace.exit', $workspace->id, false) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Exit workspace">
+                                                    <i class="bi bi-box-arrow-right me-1"></i> Exit
+                                                </button>
+                                            </form>
                                         @endif
-                                    </td>
-                                </tr>
-
-
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                {{-- pagination links --}}
-                <div class="card-footer d-flex justify-content-end">
-                    {{ $workspaces->links() }}
-                </div>
+                                    @elseif ($workspace->is_active && filled($workspace->subdomain))
+                                        <a href="{{ route('workspace.switch', ['workspace' => $workspace->subdomain]) }}"
+                                            class="btn btn-sm btn-outline-primary" title="Switch to workspace">
+                                            <i class="bi bi-arrow-repeat me-1"></i> Switch
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">Unavailable</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-building fs-3 d-block mb-2"></i>
+                                    No workspaces match these filters.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
+
+            @if ($workspaces->hasPages())
+                <div class="card-footer bg-white">{{ $workspaces->withQueryString()->links() }}</div>
+            @endif
         </div>
     </div>
-
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                setupTableSearch('search-box', 'table');
-                setupTableSorting('table');
-            });
-
-            function setupTableSearch(searchInputId, tableSelector) {
-                const searchInput = document.getElementById(searchInputId);
-                const table = document.querySelector(tableSelector);
-
-                if (!searchInput || !table) {
-                    return;
-                }
-
-                const tbody = table.querySelector('tbody');
-
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.trim().toLowerCase();
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                    rows.forEach((row) => {
-                        const cells = Array.from(row.querySelectorAll('td'));
-                        const rowText = cells
-                            .map((cell) => cell.textContent.toLowerCase())
-                            .join(' ');
-
-                        row.style.display = searchTerm === '' || rowText.includes(searchTerm) ? '' : 'none';
-                    });
-                });
-            }
-
-            function setupTableSorting(tableSelector) {
-                const table = document.querySelector(tableSelector);
-
-                if (!table) {
-                    return;
-                }
-
-                const headers = Array.from(table.querySelectorAll('th.sortable'));
-                let currentHeader = null;
-                let ascending = true;
-
-                headers.forEach((header) => {
-                    header.addEventListener('click', () => {
-                        const columnIndex = Array.prototype.indexOf.call(header.parentNode.children, header) + 1;
-
-                        if (currentHeader === header) {
-                            ascending = !ascending;
-                        } else {
-                            currentHeader = header;
-                            ascending = true;
-                        }
-
-                        sortTable(table, columnIndex, ascending);
-                        updateSortIndicators(headers, currentHeader, ascending);
-                    });
-                });
-            }
-
-            function sortTable(table, columnIndex, ascending) {
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                rows.sort((a, b) => {
-                    const aCell = a.querySelector(`td:nth-child(${columnIndex})`);
-                    const bCell = b.querySelector(`td:nth-child(${columnIndex})`);
-                    const aValue = aCell ? aCell.textContent.trim() : '';
-                    const bValue = bCell ? bCell.textContent.trim() : '';
-
-                    const comparison = aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' });
-                    return ascending ? comparison : -comparison;
-                });
-
-                rows.forEach((row) => tbody.appendChild(row));
-            }
-
-            function updateSortIndicators(headers, activeHeader, ascending) {
-                headers.forEach((header) => {
-                    const icon = header.querySelector('i');
-
-                    if (!icon) {
-                        return;
-                    }
-
-                    if (header === activeHeader) {
-                        icon.className = ascending ? 'bi bi-sort-up ms-1' : 'bi bi-sort-down ms-1';
-                    } else {
-                        icon.className = 'bi bi-chevron-expand ms-1';
-                    }
-                });
-            }
-        </script>
-    @endpush
-
 @endsection

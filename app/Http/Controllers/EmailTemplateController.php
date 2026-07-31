@@ -24,7 +24,8 @@ class EmailTemplateController extends Controller
             'workspace' => $workspace,
             'emailTemplates' => $workspace->emailTemplates()
                 ->orderBy('type')
-                ->paginate(10),
+                ->paginate(10)
+                ->withQueryString(),
         ]);
     }
 

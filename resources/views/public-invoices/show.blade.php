@@ -32,6 +32,32 @@
             white-space: pre-wrap;
         }
 
+        .public-shell .table-responsive {
+            border: 1px solid #e7edf4;
+            border-radius: 0.85rem;
+            background: #fff;
+        }
+
+        .public-shell .table {
+            --bs-table-border-color: #edf1f5;
+            margin-bottom: 0;
+        }
+
+        .public-shell .table > :not(caption) > * > * {
+            padding: 0.85rem 1rem;
+            vertical-align: middle;
+        }
+
+        .public-shell .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.045em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
         .summary-panel {
             background: #f8fafc;
             border: 1px solid #e2e8f0;

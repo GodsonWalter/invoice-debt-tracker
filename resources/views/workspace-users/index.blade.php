@@ -24,11 +24,37 @@
             <div
                 class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0 fs-6">Workspace Users</h5>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <input type="text" id="search-box" class="form-control form-control-sm w-auto"
-                        placeholder="Search workspace users..." style="max-width: 300px;">
-                  
-                </div>
+                <form method="GET" action="{{ route('workspace.users.index', $workspace) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                    <label class="visually-hidden" for="workspace-user-search">Search workspace users</label>
+                    <input type="search" id="workspace-user-search" name="search" value="{{ $filters['search'] }}"
+                        class="form-control form-control-sm" placeholder="Name or email..." style="max-width: 190px;">
+                    <select name="role" class="form-select form-select-sm" aria-label="Filter member role">
+                        <option value="">All roles</option>
+                        <option value="admin" @selected($filters['role'] === 'admin')>Admin</option>
+                        <option value="member" @selected($filters['role'] === 'member')>Member</option>
+                        <option value="viewer" @selected($filters['role'] === 'viewer')>Viewer</option>
+                    </select>
+                    <select name="status" class="form-select form-select-sm" aria-label="Filter member status">
+                        <option value="all" @selected($filters['status'] === 'all')>All statuses</option>
+                        <option value="active" @selected($filters['status'] === 'active')>Active</option>
+                        <option value="inactive" @selected($filters['status'] === 'inactive')>Inactive</option>
+                    </select>
+                    <select name="sort" class="form-select form-select-sm" aria-label="Sort workspace users">
+                        <option value="name" @selected($filters['sort'] === 'name')>Name</option>
+                        <option value="email" @selected($filters['sort'] === 'email')>Email</option>
+                        <option value="role" @selected($filters['sort'] === 'role')>Role</option>
+                        <option value="is_active" @selected($filters['sort'] === 'is_active')>Status</option>
+                        <option value="created_at" @selected($filters['sort'] === 'created_at')>Created</option>
+                    </select>
+                    <select name="direction" class="form-select form-select-sm" aria-label="Sort direction">
+                        <option value="asc" @selected($filters['direction'] === 'asc')>Ascending</option>
+                        <option value="desc" @selected($filters['direction'] === 'desc')>Descending</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-search"></i> Apply</button>
+                    @if ($filters['search'] || $filters['role'] || $filters['status'] !== 'all' || $filters['sort'] !== 'name' || $filters['direction'] !== 'asc')
+                        <a href="{{ route('workspace.users.index', $workspace) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    @endif
+                </form>
             </div>
             <div class="card-body p-3 p-md-4">
                 @if ($users->isEmpty())
@@ -67,7 +93,7 @@
                             <tbody>
                                 @foreach ($users as $key => $user)
                                     <tr>
-                                        <th scope="row" class="px-4 py-3">{{ $key + 1 }}</th>
+                                        <th scope="row" class="px-4 py-3">{{ $users->firstItem() + $key }}</th>
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->pivot->role ?? 'member' }}</td>

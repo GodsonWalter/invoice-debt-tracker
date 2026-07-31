@@ -22,7 +22,8 @@ class ReminderScheduleController extends Controller
             'reminderSchedules' => $workspace->reminderSchedules()
                 ->orderBy('direction')
                 ->orderBy('days_offset')
-                ->paginate(12),
+                ->paginate(12)
+                ->withQueryString(),
         ]);
     }
 

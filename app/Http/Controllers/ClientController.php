@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ClientIndexRequest;
 use App\Models\Client;
 use App\Models\Workspace;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,15 +22,35 @@ class ClientController extends Controller
         }
     }
 
-    public function index(Workspace $workspace)
+    public function index(ClientIndexRequest $request, Workspace $workspace)
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $clients = $workspace->clients()->orderBy('created_at', 'desc')->paginate(10);
+        $filters = array_merge([
+            'search' => null,
+            'sort' => 'created_at',
+            'direction' => 'desc',
+            'per_page' => 10,
+        ], $request->validated());
+
+        $clients = $workspace->clients()
+            ->when($filters['search'], function (Builder $query, string $search): void {
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderBy('clients.'.$filters['sort'], $filters['direction'])
+            ->orderBy('clients.id', $filters['direction'])
+            ->paginate($filters['per_page'])
+            ->withQueryString();
 
         return view('client.index', [
             'workspace' => $workspace,
             'clients' => $clients,
+            'filters' => $filters,
         ]);
     }
 

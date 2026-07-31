@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WorkspaceIndexRequest;
 use App\Models\Workspace;
 use App\Services\CurrencyService;
 use App\Services\WorkspaceLifecycleService;
@@ -42,11 +43,48 @@ class WorkspaceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, Workspace $workspace)
+    public function index(WorkspaceIndexRequest $request)
     {
-        $workspace = Auth::user()->workspaces()->orderBy('created_at', 'desc');
-        $data['workspaces'] = $workspace->paginate(10);
-        $data['activeWorkSpaces'] = $workspace->whereNotNull('subdomain')->where('workspaces.is_active', true)->get();
+        $filters = array_merge([
+            'search' => null,
+            'status' => 'all',
+            'sort' => 'created_at',
+            'direction' => 'desc',
+            'per_page' => 10,
+        ], $request->validated());
+
+        $query = Auth::user()->workspaces()
+            ->when($filters['search'], function ($query, string $search): void {
+                $query->where(function ($searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('workspaces.name', 'like', '%'.$search.'%')
+                        ->orWhere('workspaces.slug', 'like', '%'.$search.'%')
+                        ->orWhere('workspaces.subdomain', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($filters['status'] === 'active', fn ($query) => $query->where('workspaces.is_active', true))
+            ->when($filters['status'] === 'inactive', fn ($query) => $query->where('workspaces.is_active', false));
+
+        $sortColumn = $filters['sort'] === 'role'
+            ? 'workspace_user.role'
+            : 'workspaces.'.$filters['sort'];
+
+        $workspaces = $query
+            ->orderBy($sortColumn, $filters['direction'])
+            ->orderBy('workspaces.id', $filters['direction'])
+            ->paginate($filters['per_page'])
+            ->withQueryString();
+
+        $activeWorkSpaces = Auth::user()->workspaces()
+            ->whereNotNull('workspaces.subdomain')
+            ->where('workspaces.is_active', true)
+            ->orderBy('workspaces.name')
+            ->get();
+
+        $data['workspaces'] = $workspaces;
+        $data['activeWorkSpaces'] = $activeWorkSpaces;
+        $data['currentWorkspace'] = request()->currentWorkspace ?? null;
+        $data['filters'] = $filters;
 
         return view('workspace.index', $data);
     }

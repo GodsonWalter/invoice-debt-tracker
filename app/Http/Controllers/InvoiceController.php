@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InvoiceIndexRequest;
 use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\CurrencyService;
@@ -9,6 +10,7 @@ use App\Services\InvoiceEmailService;
 use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,18 +28,40 @@ class InvoiceController extends Controller
         }
     }
 
-    public function index(Workspace $workspace)
+    public function index(InvoiceIndexRequest $request, Workspace $workspace)
     {
         $this->authorizeWorkspaceUser($workspace);
 
+        $filters = array_merge([
+            'search' => null,
+            'status' => null,
+            'sort' => 'created_at',
+            'direction' => 'desc',
+            'per_page' => 10,
+        ], $request->validated());
+
         $invoices = $workspace->invoices()
             ->with(['client', 'currency'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->when($filters['search'], function (Builder $query, string $search): void {
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('invoice_number', 'like', '%'.$search.'%')
+                        ->orWhereHas('client', function (Builder $clientQuery) use ($search): void {
+                            $clientQuery->where('name', 'like', '%'.$search.'%');
+                        });
+                });
+            })
+            ->when($filters['status'], fn (Builder $query, string $status): Builder => $query->where('status', $status))
+            ->orderBy('invoices.'.$filters['sort'], $filters['direction'])
+            ->orderBy('invoices.id', $filters['direction'])
+            ->paginate($filters['per_page'])
+            ->withQueryString();
 
         return view('invoice.index', [
             'workspace' => $workspace,
             'invoices' => $invoices,
+            'filters' => $filters,
+            'statuses' => Invoice::STATUSES,
         ]);
     }
 

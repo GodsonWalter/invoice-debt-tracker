@@ -23,8 +23,33 @@
             <div class="card-header bg-white p-4 border-bottom">
                 <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
                     <h5 class="fw-bold text-dark mb-0 fs-6">Invoice List</h5>
-                    <input type="text" id="search-box" class="form-control form-control-sm w-auto"
-                        placeholder="Search invoices..." style="max-width: 320px;">
+                    <form method="GET" action="{{ route('invoices.index', $workspace) }}" class="d-flex flex-wrap gap-2 align-items-center">
+                        <label class="visually-hidden" for="invoice-search">Search invoices</label>
+                        <input type="search" id="invoice-search" name="search" value="{{ $filters['search'] }}"
+                            class="form-control form-control-sm" placeholder="Invoice or client..." style="max-width: 200px;">
+                        <select name="status" class="form-select form-select-sm" aria-label="Filter invoice status">
+                            <option value="">All statuses</option>
+                            @foreach ($statuses as $status)
+                                <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ ucfirst($status) }}</option>
+                            @endforeach
+                        </select>
+                        <select name="sort" class="form-select form-select-sm" aria-label="Sort invoices">
+                            <option value="created_at" @selected($filters['sort'] === 'created_at')>Newest</option>
+                            <option value="invoice_number" @selected($filters['sort'] === 'invoice_number')>Invoice number</option>
+                            <option value="issue_date" @selected($filters['sort'] === 'issue_date')>Issue date</option>
+                            <option value="due_date" @selected($filters['sort'] === 'due_date')>Due date</option>
+                            <option value="total_amount" @selected($filters['sort'] === 'total_amount')>Total</option>
+                            <option value="status" @selected($filters['sort'] === 'status')>Status</option>
+                        </select>
+                        <select name="direction" class="form-select form-select-sm" aria-label="Sort direction">
+                            <option value="desc" @selected($filters['direction'] === 'desc')>Descending</option>
+                            <option value="asc" @selected($filters['direction'] === 'asc')>Ascending</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-search"></i> Apply</button>
+                        @if ($filters['search'] || $filters['status'] || $filters['sort'] !== 'created_at' || $filters['direction'] !== 'desc')
+                            <a href="{{ route('invoices.index', $workspace) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                        @endif
+                    </form>
                 </div>
             </div>
 
@@ -53,7 +78,7 @@
                             <tbody>
                                 @foreach ($invoices as $key => $invoice)
                                     <tr>
-                                        <td class="px-4 py-3">{{ $key + 1 }}</td>
+                                        <td class="px-4 py-3">{{ $invoices->firstItem() + $key }}</td>
                                         <td class="px-4 py-3">{{ $invoice->invoice_number }}</td>
                                         <td class="px-4 py-3">{{ $invoice->client?->name ?? '—' }}</td>
                                         <td class="px-4 py-3">{{ $invoice->issue_date->format('Y-m-d') }}</td>
@@ -114,24 +139,4 @@
         </div>
     </div>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const searchInput = document.getElementById('search-box');
-                const table = document.getElementById('invoice-table');
-                if (!searchInput || !table) return;
-
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                searchInput.addEventListener('input', function () {
-                    const term = this.value.trim().toLowerCase();
-                    rows.forEach(row => {
-                        const text = row.innerText.toLowerCase();
-                        row.style.display = term === '' || text.includes(term) ? '' : 'none';
-                    });
-                });
-            });
-        </script>
-    @endpush
 @endsection
