@@ -51,9 +51,22 @@
             </li>
         @endif
 
-        @if ($sidebarUser?->isPlatformOwner())
+        @can('view-platform-dashboard')
             <li class="nav-divider"></li>
             <li class="nav-section-title">Platform Management</li>
+            <li class="nav-item">
+                <a href="{{ route('platform.dashboard') }}" class="nav-link {{ request()->routeIs('platform.dashboard') ? 'active' : '' }}">
+                    <i class="fa-solid fa-gauge-high fa-fw"></i> <span>Platform Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('platform.workspaces.index') }}" class="nav-link {{ request()->routeIs('platform.workspaces.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-building-shield fa-fw"></i> <span>Platform Workspaces</span>
+                </a>
+            </li>
+        @endcan
+
+        @if ($sidebarUser?->isPlatformOwner())
             <li class="nav-item">
                 <a href="{{ route('platform.recovery.index') }}" class="nav-link">
                     <i class="fa-solid fa-shield-halved fa-fw"></i> <span>Deleted Workspaces</span>

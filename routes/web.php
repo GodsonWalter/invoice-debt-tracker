@@ -8,8 +8,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformDashboardController;
 use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserRecoveryController;
+use App\Http\Controllers\PlatformWorkspaceController;
 use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
@@ -169,6 +171,21 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 've
     Route::get('/{workspaceId}', [WorkspaceRecoveryController::class, 'show'])->name('show');
     Route::get('/{workspaceId}/audit', [WorkspaceRecoveryController::class, 'audit'])->name('audit');
     Route::post('/{workspaceId}/restore', [WorkspaceRecoveryController::class, 'restore'])->name('restore');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:view-platform-dashboard'])->prefix('platform')->name('platform.')->group(function () {
+    Route::get('/dashboard', PlatformDashboardController::class)->name('dashboard');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:manage-platform-workspaces'])->prefix('platform/workspaces')->name('platform.workspaces.')->group(function () {
+    Route::get('/', [PlatformWorkspaceController::class, 'index'])->name('index');
+    Route::get('/create', [PlatformWorkspaceController::class, 'create'])->name('create');
+    Route::post('/', [PlatformWorkspaceController::class, 'store'])->name('store');
+    Route::get('/{workspace}/edit', [PlatformWorkspaceController::class, 'edit'])->name('edit');
+    Route::put('/{workspace}', [PlatformWorkspaceController::class, 'update'])->name('update');
+    Route::delete('/{workspace}', [PlatformWorkspaceController::class, 'destroy'])
+        ->middleware('can:manage-platform-workspace-lifecycle')
+        ->name('destroy');
 });
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:manage-platform-workspace-recovery'])->prefix('platform/workspace-recovery')->name('platform.recovery.')->group(function () {

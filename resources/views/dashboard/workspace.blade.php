@@ -5,7 +5,8 @@
 @php
     $kpis = $dashboard['kpis'];
     $period = $dashboard['period'];
-    $money = fn ($amount) => $workspace->formatMoney($amount);
+    $currency = $dashboard['currencyModel'];
+    $money = fn ($amount) => $currency?->formatMoney($amount) ?? number_format((float) $amount, 2);
     $statusBadge = fn ($status) => match ($status) {
         'draft' => 'secondary',
         'sent' => 'info',
@@ -41,6 +42,8 @@
                         <label for="dashboard-period" class="form-label small fw-semibold mb-1">Analytics period</label>
                         <select id="dashboard-period" name="period" class="form-select form-select-sm">
                             @foreach ([
+                                'today' => 'Today',
+                                'last_7_days' => 'Last 7 days',
                                 'this_month' => 'This month',
                                 'last_month' => 'Last month',
                                 'last_3_months' => 'Last 3 months',
@@ -52,6 +55,16 @@
                             @endforeach
                         </select>
                     </div>
+                    @if ($dashboard['currencies']->isNotEmpty())
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label for="dashboard-currency" class="form-label small fw-semibold mb-1">Currency</label>
+                            <select id="dashboard-currency" name="currency_id" class="form-select form-select-sm">
+                                @foreach ($dashboard['currencies'] as $option)
+                                    <option value="{{ $option->id }}" @selected($currency?->id === $option->id)>{{ $option->code }} - {{ $option->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                     <div class="col-6 col-md-3 col-lg-2 dashboard-custom-date">
                         <label for="dashboard-start-date" class="form-label small fw-semibold mb-1">From</label>
                         <input id="dashboard-start-date" name="start_date" type="date" class="form-control form-control-sm"
@@ -66,7 +79,7 @@
                         <button type="submit" class="btn btn-sm btn-dark">Apply</button>
                     </div>
                     <div class="col-12 col-lg-auto ms-lg-auto text-muted small">
-                        Showing {{ $period->label }}. Current-state cards are labelled separately; period metrics use business dates.
+                         Showing {{ $period->label }} in {{ $currency?->code ?? 'an unspecified currency' }}. Current-state cards are labelled separately; period metrics use business dates.
                     </div>
                 </form>
             </div>

@@ -17,7 +17,12 @@ class DashboardController extends Controller
         if ($workspace instanceof Workspace && $workspace->canBeManagedBy(Auth::user())) {
             return view('dashboard.workspace', [
                 'workspace' => $workspace,
-                'dashboard' => $dashboardService->dashboard($workspace, Auth::user(), $request->dashboardPeriod()),
+                'dashboard' => $dashboardService->dashboard(
+                    $workspace,
+                    Auth::user(),
+                    $request->dashboardPeriod(),
+                    $request->dashboardCurrencyId(),
+                ),
             ]);
         }
 

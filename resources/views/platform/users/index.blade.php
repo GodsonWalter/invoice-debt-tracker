@@ -86,7 +86,7 @@
                                     <div class="fw-semibold">{{ $user->name ?: 'Unnamed account' }}</div>
                                     <small class="text-muted">Created {{ $user->created_at?->format('M j, Y') }}</small>
                                 </td>
-                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->email }} <br>Phone: {{ $user->phone }}</td>
                                 <td><span class="badge text-bg-secondary">{{ ucfirst($user->role) }}</span></td>
                                 <td>
                                     @if ($user->trashed())

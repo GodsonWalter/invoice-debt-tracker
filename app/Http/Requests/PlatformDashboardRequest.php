@@ -2,26 +2,33 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Currency;
-use App\Models\Workspace;
 use App\WorkspaceDashboardPeriod;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
-class WorkspaceDashboardRequest extends FormRequest
+class PlatformDashboardRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
-        return auth()->check();
+        return Gate::allows('view-platform-dashboard');
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
             'period' => ['nullable', 'string', Rule::in($this->supportedPeriods())],
             'range' => ['nullable', 'string'],
-            'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')],
             'start_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date', 'before_or_equal:today'],
         ];
@@ -36,13 +43,9 @@ class WorkspaceDashboardRequest extends FormRequest
         }
     }
 
-    public function withValidator($validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function ($validator): void {
-            if ($this->filled('currency_id') && ! $this->currencyBelongsToWorkspace($this->integer('currency_id'))) {
-                $validator->errors()->add('currency_id', 'The selected currency is not available in this workspace.');
-            }
-
+        $validator->after(function (Validator $validator): void {
             if ($this->string('period')->toString() !== WorkspaceDashboardPeriod::CUSTOM) {
                 return;
             }
@@ -69,34 +72,6 @@ class WorkspaceDashboardRequest extends FormRequest
             startDate: $this->string('start_date')->toString() ?: null,
             endDate: $this->string('end_date')->toString() ?: null,
         );
-    }
-
-    public function dashboardCurrencyId(): ?int
-    {
-        return $this->filled('currency_id') ? $this->integer('currency_id') : null;
-    }
-
-    private function currencyBelongsToWorkspace(int $currencyId): bool
-    {
-        $workspace = $this->route('workspace');
-
-        if (! $workspace instanceof Workspace) {
-            $workspace = $this->attributes->get('currentWorkspace');
-        }
-
-        if (! $workspace instanceof Workspace) {
-            return false;
-        }
-
-        return Currency::withTrashed()
-            ->whereKey($currencyId)
-            ->where(function (Builder $query) use ($workspace): void {
-                $query->whereKey($workspace->currency_id)
-                    ->orWhereHas('invoices', function (Builder $invoiceQuery) use ($workspace): void {
-                        $invoiceQuery->where('invoices.workspace_id', $workspace->id);
-                    });
-            })
-            ->exists();
     }
 
     /**

@@ -51,6 +51,18 @@ class AppServiceProvider extends ServiceProvider
             return $user instanceof User && $user->canManagePlatformUsers();
         });
 
+        Gate::define('manage-platform-workspaces', function (?User $user): bool {
+            return $user instanceof User && $user->canManagePlatformUsers();
+        });
+
+        Gate::define('manage-platform-workspace-lifecycle', function (?User $user): bool {
+            return $user?->isPlatformOwner() ?? false;
+        });
+
+        Gate::define('view-platform-dashboard', function (?User $user): bool {
+            return $user instanceof User && $user->canManagePlatformUsers();
+        });
+
         Gate::define('manage-platform-user-target', function (User $user, User $target): bool {
             return app(PlatformUserManagementService::class)->canModifyTarget($user, $target);
         });

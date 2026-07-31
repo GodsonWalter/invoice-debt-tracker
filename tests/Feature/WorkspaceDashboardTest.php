@@ -100,6 +100,12 @@ test('workspace dashboard calculates payments and balances only for the active w
         'amount' => 900,
         'payment_date' => now()->toDateString(),
     ]);
+    Payment::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $otherInvoice->id,
+        'amount' => 800,
+        'payment_date' => now()->toDateString(),
+    ]);
 
     $period = WorkspaceDashboardPeriod::fromInput(WorkspaceDashboardPeriod::LAST_6_MONTHS);
     $dashboard = app(WorkspaceDashboardService::class)->dashboard($workspace, $user, $period);
@@ -110,7 +116,11 @@ test('workspace dashboard calculates payments and balances only for the active w
         ->and($dashboard['kpis']['unpaid_count'])->toBe(1)
         ->and($dashboard['kpis']['customers_owing'])->toBe(1)
         ->and($dashboard['kpis']['overdue_amount'])->toBe(750.0)
+        ->and($dashboard['kpis']['pending_invoice_value'])->toBe(750.0)
+        ->and($dashboard['kpis']['payment_transactions_period'])->toBe(1)
+        ->and(array_sum($dashboard['chart']['payments']))->toBe(250.0)
         ->and(max($dashboard['chart']['outstanding']))->toBe(750.0)
+        ->and($dashboard['recentPayments'])->toHaveCount(1)
         ->and($dashboard['topDebtors'])->toHaveCount(1)
         ->and((float) $dashboard['topDebtors']->first()->outstanding_amount)->toBe(750.0);
 });
@@ -137,7 +147,10 @@ test('workspace dashboard renders operational sections and empty states safely',
         ->assertSee($invoice->invoice_number)
         ->assertSee($client->name)
         ->assertSee('Recent payments')
-        ->assertSee('Quick actions');
+        ->assertSee('Quick actions')
+        ->assertSee('value="today" selected', false)
+        ->assertDontSee('value="last_7_days" selected', false)
+        ->assertSeeInOrder(['<option value="today"', '<option value="last_7_days"'], false);
 
     [$emptyUser, $emptyWorkspace] = array_values(array_slice(createDashboardFixture('empty'), 0, 2));
 
@@ -166,6 +179,16 @@ test('workspace dashboard date filters are validated and affect the selected per
         ->get(dashboardTestUrl('workspace.dashboard', $workspace, ['period' => 'this_month']))
         ->assertOk()
         ->assertSee('This month');
+
+    $this->actingAs($user)
+        ->get(dashboardTestUrl('workspace.dashboard', $workspace, ['period' => 'today']))
+        ->assertOk()
+        ->assertSee('Today');
+
+    $this->actingAs($user)
+        ->get(dashboardTestUrl('workspace.dashboard', $workspace, ['period' => 'last_7_days']))
+        ->assertOk()
+        ->assertSee('Last 7 days');
 
     $this->actingAs($user)
         ->get(dashboardTestUrl('workspace.dashboard', $workspace, [
@@ -275,6 +298,81 @@ test('workspace dashboard uses business dates for period analytics', function ()
         ->and($dashboard['reminders']['failed'])->toBe(1)
         ->and($dashboard['invoiceStatuses'])->toHaveCount(1)
         ->and((float) $dashboard['invoiceStatuses']->first()->value)->toBe(300.0);
+});
+
+test('workspace dashboard keeps financial calculations within the selected currency', function (): void {
+    [$user, $workspace, $client, $usd] = createDashboardFixture('currency-safe');
+    $eur = Currency::create([
+        'code' => 'EUR',
+        'symbol' => '€',
+        'name' => 'Euro',
+        'is_active' => true,
+    ]);
+    $usdInvoice = createDashboardInvoice($workspace, $client, $usd, [
+        'issue_date' => now()->toDateString(),
+        'due_date' => now()->addDays(7)->toDateString(),
+        'status' => Invoice::STATUS_SENT,
+        'subtotal' => 300,
+        'total_amount' => 300,
+    ]);
+    $eurInvoice = createDashboardInvoice($workspace, $client, $eur, [
+        'issue_date' => now()->toDateString(),
+        'due_date' => now()->addDays(7)->toDateString(),
+        'status' => Invoice::STATUS_SENT,
+        'subtotal' => 500,
+        'total_amount' => 500,
+    ]);
+    Payment::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $usdInvoice->id,
+        'amount' => 100,
+        'payment_date' => now()->toDateString(),
+    ]);
+    Payment::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $eurInvoice->id,
+        'amount' => 200,
+        'payment_date' => now()->toDateString(),
+    ]);
+
+    $period = WorkspaceDashboardPeriod::fromInput(WorkspaceDashboardPeriod::TODAY);
+    $usdDashboard = app(WorkspaceDashboardService::class)->dashboard($workspace, $user, $period);
+    $eurDashboard = app(WorkspaceDashboardService::class)->dashboard($workspace, $user, $period, $eur->id);
+
+    expect($usdDashboard['currency']['code'])->toBe($usd->code)
+        ->and($usdDashboard['kpis']['payments_period'])->toBe(100.0)
+        ->and($usdDashboard['invoiceStatuses'])->toHaveCount(1)
+        ->and(array_sum($usdDashboard['chart']['payments']))->toBe(100.0)
+        ->and($eurDashboard['currency']['code'])->toBe('EUR')
+        ->and($eurDashboard['kpis']['payments_period'])->toBe(200.0)
+        ->and($eurDashboard['invoiceStatuses'])->toHaveCount(1)
+        ->and(array_sum($eurDashboard['chart']['payments']))->toBe(200.0)
+        ->and($eurDashboard['recentInvoices']->first()->id)->toBe($eurInvoice->id);
+
+    createDashboardInvoice($workspace, $client, $usd, [
+        'currency_id' => null,
+        'issue_date' => now()->toDateString(),
+        'due_date' => now()->addDays(7)->toDateString(),
+        'status' => Invoice::STATUS_SENT,
+    ]);
+
+    $dashboardWithUnassignedCurrency = app(WorkspaceDashboardService::class)->dashboard($workspace, $user, $period);
+
+    expect(collect($dashboardWithUnassignedCurrency['alerts'])->contains(
+        fn (array $alert): bool => $alert['title'] === 'Invoices missing currency',
+    ))->toBeTrue();
+
+    $this->actingAs($user)
+        ->get(dashboardTestUrl('workspace.dashboard', $workspace, ['currency_id' => $eur->id]))
+        ->assertOk()
+        ->assertSee('Showing Today in EUR');
+
+    $otherFixture = createDashboardFixture('other-currency');
+    $otherCurrency = $otherFixture[3];
+
+    $this->actingAs($user)
+        ->get(dashboardTestUrl('workspace.dashboard', $workspace, ['currency_id' => $otherCurrency->id]))
+        ->assertSessionHasErrors('currency_id');
 });
 
 test('workspace dashboard validates unsupported, incomplete, reversed, future, and excessive ranges', function (): void {

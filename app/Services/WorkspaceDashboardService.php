@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Client;
+use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\ReminderLog;
@@ -13,6 +14,9 @@ use App\WorkspaceDashboardPeriod;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -29,32 +33,42 @@ class WorkspaceDashboardService
     /**
      * @return array<string, mixed>
      */
-    public function dashboard(Workspace $workspace, User $user, WorkspaceDashboardPeriod $period): array
-    {
+    public function dashboard(
+        Workspace $workspace,
+        User $user,
+        WorkspaceDashboardPeriod $period,
+        ?int $currencyId = null,
+    ): array {
         if (! $workspace->canBeManagedBy($user)) {
             throw new AuthorizationException('You are not authorized to view this workspace dashboard.');
         }
 
         $workspace->loadMissing(['currency', 'businessProfile']);
-        $reminders = $this->reminderSummary($workspace, $period);
+        $currencies = $this->dashboardCurrencies($workspace);
+        $currencyId = $this->resolveCurrencyId($workspace, $currencies, $currencyId);
+        $currency = $currencies->firstWhere('id', $currencyId);
+        $reminders = $this->reminderSummary($workspace, $period, $currencyId);
 
         return [
             'period' => $period,
-            'kpis' => $this->kpis($workspace, $period, $reminders),
-            'chart' => $this->collectionChart($workspace, $period),
-            'invoiceStatuses' => $this->invoiceStatuses($workspace, $period),
-            'topDebtors' => $this->topDebtors($workspace),
-            'recentInvoices' => $this->recentInvoices($workspace),
-            'recentPayments' => $this->recentPayments($workspace),
-            'overdueInvoices' => $this->overdueInvoices($workspace),
+            'kpis' => $this->kpis($workspace, $period, $reminders, $currencyId),
+            'chart' => $this->collectionChart($workspace, $period, $currencyId),
+            'invoiceStatuses' => $this->invoiceStatuses($workspace, $period, $currencyId),
+            'topDebtors' => $this->topDebtors($workspace, $currencyId),
+            'recentInvoices' => $this->recentInvoices($workspace, $currencyId),
+            'recentPayments' => $this->recentPayments($workspace, $currencyId),
+            'overdueInvoices' => $this->overdueInvoices($workspace, $currencyId),
             'reminders' => $reminders,
-            'activities' => $this->recentActivities($workspace),
-            'alerts' => $this->alerts($workspace),
+            'activities' => $this->recentActivities($workspace, $currencyId),
+            'alerts' => $this->alerts($workspace, $currencyId),
             'quickActions' => $this->quickActions($workspace),
+            'currencies' => $currencies,
             'currency' => [
-                'code' => $workspace->currency?->code,
-                'symbol' => $workspace->currency?->symbol,
+                'id' => $currency?->id,
+                'code' => $currency?->code,
+                'symbol' => $currency?->symbol,
             ],
+            'currencyModel' => $currency,
         ];
     }
 
@@ -62,12 +76,15 @@ class WorkspaceDashboardService
      * @param  array{sent: int, failed: int, pending: int, upcoming: int, without_schedule: int, success_rate: float, last_activity_at: ?CarbonImmutable}  $reminders
      * @return array<string, mixed>
      */
-    private function kpis(Workspace $workspace, WorkspaceDashboardPeriod $period, array $reminders): array
-    {
+    private function kpis(
+        Workspace $workspace,
+        WorkspaceDashboardPeriod $period,
+        array $reminders,
+        ?int $currencyId,
+    ): array {
         $now = CarbonImmutable::now(config('app.timezone', 'UTC'));
 
-        $paymentStats = Payment::query()
-            ->where('workspace_id', $workspace->id)
+        $paymentStats = $this->workspacePaymentQuery($workspace, $currencyId)
             ->selectRaw('COALESCE(SUM(amount), 0) as all_time_revenue')
             ->selectRaw('COALESCE(SUM(CASE WHEN payment_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) as period_revenue', [
                 $period->start->toDateTimeString(),
@@ -83,7 +100,7 @@ class WorkspaceDashboardService
             ])
             ->first();
 
-        $balanceQuery = $this->balanceQuery($workspace);
+        $balanceQuery = $this->balanceQuery($workspace, $currencyId);
         $remainingBalance = $this->remainingBalanceExpression();
         $debt = (clone $balanceQuery)
             ->selectRaw("COALESCE(SUM(CASE WHEN {$remainingBalance} > 0 THEN {$remainingBalance} ELSE 0 END), 0) as total_debt")
@@ -104,11 +121,17 @@ class WorkspaceDashboardService
             ->selectRaw('MIN(invoices.due_date) as oldest_due_date')
             ->first();
 
+        $pendingBalance = $this->remainingBalanceExpression();
         $pending = Invoice::query()
-            ->where('workspace_id', $workspace->id)
-            ->whereIn('status', [Invoice::STATUS_DRAFT, ...self::DEBT_STATUSES])
+            ->from('invoices')
+            ->leftJoinSub($this->paymentTotals($workspace, $currencyId), 'dashboard_payment_totals', function (JoinClause $join): void {
+                $join->on('dashboard_payment_totals.invoice_id', '=', 'invoices.id');
+            })
+            ->where('invoices.workspace_id', $workspace->id)
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
+            ->whereIn('invoices.status', [Invoice::STATUS_DRAFT, ...self::DEBT_STATUSES])
             ->selectRaw('COUNT(*) as count')
-            ->selectRaw('COALESCE(SUM(total_amount), 0) as value')
+            ->selectRaw("COALESCE(SUM(CASE WHEN invoices.status = ? THEN invoices.total_amount WHEN {$pendingBalance} > 0 THEN {$pendingBalance} ELSE 0 END), 0) as value", [Invoice::STATUS_DRAFT])
             ->first();
 
         return [
@@ -139,7 +162,7 @@ class WorkspaceDashboardService
     /**
      * @return array{labels: array<int, string>, invoiced: array<int, float>, payments: array<int, float>, outstanding: array<int, float>}
      */
-    private function collectionChart(Workspace $workspace, WorkspaceDashboardPeriod $period): array
+    private function collectionChart(Workspace $workspace, WorkspaceDashboardPeriod $period, ?int $currencyId): array
     {
         $isDaily = $period->granularity === 'day';
         $bucketStart = $isDaily ? $period->start->startOfDay() : $period->start->startOfMonth();
@@ -158,14 +181,14 @@ class WorkspaceDashboardService
         $invoiceRows = $this->groupedAmountRows(
             Invoice::query()
                 ->where('workspace_id', $workspace->id)
+                ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
                 ->whereBetween('issue_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()]),
             'issue_date',
             'total_amount',
             $isDaily,
         );
         $paymentRows = $this->groupedAmountRows(
-            Payment::query()
-                ->where('workspace_id', $workspace->id)
+            $this->workspacePaymentQuery($workspace, $currencyId)
                 ->whereBetween('payment_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()]),
             'payment_date',
             'amount',
@@ -189,10 +212,10 @@ class WorkspaceDashboardService
         $runningOutstanding = $this->money->subtract(
             Invoice::query()
                 ->where('workspace_id', $workspace->id)
+                ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
                 ->where('issue_date', '<', $bucketStart->toDateTimeString())
                 ->sum('total_amount'),
-            Payment::query()
-                ->where('workspace_id', $workspace->id)
+            $this->workspacePaymentQuery($workspace, $currencyId)
                 ->where('payment_date', '<', $bucketStart->toDateTimeString())
                 ->sum('amount'),
         );
@@ -222,10 +245,11 @@ class WorkspaceDashboardService
     /**
      * @return Collection<int, object>
      */
-    private function invoiceStatuses(Workspace $workspace, WorkspaceDashboardPeriod $period): Collection
+    private function invoiceStatuses(Workspace $workspace, WorkspaceDashboardPeriod $period, ?int $currencyId): Collection
     {
         return Invoice::query()
             ->where('workspace_id', $workspace->id)
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
             ->whereBetween('issue_date', [$period->start->toDateTimeString(), $period->end->toDateTimeString()])
             ->select('status')
             ->selectRaw('COUNT(*) as count')
@@ -238,18 +262,19 @@ class WorkspaceDashboardService
     /**
      * @return Collection<int, object>
      */
-    private function topDebtors(Workspace $workspace): Collection
+    private function topDebtors(Workspace $workspace, ?int $currencyId): Collection
     {
         $remainingBalance = $this->remainingBalanceExpression();
 
         return Client::query()
             ->select(['clients.id', 'clients.name'])
             ->join('invoices', 'clients.id', '=', 'invoices.client_id')
-            ->leftJoinSub($this->paymentTotals($workspace), 'dashboard_payment_totals', function ($join): void {
+            ->leftJoinSub($this->paymentTotals($workspace, $currencyId), 'dashboard_payment_totals', function (JoinClause $join): void {
                 $join->on('dashboard_payment_totals.invoice_id', '=', 'invoices.id');
             })
             ->where('clients.workspace_id', $workspace->id)
             ->where('invoices.workspace_id', $workspace->id)
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
             ->whereIn('invoices.status', self::DEBT_STATUSES)
             ->whereRaw("{$remainingBalance} > 0")
             ->selectRaw("COALESCE(SUM({$remainingBalance}), 0) as outstanding_amount")
@@ -262,20 +287,28 @@ class WorkspaceDashboardService
             ->get();
     }
 
-    private function recentInvoices(Workspace $workspace): Collection
+    private function recentInvoices(Workspace $workspace, ?int $currencyId): Collection
     {
         return $workspace->invoices()
-            ->with(['client', 'payments'])
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
+            ->with([
+                'client' => fn (Relation $query) => $query->where('clients.workspace_id', $workspace->id),
+                'payments' => fn (Relation $query) => $query->where('payments.workspace_id', $workspace->id),
+            ])
             ->select(['id', 'workspace_id', 'client_id', 'invoice_number', 'issue_date', 'due_date', 'status', 'total_amount'])
             ->latest('issue_date')
             ->limit(5)
             ->get();
     }
 
-    private function recentPayments(Workspace $workspace): Collection
+    private function recentPayments(Workspace $workspace, ?int $currencyId): Collection
     {
-        return $workspace->payments()
-            ->with(['invoice.client'])
+        return $this->workspacePaymentQuery($workspace, $currencyId)
+            ->with([
+                'invoice' => fn (Relation $query) => $query
+                    ->where('invoices.workspace_id', $workspace->id)
+                    ->with(['client' => fn (Relation $clientQuery) => $clientQuery->where('clients.workspace_id', $workspace->id)]),
+            ])
             ->select(['id', 'workspace_id', 'invoice_id', 'amount', 'payment_date', 'payment_method', 'reference'])
             ->latest('payment_date')
             ->latest('id')
@@ -283,7 +316,7 @@ class WorkspaceDashboardService
             ->get();
     }
 
-    private function overdueInvoices(Workspace $workspace): Collection
+    private function overdueInvoices(Workspace $workspace, ?int $currencyId): Collection
     {
         $lastReminder = ReminderLog::query()
             ->selectRaw('MAX(sent_at)')
@@ -297,11 +330,14 @@ class WorkspaceDashboardService
             ->latest('created_at')
             ->limit(1);
 
-        return $this->balanceQuery($workspace)
+        return $this->balanceQuery($workspace, $currencyId)
             ->select('invoices.*')
             ->selectSub($lastReminder, 'last_reminder_sent_at')
             ->selectSub($lastReminderStatus, 'last_reminder_status')
-            ->with(['client', 'payments'])
+            ->with([
+                'client' => fn (Relation $query) => $query->where('clients.workspace_id', $workspace->id),
+                'payments' => fn (Relation $query) => $query->where('payments.workspace_id', $workspace->id),
+            ])
             ->whereDate('invoices.due_date', '<', now()->toDateString())
             ->whereRaw($this->remainingBalanceExpression().' > 0')
             ->orderBy('invoices.due_date')
@@ -312,10 +348,9 @@ class WorkspaceDashboardService
     /**
      * @return array{sent: int, failed: int, pending: int, upcoming: int, without_schedule: int, success_rate: float, last_activity_at: ?CarbonImmutable}
      */
-    private function reminderSummary(Workspace $workspace, WorkspaceDashboardPeriod $period): array
+    private function reminderSummary(Workspace $workspace, WorkspaceDashboardPeriod $period, ?int $currencyId): array
     {
-        $stats = ReminderLog::query()
-            ->where('workspace_id', $workspace->id)
+        $stats = $this->workspaceReminderQuery($workspace, $currencyId)
             ->selectRaw('SUM(CASE WHEN status = ? AND sent_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as sent', [
                 ReminderLog::STATUS_SENT,
                 $period->start->toDateTimeString(),
@@ -330,7 +365,7 @@ class WorkspaceDashboardService
             ->selectRaw('MAX(updated_at) as last_activity_at')
             ->first();
 
-        $withoutSchedule = $this->balanceQuery($workspace)
+        $withoutSchedule = $this->balanceQuery($workspace, $currencyId)
             ->whereRaw($this->remainingBalanceExpression().' > 0')
             ->whereNotExists(function ($query) use ($workspace): void {
                 $query->selectRaw('1')
@@ -355,7 +390,7 @@ class WorkspaceDashboardService
         ];
     }
 
-    private function recentActivities(Workspace $workspace): Collection
+    private function recentActivities(Workspace $workspace, ?int $currencyId): Collection
     {
         $activityLogs = ActivityLog::query()
             ->where('workspace_id', $workspace->id)
@@ -372,7 +407,10 @@ class WorkspaceDashboardService
             ]);
 
         $invoices = $workspace->invoices()
-            ->with('client:id,name')
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
+            ->with(['client' => fn (Relation $query) => $query
+                ->select(['clients.id', 'clients.workspace_id', 'clients.name'])
+                ->where('clients.workspace_id', $workspace->id)])
             ->latest()
             ->limit(5)
             ->get()
@@ -384,8 +422,10 @@ class WorkspaceDashboardService
                 'url' => route('invoices.show', [$workspace, $invoice], false),
             ]);
 
-        $payments = $workspace->payments()
-            ->with('invoice:id,invoice_number')
+        $payments = $this->workspacePaymentQuery($workspace, $currencyId)
+            ->with(['invoice' => fn (Relation $query) => $query
+                ->select(['invoices.id', 'invoices.workspace_id', 'invoices.invoice_number'])
+                ->where('invoices.workspace_id', $workspace->id)])
             ->latest()
             ->limit(5)
             ->get()
@@ -397,8 +437,7 @@ class WorkspaceDashboardService
                 'url' => $payment->invoice ? route('invoices.show', [$workspace, $payment->invoice], false) : null,
             ]);
 
-        $reminders = ReminderLog::query()
-            ->where('workspace_id', $workspace->id)
+        $reminders = $this->workspaceReminderQuery($workspace, $currencyId)
             ->latest('updated_at')
             ->limit(10)
             ->get()
@@ -419,16 +458,30 @@ class WorkspaceDashboardService
             ->values();
     }
 
-    private function alerts(Workspace $workspace): array
+    private function alerts(Workspace $workspace, ?int $currencyId): array
     {
         $alerts = [];
         $remainingBalance = $this->remainingBalanceExpression();
 
-        $overdueWithoutReminder = $this->balanceQuery($workspace)
+        $unassignedCurrencyInvoices = Invoice::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereNull('currency_id')
+            ->count();
+        if ($unassignedCurrencyInvoices > 0) {
+            $alerts[] = [
+                'severity' => 'warning',
+                'title' => 'Invoices missing currency',
+                'message' => $unassignedCurrencyInvoices.' invoice '.str('record')->plural($unassignedCurrencyInvoices).' are excluded from currency-scoped dashboard totals until a currency is assigned.',
+                'url' => route('invoices.index', $workspace, false),
+            ];
+        }
+
+        $overdueWithoutReminder = $this->balanceQuery($workspace, $currencyId)
             ->whereDate('invoices.due_date', '<', now()->toDateString())
             ->whereRaw("{$remainingBalance} > 0")
-            ->whereDoesntHave('reminderLogs', function ($query): void {
-                $query->where('status', ReminderLog::STATUS_SENT)
+            ->whereDoesntHave('reminderLogs', function (Builder $query) use ($workspace): void {
+                $query->where('reminder_logs.workspace_id', $workspace->id)
+                    ->where('status', ReminderLog::STATUS_SENT)
                     ->where('sent_at', '>=', now()->subDays(7));
             })
             ->count();
@@ -441,8 +494,7 @@ class WorkspaceDashboardService
             ];
         }
 
-        $failedReminders = ReminderLog::query()
-            ->where('workspace_id', $workspace->id)
+        $failedReminders = $this->workspaceReminderQuery($workspace, $currencyId)
             ->where('status', ReminderLog::STATUS_FAILED)
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
@@ -455,7 +507,7 @@ class WorkspaceDashboardService
             ];
         }
 
-        $dueSoon = $this->balanceQuery($workspace)
+        $dueSoon = $this->balanceQuery($workspace, $currencyId)
             ->whereBetween('invoices.due_date', [now()->toDateString(), now()->addDays(7)->toDateString()])
             ->whereRaw("{$remainingBalance} > 0")
             ->count();
@@ -508,24 +560,85 @@ class WorkspaceDashboardService
         ];
     }
 
-    private function balanceQuery(Workspace $workspace): Builder
+    /**
+     * @return Collection<int, Currency>
+     */
+    private function dashboardCurrencies(Workspace $workspace): Collection
+    {
+        return Currency::withTrashed()
+            ->where(function (Builder $query) use ($workspace): void {
+                if ($workspace->currency_id !== null) {
+                    $query->whereKey($workspace->currency_id);
+                }
+
+                $query->orWhereHas('invoices', function (Builder $invoiceQuery) use ($workspace): void {
+                    $invoiceQuery->where('invoices.workspace_id', $workspace->id);
+                });
+            })
+            ->orderBy('code')
+            ->get();
+    }
+
+    /**
+     * @param  Collection<int, Currency>  $currencies
+     */
+    private function resolveCurrencyId(Workspace $workspace, Collection $currencies, ?int $currencyId): ?int
+    {
+        if ($currencyId !== null && $currencies->contains('id', $currencyId)) {
+            return $currencyId;
+        }
+
+        if ($workspace->currency_id !== null && $currencies->contains('id', $workspace->currency_id)) {
+            return (int) $workspace->currency_id;
+        }
+
+        return $currencies->first()?->id;
+    }
+
+    private function balanceQuery(Workspace $workspace, ?int $currencyId): Builder
     {
         return Invoice::query()
             ->from('invoices')
-            ->leftJoinSub($this->paymentTotals($workspace), 'dashboard_payment_totals', function ($join): void {
+            ->leftJoinSub($this->paymentTotals($workspace, $currencyId), 'dashboard_payment_totals', function (JoinClause $join): void {
                 $join->on('dashboard_payment_totals.invoice_id', '=', 'invoices.id');
             })
             ->where('invoices.workspace_id', $workspace->id)
+            ->when($currencyId !== null, fn (Builder $query) => $query->where('invoices.currency_id', $currencyId))
             ->whereIn('invoices.status', self::DEBT_STATUSES);
     }
 
-    private function paymentTotals(Workspace $workspace): Builder
+    private function workspacePaymentQuery(Workspace $workspace, ?int $currencyId): Builder
     {
         return Payment::query()
-            ->select('invoice_id')
+            ->where('payments.workspace_id', $workspace->id)
+            ->whereExists(function (QueryBuilder $query) use ($currencyId): void {
+                $query->selectRaw('1')
+                    ->from('invoices')
+                    ->whereColumn('invoices.id', 'payments.invoice_id')
+                    ->whereColumn('invoices.workspace_id', 'payments.workspace_id')
+                    ->when($currencyId !== null, fn (QueryBuilder $invoiceQuery) => $invoiceQuery->where('invoices.currency_id', $currencyId));
+            });
+    }
+
+    private function workspaceReminderQuery(Workspace $workspace, ?int $currencyId): Builder
+    {
+        return ReminderLog::query()
+            ->where('reminder_logs.workspace_id', $workspace->id)
+            ->whereExists(function (QueryBuilder $query) use ($currencyId): void {
+                $query->selectRaw('1')
+                    ->from('invoices')
+                    ->whereColumn('invoices.id', 'reminder_logs.invoice_id')
+                    ->whereColumn('invoices.workspace_id', 'reminder_logs.workspace_id')
+                    ->when($currencyId !== null, fn (QueryBuilder $invoiceQuery) => $invoiceQuery->where('invoices.currency_id', $currencyId));
+            });
+    }
+
+    private function paymentTotals(Workspace $workspace, ?int $currencyId): Builder
+    {
+        return $this->workspacePaymentQuery($workspace, $currencyId)
+            ->select('payments.invoice_id')
             ->selectRaw('COALESCE(SUM(amount), 0) as paid_amount')
-            ->where('workspace_id', $workspace->id)
-            ->groupBy('invoice_id');
+            ->groupBy('payments.invoice_id');
     }
 
     private function groupedAmountRows(Builder $query, string $dateColumn, string $amountColumn, bool $daily): Collection

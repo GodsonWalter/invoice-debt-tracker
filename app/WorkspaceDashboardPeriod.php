@@ -16,9 +16,15 @@ final readonly class WorkspaceDashboardPeriod
 
     public const THIS_YEAR = 'this_year';
 
+    public const TODAY = 'today';
+
+    public const LAST_7_DAYS = 'last_7_days';
+
     public const CUSTOM = 'custom';
 
     public const DEFAULT = self::LAST_6_MONTHS;
+
+    public const DASHBOARD_DEFAULT = self::TODAY;
 
     public const MAX_CUSTOM_RANGE_DAYS = 366;
 
@@ -49,6 +55,8 @@ final readonly class WorkspaceDashboardPeriod
             self::LAST_3_MONTHS,
             self::LAST_6_MONTHS,
             self::THIS_YEAR,
+            self::TODAY,
+            self::LAST_7_DAYS,
             self::CUSTOM,
         ], true)) {
             $period = self::DEFAULT;
@@ -95,11 +103,28 @@ final readonly class WorkspaceDashboardPeriod
                 $now->subYear()->endOfYear(),
                 'Previous calendar year',
             ],
+            self::TODAY => [
+                $now->startOfDay(),
+                $now->endOfDay(),
+                'Today',
+                $now->subDay()->startOfDay(),
+                $now->subDay()->endOfDay(),
+                'Yesterday',
+            ],
+            self::LAST_7_DAYS => [
+                $now->subDays(6)->startOfDay(),
+                $now->endOfDay(),
+                'Last 7 days',
+                $now->subDays(13)->startOfDay(),
+                $now->subDays(7)->endOfDay(),
+                'Previous 7 days',
+            ],
             self::CUSTOM => self::customRange($startDate, $endDate, $timezone),
             default => self::fromInput(self::DEFAULT, now: $now)->asTuple(),
         };
 
-        $granularity = $period === self::CUSTOM && $start->startOfDay()->diffInDays($end->startOfDay()) < 31
+        $granularity = in_array($period, [self::TODAY, self::LAST_7_DAYS], true)
+            || ($period === self::CUSTOM && $start->startOfDay()->diffInDays($end->startOfDay()) < 31)
             ? 'day'
             : 'month';
 

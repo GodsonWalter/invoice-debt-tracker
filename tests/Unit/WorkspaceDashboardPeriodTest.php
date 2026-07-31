@@ -80,6 +80,25 @@ test('custom dashboard periods are inclusive and use daily chart buckets for sho
         ->and($dashboardPeriod->granularity)->toBe('day');
 });
 
+test('short platform dashboard periods use inclusive daily boundaries', function (): void {
+    $today = WorkspaceDashboardPeriod::fromInput(WorkspaceDashboardPeriod::TODAY, now: dashboardPeriodNow());
+    $lastSevenDays = WorkspaceDashboardPeriod::fromInput(WorkspaceDashboardPeriod::LAST_7_DAYS, now: dashboardPeriodNow());
+
+    expect($today->start->toDateTimeString())->toBe('2026-07-29 00:00:00')
+        ->and($today->end->toDateTimeString())->toBe('2026-07-29 23:59:59')
+        ->and($today->comparisonStart->toDateTimeString())->toBe('2026-07-28 00:00:00')
+        ->and($today->comparisonEnd->toDateTimeString())->toBe('2026-07-28 23:59:59')
+        ->and($today->label)->toBe('Today')
+        ->and($today->granularity)->toBe('day')
+        ->and($lastSevenDays->start->toDateTimeString())->toBe('2026-07-23 00:00:00')
+        ->and($lastSevenDays->end->toDateTimeString())->toBe('2026-07-29 23:59:59')
+        ->and((int) $lastSevenDays->start->diffInDays($lastSevenDays->end->startOfDay()))->toBe(6)
+        ->and($lastSevenDays->comparisonStart->toDateTimeString())->toBe('2026-07-16 00:00:00')
+        ->and($lastSevenDays->comparisonEnd->toDateTimeString())->toBe('2026-07-22 23:59:59')
+        ->and($lastSevenDays->label)->toBe('Last 7 days')
+        ->and($lastSevenDays->granularity)->toBe('day');
+});
+
 test('a one-day custom period remains inclusive and uses a single daily bucket', function (): void {
     $dashboardPeriod = WorkspaceDashboardPeriod::fromInput(
         WorkspaceDashboardPeriod::CUSTOM,
