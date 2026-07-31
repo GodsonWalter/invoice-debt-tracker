@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\PlatformUserManagementService;
 use App\Services\UserAccountService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -44,6 +45,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('delete-own-account', function (?User $user): bool {
             return $user instanceof User
                 && app(UserAccountService::class)->canDeleteAccount($user);
+        });
+
+        Gate::define('manage-platform-users', function (?User $user): bool {
+            return $user instanceof User && $user->canManagePlatformUsers();
+        });
+
+        Gate::define('manage-platform-user-target', function (User $user, User $target): bool {
+            return app(PlatformUserManagementService::class)->canModifyTarget($user, $target);
         });
     }
 }

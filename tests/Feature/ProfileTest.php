@@ -83,7 +83,12 @@ test('a deleted user cannot authenticate or use a stale session', function (): v
     $this->post('/login', [
         'email' => $user->email,
         'password' => 'password',
-    ])->assertSessionHasErrors('email');
+    ])->assertRedirect(route('account.status'));
+
+    $this->get(route('account.status'))
+        ->assertOk()
+        ->assertSee('Your account has been deleted')
+        ->assertSee('Please contact the support team');
 
     $this->actingAs($user)->get('/profile')->assertOk();
     $user->delete();

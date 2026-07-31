@@ -71,6 +71,14 @@
             </li>
         @endif
 
+        @can('manage-platform-users')
+            <li class="nav-item">
+                <a href="{{ route('platform.users.index') }}" class="nav-link">
+                    <i class="fa-solid fa-user-gear fa-fw"></i> <span>Platform Users</span>
+                </a>
+            </li>
+        @endcan
+
         @if (in_array(Auth::user()?->role, ['owner', 'admin'], true))
             <li class="nav-item">
                 <a href="{{ route('currencies.index') }}" class="nav-link">

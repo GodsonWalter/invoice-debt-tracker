@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserRecoveryController;
 use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
@@ -36,7 +37,7 @@ Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
     Route::get('/{token}/print', [PublicInvoiceController::class, 'print'])->middleware('signed')->name('print');
 });
 
-Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {
+Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resolve.workspace'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // AI Query routes
@@ -163,26 +164,35 @@ Route::middleware(['auth', 'verified', 'workspace.active', 'resolve.workspace'])
     });
 });
 
-Route::domain(config('app.base_domain'))->middleware(['auth', 'verified'])->prefix('recovery')->name('workspace.recovery.')->group(function () {
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified'])->prefix('recovery')->name('workspace.recovery.')->group(function () {
     Route::get('/', [WorkspaceRecoveryController::class, 'index'])->name('index');
     Route::get('/{workspaceId}', [WorkspaceRecoveryController::class, 'show'])->name('show');
     Route::get('/{workspaceId}/audit', [WorkspaceRecoveryController::class, 'audit'])->name('audit');
     Route::post('/{workspaceId}/restore', [WorkspaceRecoveryController::class, 'restore'])->name('restore');
 });
 
-Route::domain(config('app.base_domain'))->middleware(['auth', 'verified', 'can:manage-platform-workspace-recovery'])->prefix('platform/workspace-recovery')->name('platform.recovery.')->group(function () {
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:manage-platform-workspace-recovery'])->prefix('platform/workspace-recovery')->name('platform.recovery.')->group(function () {
     Route::get('/', [PlatformWorkspaceRecoveryController::class, 'index'])->name('index');
     Route::get('/audits', [PlatformWorkspaceRecoveryController::class, 'audits'])->name('audits');
     Route::get('/{workspaceId}', [PlatformWorkspaceRecoveryController::class, 'show'])->name('show');
     Route::post('/{workspaceId}/restore', [PlatformWorkspaceRecoveryController::class, 'restore'])->name('restore');
 });
 
-Route::domain(config('app.base_domain'))->middleware(['auth', 'verified', 'can:manage-platform-user-recovery'])->prefix('platform/user-recovery')->name('platform.user-recovery.')->group(function () {
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:manage-platform-user-recovery'])->prefix('platform/user-recovery')->name('platform.user-recovery.')->group(function () {
     Route::get('/', [PlatformUserRecoveryController::class, 'index'])->name('index');
     Route::get('/{userId}', [PlatformUserRecoveryController::class, 'show'])->name('show');
     Route::post('/{userId}/restore', [PlatformUserRecoveryController::class, 'restore'])
         ->middleware('throttle:10,1')
         ->name('restore');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'can:manage-platform-users'])->prefix('platform/users')->name('platform.users.')->group(function () {
+    Route::get('/', [PlatformUserController::class, 'index'])->name('index');
+    Route::get('/create', [PlatformUserController::class, 'create'])->name('create');
+    Route::post('/', [PlatformUserController::class, 'store'])->name('store');
+    Route::get('/{user}/edit', [PlatformUserController::class, 'edit'])->name('edit');
+    Route::put('/{user}', [PlatformUserController::class, 'update'])->name('update');
+    Route::delete('/{user}', [PlatformUserController::class, 'destroy'])->name('destroy');
 });
 
 // system currency management routes
@@ -205,6 +215,6 @@ Route::domain(config('app.base_domain'))->prefix('currencies')->name('currencies
 // Invitation acceptance route (requires login)
 Route::get('/invitations/accept/{token}', [WorkspaceUserController::class, 'acceptInvitation'])
     ->name('workspace.users.accept')
-    ->middleware('auth');
+    ->middleware(['auth', 'active.user']);
 
 require __DIR__.'/auth.php';

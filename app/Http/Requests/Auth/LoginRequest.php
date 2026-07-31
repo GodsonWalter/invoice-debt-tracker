@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -38,12 +40,21 @@ class LoginRequest extends FormRequest
      *
      * @throws ValidationException
      */
-    public function authenticate(): void
+    public function authenticate(): ?string
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt(
+            array_merge($this->only('email', 'password'), ['is_active' => true]),
+            $this->boolean('remember'),
+        )) {
             RateLimiter::hit($this->throttleKey());
+
+            $accountStatus = $this->inactiveAccountStatus();
+
+            if ($accountStatus !== null) {
+                return $accountStatus;
+            }
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -51,6 +62,22 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        return null;
+    }
+
+    /**
+     * Determine whether valid credentials belong to an unavailable account.
+     */
+    private function inactiveAccountStatus(): ?string
+    {
+        $user = User::withTrashed()->where('email', $this->string('email'))->first();
+
+        if (! $user || ! Hash::check($this->string('password'), $user->password)) {
+            return null;
+        }
+
+        return $user->trashed() ? 'deleted' : (! $user->is_active ? 'deactivated' : null);
     }
 
     /**

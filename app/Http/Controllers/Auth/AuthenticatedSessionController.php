@@ -24,7 +24,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        $accountStatus = $request->authenticate();
+
+        if ($accountStatus !== null) {
+            return redirect()->route('account.status')->with('account_status', $accountStatus);
+        }
 
         $request->session()->regenerate();
 

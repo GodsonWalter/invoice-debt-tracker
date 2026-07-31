@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAuthorizeWorkspaceUser;
 use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
 use App\Http\Middleware\ResolveWorkspace;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'active.user' => EnsureUserIsActive::class,
             'workspace.active' => EnsureWorkspaceIsActive::class,
             'resolve.workspace' => ResolveWorkspace::class,
             'authorized-workspace-user' => EnsureAuthorizeWorkspaceUser::class,

@@ -15,6 +15,10 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     public const PLATFORM_ROLE_OWNER = 'owner';
 
+    public const PLATFORM_ROLES = ['owner', 'admin', 'manager', 'staff', 'user'];
+
+    public const PLATFORM_MANAGEMENT_ROLES = ['owner', 'admin', 'manager', 'staff'];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -27,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'avatar',
         'address',
+        'is_active',
         'default_currency_id',
     ];
 
@@ -45,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -68,6 +74,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isPlatformOwner(): bool
     {
         return $this->role === self::PLATFORM_ROLE_OWNER;
+    }
+
+    public function canManagePlatformUsers(): bool
+    {
+        return in_array($this->role, self::PLATFORM_MANAGEMENT_ROLES, true);
     }
 
     public function defaultCurrency(): BelongsTo

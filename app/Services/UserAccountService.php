@@ -7,13 +7,24 @@ use App\Models\User;
 use App\Models\UserAccountAudit;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class UserAccountService
 {
     public const EVENT_DELETED = 'user_account_deleted';
 
+    public const EVENT_DELETED_BY_PLATFORM = 'user_account_deleted_by_platform';
+
     public const EVENT_RESTORED = 'user_account_restored';
+
+    private const ROLE_LEVELS = [
+        'user' => 0,
+        'staff' => 1,
+        'manager' => 2,
+        'admin' => 3,
+        'owner' => 4,
+    ];
 
     public function canRestoreDeletedUsers(User $actor): bool
     {
@@ -23,6 +34,21 @@ class UserAccountService
     public function canDeleteAccount(User $user): bool
     {
         return $user->role === 'user';
+    }
+
+    public function canManageTarget(User $actor, User $target): bool
+    {
+        if (! $actor->canManagePlatformUsers() || $actor->is($target)) {
+            return false;
+        }
+
+        return $actor->isPlatformOwner()
+            || $this->platformRoleLevel($actor->role) > $this->platformRoleLevel($target->role);
+    }
+
+    public function platformRoleLevel(?string $role): int
+    {
+        return self::ROLE_LEVELS[$role] ?? -1;
     }
 
     public function softDelete(User $user): void
@@ -60,6 +86,54 @@ class UserAccountService
         $user->setRememberToken(null);
     }
 
+    public function softDeleteManagedUser(User $actor, User $target): void
+    {
+        if (! $this->canManageTarget($actor, $target)) {
+            throw new AuthorizationException('You are not authorized to delete this platform account.');
+        }
+
+        DB::transaction(function () use ($actor, $target): void {
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($target->id);
+
+            $this->assertCanDeactivate($lockedUser);
+            $this->syncOwnedWorkspaces($lockedUser, false);
+            $this->revokeUserSessionsAndTokens($lockedUser);
+            $this->recordAudit(
+                target: $lockedUser,
+                actor: $actor,
+                actorType: 'platform_management',
+                event: self::EVENT_DELETED_BY_PLATFORM,
+                metadata: ['session_driver' => config('session.driver')],
+            );
+
+            $lockedUser->forceFill([
+                'is_active' => false,
+                'remember_token' => null,
+            ])->save();
+            $lockedUser->delete();
+        });
+
+        $target->setRememberToken(null);
+    }
+
+    public function assertCanDeactivate(User $target): void
+    {
+        if ($target->isPlatformOwner() && ! User::query()
+            ->where('role', User::PLATFORM_ROLE_OWNER)
+            ->where('is_active', true)
+            ->whereKeyNot($target->id)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'is_active' => 'At least one active platform owner must remain.',
+            ]);
+        }
+    }
+
+    public function syncOwnedWorkspaces(User $user, bool $active): void
+    {
+        $user->ownedWorkspaces()->update(['is_active' => $active]);
+    }
+
     public function restoreDeletedUser(User $actor, int $userId, ?string $reason = null): User
     {
         if (! $this->canRestoreDeletedUsers($actor)) {
@@ -74,6 +148,8 @@ class UserAccountService
             }
 
             $deletedUser->restore();
+            $deletedUser->forceFill(['is_active' => true])->save();
+            $this->syncOwnedWorkspaces($deletedUser, true);
             $this->recordAudit(
                 target: $deletedUser,
                 actor: $actor,
