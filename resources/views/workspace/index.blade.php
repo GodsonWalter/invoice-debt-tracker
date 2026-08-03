@@ -110,7 +110,7 @@
         </div>
 
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="card-header bg-white border-0 px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2" aria-live="polite">
                 <div>
                     <h2 class="h6 fw-bold mb-1">Workspace list</h2>
                     <p class="text-muted small mb-0">View workspace membership, status, and available actions.</p>

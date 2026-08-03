@@ -3,140 +3,172 @@
 @section('page_title', 'Invoices')
 
 @section('content')
+    @php
+        $statusOptions = collect($statuses)->mapWithKeys(fn (string $status): array => [$status => ucfirst($status)])->all();
+        $sortOptions = [
+            'created_at' => 'Created date',
+            'invoice_number' => 'Invoice number',
+            'issue_date' => 'Issue date',
+            'due_date' => 'Due date',
+            'total_amount' => 'Total amount',
+            'status' => 'Status',
+        ];
+    @endphp
+
     <div class="container-fluid py-2">
-        <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-                <h2 class="fs-4 fw-bold text-dark mb-1">Invoices</h2>
-                <p class="text-muted small mb-0">Manage invoices for <strong>{{ $workspace->name }}</strong>.</p>
+                <h1 class="fs-4 fw-bold mb-1">Invoices</h1>
+                <p class="text-muted mb-0">Manage invoices for <strong>{{ $workspace->name }}</strong>.</p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('clients.index', $workspace) }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Back to Clients
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('clients.index', $workspace) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Clients
                 </a>
-                <a href="{{ route('invoices.create', $workspace) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Add Invoice
+                <a href="{{ route('invoices.create', $workspace) }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add invoice
                 </a>
             </div>
         </div>
 
-        <div class="card border-light shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-white p-4 border-bottom">
-                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                    <h5 class="fw-bold text-dark mb-0 fs-6">Invoice List</h5>
-                    <form method="GET" action="{{ route('invoices.index', $workspace) }}" class="d-flex flex-wrap gap-2 align-items-center">
-                        <label class="visually-hidden" for="invoice-search">Search invoices</label>
-                        <input type="search" id="invoice-search" name="search" value="{{ $filters['search'] }}"
-                            class="form-control form-control-sm" placeholder="Invoice or client..." style="max-width: 200px;">
-                        <select name="status" class="form-select form-select-sm" aria-label="Filter invoice status">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ route('invoices.index', $workspace) }}" class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label for="invoice-search" class="form-label">Search</label>
+                        <input id="invoice-search" type="search" name="search" value="{{ $filters['search'] ?? '' }}"
+                            class="form-control" maxlength="100" placeholder="Invoice number or client">
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="invoice-status" class="form-label">Status</label>
+                        <select id="invoice-status" name="status" class="form-select">
                             <option value="">All statuses</option>
-                            @foreach ($statuses as $status)
-                                <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ ucfirst($status) }}</option>
+                            @foreach ($statusOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <select name="sort" class="form-select form-select-sm" aria-label="Sort invoices">
-                            <option value="created_at" @selected($filters['sort'] === 'created_at')>Newest</option>
-                            <option value="invoice_number" @selected($filters['sort'] === 'invoice_number')>Invoice number</option>
-                            <option value="issue_date" @selected($filters['sort'] === 'issue_date')>Issue date</option>
-                            <option value="due_date" @selected($filters['sort'] === 'due_date')>Due date</option>
-                            <option value="total_amount" @selected($filters['sort'] === 'total_amount')>Total</option>
-                            <option value="status" @selected($filters['sort'] === 'status')>Status</option>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="invoice-sort" class="form-label">Sort by</label>
+                        <select id="invoice-sort" name="sort" class="form-select">
+                            @foreach ($sortOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['sort'] ?? 'created_at') === $value)>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
                         </select>
-                        <select name="direction" class="form-select form-select-sm" aria-label="Sort direction">
-                            <option value="desc" @selected($filters['direction'] === 'desc')>Descending</option>
-                            <option value="asc" @selected($filters['direction'] === 'asc')>Ascending</option>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="invoice-direction" class="form-label">Order</label>
+                        <select id="invoice-direction" name="direction" class="form-select">
+                            <option value="desc" @selected(($filters['direction'] ?? 'desc') === 'desc')>Desc</option>
+                            <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
                         </select>
-                        <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-search"></i> Apply</button>
-                        @if ($filters['search'] || $filters['status'] || $filters['sort'] !== 'created_at' || $filters['direction'] !== 'desc')
-                            <a href="{{ route('invoices.index', $workspace) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    </div>
+                    <div class="col-sm-6 col-lg-2 d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-grow-1" type="submit">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        @if (($filters['search'] ?? '') || ($filters['status'] ?? '') || ($filters['sort'] ?? 'created_at') !== 'created_at' || ($filters['direction'] ?? 'desc') !== 'desc')
+                            <a href="{{ route('invoices.index', $workspace) }}" class="btn btn-outline-secondary">Reset</a>
                         @endif
-                    </form>
-                </div>
-            </div>
-
-            <div class="card-body p-3 p-md-4">
-                @if ($invoices->isEmpty())
-                    <div class="text-center py-5 text-muted">
-                        <p class="mb-1">No invoices found.</p>
-                        <a href="{{ route('invoices.create', $workspace) }}" class="btn btn-sm btn-primary">Create your first
-                            invoice</a>
                     </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0" id="invoice-table">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="px-4 py-3">SN</th>
-                                    <th class="px-4 py-3">Invoice #</th>
-                                    <th class="px-4 py-3">Client</th>
-                                    <th class="px-4 py-3">Issue Date</th>
-                                    <th class="px-4 py-3">Due Date</th>
-                                    <th class="px-4 py-3">Status</th>
-                                    <th class="text-end px-4 py-3">Total</th>
-                                    <th class="text-end px-4 py-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($invoices as $key => $invoice)
-                                    <tr>
-                                        <td class="px-4 py-3">{{ $invoices->firstItem() + $key }}</td>
-                                        <td class="px-4 py-3">{{ $invoice->invoice_number }}</td>
-                                        <td class="px-4 py-3">{{ $invoice->client?->name ?? '—' }}</td>
-                                        <td class="px-4 py-3">{{ $invoice->issue_date->format('Y-m-d') }}</td>
-                                        <td class="px-4 py-3">{{ $invoice->due_date->format('Y-m-d') }}</td>
-                                        <td class="px-4 py-3">
-                                            @php
-                                                $badge = match ($invoice->status) {
-                                                    'draft' => 'secondary',
-                                                    'sent' => 'info',
-                                                    'partial' => 'warning',
-                                                    'paid' => 'success',
-                                                    'overdue' => 'danger',
-                                                    default => 'secondary'
-                                                };
-                                            @endphp
-                                            <span class="badge bg-{{ $badge }}">{{ ucfirst($invoice->status) }}</span>
-                                        </td>
-                                        <td class="text-end px-4 py-3">{{ $invoice->formatMoney($invoice->total_amount) }}</td>
-                                        <td class="text-end px-4 py-3">
-                                            <a href="{{ route('invoices.show', [$workspace, $invoice]) }}"
-                                                class="btn btn-sm btn-outline-primary me-1" title="View">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}"
-                                                class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}"
-                                                class="btn btn-sm btn-outline-primary me-1" title="Download PDF">
-                                                <i class="bi bi-file-earmark-pdf"></i>
-                                            </a>
-                                            <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST"
-                                                class="d-inline-block me-1">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-primary" title="Send Invoice">
-                                                    <i class="bi bi-send"></i>
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST"
-                                                class="d-inline-block" data-delete-confirm>
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i
-                                                        class="bi bi-trash"></i></button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card-footer d-flex justify-content-end">
-                        {{ $invoices->links() ?? '' }}
-                    </div>
-                @endif
+                </form>
             </div>
         </div>
-    </div>
 
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h6 fw-bold mb-1">Invoice list</h2>
+                    <p class="text-muted small mb-0">Review invoice status, dates, totals, and available actions.</p>
+                </div>
+                @if ($invoices->total() > 0)
+                    <span class="text-muted small">Showing {{ $invoices->firstItem() }}–{{ $invoices->lastItem() }} of {{ $invoices->total() }}</span>
+                @endif
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="invoice-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Invoice</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Issue date</th>
+                            <th scope="col">Due date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-end">Total</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($invoices as $invoice)
+                            @php
+                                $statusTone = match ($invoice->status) {
+                                    'draft' => 'secondary',
+                                    'sent' => 'info',
+                                    'partial' => 'warning',
+                                    'paid' => 'success',
+                                    'overdue' => 'danger',
+                                    default => 'secondary',
+                                };
+                            @endphp
+                            <tr>
+                                <th scope="row">{{ ($invoices->firstItem() ?? 1) + $loop->index }}</th>
+                                <td class="fw-semibold">{{ $invoice->invoice_number }}</td>
+                                <td>{{ $invoice->client?->name ?? '—' }}</td>
+                                <td>{{ $invoice->issue_date?->format('Y-m-d') ?? '—' }}</td>
+                                <td>{{ $invoice->due_date?->format('Y-m-d') ?? '—' }}</td>
+                                <td><span class="badge text-bg-{{ $statusTone }}">{{ ucfirst($invoice->status) }}</span></td>
+                                <td class="text-end text-nowrap">{{ $invoice->formatMoney($invoice->total_amount) }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ route('invoices.show', [$workspace, $invoice]) }}"
+                                        class="btn btn-sm btn-outline-primary" title="View invoice">
+                                        <i class="bi bi-eye me-1"></i> View
+                                    </a>
+                                    <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Edit invoice">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit
+                                    </a>
+                                    <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}"
+                                        class="btn btn-sm btn-outline-primary" title="Download PDF">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                    </a>
+                                    <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-primary" title="Send invoice">
+                                            <i class="bi bi-send me-1"></i> Send
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST" class="d-inline"
+                                        data-delete-confirm>
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete invoice">
+                                            <i class="bi bi-trash me-1"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="bi bi-receipt fs-3 d-block mb-2"></i>
+                                    No invoices match these filters.
+                                    <div class="mt-3">
+                                        <a href="{{ route('invoices.create', $workspace) }}" class="btn btn-sm btn-primary">Create invoice</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($invoices->hasPages())
+                <div class="card-footer bg-white">{{ $invoices->withQueryString()->links() }}</div>
+            @endif
+        </div>
+    </div>
 @endsection

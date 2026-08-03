@@ -3,213 +3,134 @@
 @section('page_title', 'Clients')
 
 @section('content')
+    @php
+        $sortOptions = [
+            'created_at' => 'Created date',
+            'name' => 'Name',
+            'email' => 'Email',
+            'phone' => 'Phone',
+        ];
+    @endphp
+
     <div class="container-fluid py-2">
-        <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-                <h2 class="fs-4 fw-bold text-dark mb-1">Clients</h2>
-                <p class="text-muted small mb-0">Manage your clients for <strong>{{ $workspace->name }}</strong>.</p>
+                <h1 class="fs-4 fw-bold mb-1">Clients</h1>
+                <p class="text-muted mb-0">Manage clients for <strong>{{ $workspace->name }}</strong>.</p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('workspace.show', $workspace) }}" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Back to Workspace
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('workspace.show', $workspace) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Workspace
                 </a>
-                <a href="{{ route('clients.create', $workspace) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Add Client
+                <a href="{{ route('clients.create', $workspace) }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add client
                 </a>
             </div>
         </div>
 
-        <div class="card border-light shadow-sm rounded-4 overflow-hidden">
-            <div
-                class="card-header bg-white p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0 fs-6">Client List</h5>
-                <form method="GET" action="{{ route('clients.index', $workspace) }}" class="d-flex flex-wrap gap-2 align-items-center">
-                    <label class="visually-hidden" for="client-search">Search clients</label>
-                    <input type="search" id="client-search" name="search" value="{{ $filters['search'] }}"
-                        class="form-control form-control-sm" placeholder="Search clients..." style="max-width: 220px;">
-                    <select name="sort" class="form-select form-select-sm" aria-label="Sort clients">
-                        <option value="created_at" @selected($filters['sort'] === 'created_at')>Newest</option>
-                        <option value="name" @selected($filters['sort'] === 'name')>Name</option>
-                        <option value="email" @selected($filters['sort'] === 'email')>Email</option>
-                        <option value="phone" @selected($filters['sort'] === 'phone')>Phone</option>
-                    </select>
-                    <select name="direction" class="form-select form-select-sm" aria-label="Sort direction">
-                        <option value="desc" @selected($filters['direction'] === 'desc')>Descending</option>
-                        <option value="asc" @selected($filters['direction'] === 'asc')>Ascending</option>
-                    </select>
-                    <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-search"></i> Apply</button>
-                    @if ($filters['search'] || $filters['sort'] !== 'created_at' || $filters['direction'] !== 'desc')
-                        <a href="{{ route('clients.index', $workspace) }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-                    @endif
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ route('clients.index', $workspace) }}" class="row g-3 align-items-end">
+                    <div class="col-lg-5">
+                        <label for="client-search" class="form-label">Search</label>
+                        <input id="client-search" type="search" name="search" value="{{ $filters['search'] ?? '' }}"
+                            class="form-control" maxlength="100" placeholder="Name, email, phone, or address">
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label for="client-sort" class="form-label">Sort by</label>
+                        <select id="client-sort" name="sort" class="form-select">
+                            @foreach ($sortOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['sort'] ?? 'created_at') === $value)>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2">
+                        <label for="client-direction" class="form-label">Order</label>
+                        <select id="client-direction" name="direction" class="form-select">
+                            <option value="desc" @selected(($filters['direction'] ?? 'desc') === 'desc')>Desc</option>
+                            <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-2 d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-grow-1" type="submit">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        @if (($filters['search'] ?? '') || ($filters['sort'] ?? 'created_at') !== 'created_at' || ($filters['direction'] ?? 'desc') !== 'desc')
+                            <a href="{{ route('clients.index', $workspace) }}" class="btn btn-outline-secondary">Reset</a>
+                        @endif
+                    </div>
                 </form>
             </div>
+        </div>
 
-            <div class="card-body p-3 p-md-4">
-                @if ($clients->isEmpty())
-                    <div class="text-center py-5 text-muted">
-                        <p class="mb-1">No clients found.</p>
-                        <a href="{{ route('clients.create', $workspace) }}" class="btn btn-sm btn-primary">
-                            Add your first client
-                        </a>
-                    </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="sn"
-                                        style="cursor: pointer;">SN
-                                        <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                    </th>
-                                     <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="name"
-                                    style="cursor: pointer;">
-                                    Name <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                    
-                                </th>
-                                
-                                <th scope="col" class="px-4 py-3 sortable cursor-pointer" data-column="phone"
-                                    style="cursor: pointer;">
-                                    Phone <i class="bi bi-chevron-expand ms-1" style="font-size: 0.75rem;"></i>
-                                </th>
-                                    <th scope="col" class="text-end px-4 py-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($clients as $key => $client)
-                                    <tr>
-                                        <th scope="row">{{ $clients->firstItem() + $key }}</th>
-                                        <td>
-                                            {{ $client->name }}
-                                        </td>                                       
-                                        <td>
-                                            {{ $client->phone ?: '—' }}
-                                        </td>
-
-                                       <td class="px-4 py-3 text-end">
-                                            <a href="{{ route('clients.show', [$workspace, $client]) }}"
-                                                class="btn btn-sm btn-outline-primary me-1" title="View">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a href="{{ route('clients.edit', [$workspace, $client]) }}"
-                                                class="btn btn-sm btn-outline-secondary me-1" title="Edit">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <form action="{{ route('clients.destroy', [$workspace, $client]) }}" method="POST"
-                                                class="d-inline-block" data-delete-confirm>
-                                                @csrf
-                                                
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card-footer d-flex justify-content-end">
-                        {{ $clients->links() ?? '' }}
-                    </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h6 fw-bold mb-1">Client list</h2>
+                    <p class="text-muted small mb-0">Review customer contact information and account actions.</p>
+                </div>
+                @if ($clients->total() > 0)
+                    <span class="text-muted small">Showing {{ $clients->firstItem() }}–{{ $clients->lastItem() }} of {{ $clients->total() }}</span>
                 @endif
             </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($clients as $client)
+                            <tr>
+                                <th scope="row">{{ ($clients->firstItem() ?? 1) + $loop->index }}</th>
+                                <td class="fw-semibold">{{ $client->name }}</td>
+                                <td>{{ $client->email ?: '—' }}</td>
+                                <td>{{ $client->phone ?: '—' }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ route('clients.show', [$workspace, $client]) }}"
+                                        class="btn btn-sm btn-outline-primary" title="View client">
+                                        <i class="bi bi-eye me-1"></i> View
+                                    </a>
+                                    <a href="{{ route('clients.edit', [$workspace, $client]) }}"
+                                        class="btn btn-sm btn-outline-secondary" title="Edit client">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit
+                                    </a>
+                                    <form action="{{ route('clients.destroy', [$workspace, $client]) }}" method="POST" class="d-inline"
+                                        data-delete-confirm>
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete client">
+                                            <i class="bi bi-trash me-1"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="bi bi-people fs-3 d-block mb-2"></i>
+                                    No clients match these filters.
+                                    <div class="mt-3">
+                                        <a href="{{ route('clients.create', $workspace) }}" class="btn btn-sm btn-primary">Add client</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($clients->hasPages())
+                <div class="card-footer bg-white">{{ $clients->withQueryString()->links() }}</div>
+            @endif
         </div>
     </div>
-
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                setupTableSearch('search-box', 'table');
-                setupTableSorting('table');
-            });
-
-            function setupTableSearch(searchInputId, tableSelector) {
-                const searchInput = document.getElementById(searchInputId);
-                const table = document.querySelector(tableSelector);
-
-                if (!searchInput || !table) {
-                    return;
-                }
-
-                const tbody = table.querySelector('tbody');
-
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.trim().toLowerCase();
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                    rows.forEach((row) => {
-                        const cells = Array.from(row.querySelectorAll('td'));
-                        const rowText = cells
-                            .map((cell) => cell.textContent.toLowerCase())
-                            .join(' ');
-
-                        row.style.display = searchTerm === '' || rowText.includes(searchTerm) ? '' : 'none';
-                    });
-                });
-            }
-
-            function setupTableSorting(tableSelector) {
-                const table = document.querySelector(tableSelector);
-
-                if (!table) {
-                    return;
-                }
-
-                const headers = Array.from(table.querySelectorAll('th.sortable'));
-                let currentHeader = null;
-                let ascending = true;
-
-                headers.forEach((header) => {
-                    header.addEventListener('click', () => {
-                        const columnIndex = Array.prototype.indexOf.call(header.parentNode.children, header) + 1;
-
-                        if (currentHeader === header) {
-                            ascending = !ascending;
-                        } else {
-                            currentHeader = header;
-                            ascending = true;
-                        }
-
-                        sortTable(table, columnIndex, ascending);
-                        updateSortIndicators(headers, currentHeader, ascending);
-                    });
-                });
-            }
-
-            function sortTable(table, columnIndex, ascending) {
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                rows.sort((a, b) => {
-                    const aCell = a.querySelector(`td:nth-child(${columnIndex})`);
-                    const bCell = b.querySelector(`td:nth-child(${columnIndex})`);
-                    const aValue = aCell ? aCell.textContent.trim() : '';
-                    const bValue = bCell ? bCell.textContent.trim() : '';
-
-                    const comparison = aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' });
-                    return ascending ? comparison : -comparison;
-                });
-
-                rows.forEach((row) => tbody.appendChild(row));
-            }
-
-            function updateSortIndicators(headers, activeHeader, ascending) {
-                headers.forEach((header) => {
-                    const icon = header.querySelector('i');
-
-                    if (!icon) {
-                        return;
-                    }
-
-                    if (header === activeHeader) {
-                        icon.className = ascending ? 'bi bi-sort-up ms-1' : 'bi bi-sort-down ms-1';
-                    } else {
-                        icon.className = 'bi bi-chevron-expand ms-1';
-                    }
-                });
-            }
-        </script>
-    @endpush
 @endsection
