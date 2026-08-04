@@ -6,10 +6,13 @@ use App\Services\MoneyCalculator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
+    use SoftDeletes;
+
     public const STATUS_DRAFT = 'draft';
 
     public const STATUS_SENT = 'sent';
@@ -19,6 +22,8 @@ class Invoice extends Model
     public const STATUS_PAID = 'paid';
 
     public const STATUS_OVERDUE = 'overdue';
+
+    public const STATUS_VOID = 'void';
 
     public const REMINDER_STATUS_NOT_DUE = 'not_due';
 
@@ -34,6 +39,7 @@ class Invoice extends Model
         self::STATUS_PARTIAL,
         self::STATUS_PAID,
         self::STATUS_OVERDUE,
+        self::STATUS_VOID,
     ];
 
     public const REMINDER_STATUSES = [
@@ -53,6 +59,9 @@ class Invoice extends Model
         'due_date',
         'status',
         'reminder_status',
+        'voided_at',
+        'voided_by',
+        'void_reason',
         'subtotal',
         'tax_amount',
         'discount_amount',
@@ -73,6 +82,7 @@ class Invoice extends Model
         'viewed_at' => 'datetime',
         'downloaded_at' => 'datetime',
         'printed_at' => 'datetime',
+        'voided_at' => 'datetime',
     ];
 
     protected static function booted(): void

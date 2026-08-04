@@ -129,6 +129,10 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
             Route::get('/', [InvoiceController::class, 'index'])->name('index');
             Route::get('/create', [InvoiceController::class, 'create'])->name('create');
             Route::post('/', [InvoiceController::class, 'store'])->name('store');
+            Route::get('/deleted', [InvoiceController::class, 'deleted'])->name('deleted');
+            Route::post('/{invoice}/restore', [InvoiceController::class, 'restore'])->name('restore');
+            Route::delete('/{invoice}/force-delete', [InvoiceController::class, 'forceDelete'])->name('force-delete');
+            Route::post('/{invoice}/void', [InvoiceController::class, 'void'])->name('void');
             Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
             Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
             Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');

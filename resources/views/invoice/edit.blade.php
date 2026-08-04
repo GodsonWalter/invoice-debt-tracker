@@ -3,11 +3,15 @@
 @section('page_title', 'Edit Invoice')
 
 @section('content')
+@php($paidInvoice = $invoice->status === \App\Models\Invoice::STATUS_PAID)
 <div class="container-fluid py-2">
     <div class="mb-4 d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
         <div>
             <h2 class="fs-4 fw-bold text-dark mb-1">Edit Invoice</h2>
             <p class="text-muted small mb-0">Update invoice {{ $invoice->invoice_number }}.</p>
+            @if ($paidInvoice)
+                <div class="alert alert-info mt-3 mb-0">Paid invoices are locked for financial fields. Only notes can be changed.</div>
+            @endif
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('invoices.show', [$workspace, $invoice]) }}" class="btn btn-secondary btn-sm">
@@ -33,7 +37,7 @@
 
                     <div class="col-12 col-md-6">
                         <label class="form-label">Client</label>
-                        <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" required>
+                        <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" required @disabled($paidInvoice)>
                             <option value="" disabled>Select client</option>
                             @foreach($clients as $client)
                                 <option value="{{ $client->id }}" {{ old('client_id', $invoice->client_id) == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
@@ -46,7 +50,7 @@
 
                     <div class="col-12 col-md-4">
                         <label class="form-label">Currency</label>
-                        <select name="currency_id" class="form-select @error('currency_id') is-invalid @enderror" required>
+                        <select name="currency_id" class="form-select @error('currency_id') is-invalid @enderror" required @disabled($paidInvoice)>
                             @foreach ($currencies as $currency)
                                 <option value="{{ $currency->id }}" {{ (string) old('currency_id', $invoice->currency_id ?? $workspace->currency_id) === (string) $currency->id ? 'selected' : '' }}>
                                     {{ $currency->code }} - {{ $currency->name }} ({{ $currency->symbol }})
@@ -60,7 +64,7 @@
 
                     <div class="col-12 col-md-4">
                         <label class="form-label">Issue Date</label>
-                        <input type="date" name="issue_date" class="form-control @error('issue_date') is-invalid @enderror" value="{{ old('issue_date', optional($invoice->issue_date)->format('Y-m-d')) }}" required>
+                        <input type="date" name="issue_date" class="form-control @error('issue_date') is-invalid @enderror" value="{{ old('issue_date', optional($invoice->issue_date)->format('Y-m-d')) }}" required @disabled($paidInvoice)>
                         @error('issue_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -68,7 +72,7 @@
 
                     <div class="col-12 col-md-4">
                         <label class="form-label">Due Date</label>
-                        <input type="date" name="due_date" class="form-control @error('due_date') is-invalid @enderror" value="{{ old('due_date', optional($invoice->due_date)->format('Y-m-d')) }}" required>
+                        <input type="date" name="due_date" class="form-control @error('due_date') is-invalid @enderror" value="{{ old('due_date', optional($invoice->due_date)->format('Y-m-d')) }}" required @disabled($paidInvoice)>
                         @error('due_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -76,8 +80,13 @@
 
                     <div class="col-12 col-md-4">
                         <label class="form-label">Status</label>
-                        <select name="status" class="form-select @error('status') is-invalid @enderror">
-                            @foreach(\App\Models\Invoice::STATUSES as $st)
+                        <select name="status" class="form-select @error('status') is-invalid @enderror" @disabled($paidInvoice)>
+                            @foreach([
+                                \App\Models\Invoice::STATUS_DRAFT,
+                                \App\Models\Invoice::STATUS_SENT,
+                                \App\Models\Invoice::STATUS_PARTIAL,
+                                \App\Models\Invoice::STATUS_OVERDUE,
+                            ] as $st)
                                 <option value="{{ $st }}" {{ old('status', $invoice->status) == $st ? 'selected' : '' }}>{{ ucfirst($st) }}</option>
                             @endforeach
                         </select>
@@ -94,30 +103,30 @@
                             @php($idx = 0)
                             @foreach($invoice->items as $item)
                                 <div class="item-row border rounded-3 p-3 mb-3" data-index="{{ $idx }}">
-                                    <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item->id }}">
+                                    <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item->id }}" @disabled($paidInvoice)>
 
                                     <div class="row g-2 align-items-end">
                                         <div class="col-12 col-md-3">
                                             <button type="button" class="btn btn-link p-0 ms-auto text-danger remove-item" title="Remove" aria-label="Remove row">×</button>
                                             <label class="form-label">Item Name</label>
-                                            <input type="text" name="items[{{ $idx }}][item_name]" class="form-control" value="{{ old('items.' . $idx . '.item_name', $item->item_name) }}" required>
+                                            <input type="text" name="items[{{ $idx }}][item_name]" class="form-control" value="{{ old('items.' . $idx . '.item_name', $item->item_name) }}" required @disabled($paidInvoice)>
                                         </div>
 
                                         <div class="col-12 col-md-3">
                                             <label class="form-label">Description</label>
-                                            <input type="text" name="items[{{ $idx }}][description]" class="form-control" value="{{ old('items.' . $idx . '.description', $item->description) }}">
+                                            <input type="text" name="items[{{ $idx }}][description]" class="form-control" value="{{ old('items.' . $idx . '.description', $item->description) }}" @disabled($paidInvoice)>
                                         </div>
                                         <div class="col-6 col-md-2">
                                             <label class="form-label">Qty</label>
-                                            <input type="number" min="1" name="items[{{ $idx }}][quantity]" class="form-control" value="{{ old('items.' . $idx . '.quantity', $item->quantity) }}" required>
+                                            <input type="number" min="1" name="items[{{ $idx }}][quantity]" class="form-control" value="{{ old('items.' . $idx . '.quantity', $item->quantity) }}" required @disabled($paidInvoice)>
                                         </div>
                                         <div class="col-6 col-md-2">
                                             <label class="form-label">Unit Price</label>
-                                            <input type="number" step="0.01" min="0" name="items[{{ $idx }}][unit_price]" class="form-control" value="{{ old('items.' . $idx . '.unit_price', $item->unit_price) }}" required>
+                                            <input type="number" step="0.01" min="0" name="items[{{ $idx }}][unit_price]" class="form-control" value="{{ old('items.' . $idx . '.unit_price', $item->unit_price) }}" required @disabled($paidInvoice)>
                                         </div>
                                         <div class="col-12 col-md-2">
                                             <label class="form-label">Total</label>
-                                            <input type="number" step="0.01" min="0" name="items[{{ $idx }}][total_price]" class="form-control" value="{{ old('items.' . $idx . '.total_price', $item->total_price) }}" readonly>
+                                            <input type="number" step="0.01" min="0" name="items[{{ $idx }}][total_price]" class="form-control" value="{{ old('items.' . $idx . '.total_price', $item->total_price) }}" readonly @disabled($paidInvoice)>
                                         </div>
                                     </div>
                                 </div>
@@ -125,7 +134,7 @@
                             @endforeach
                         </div>
 
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item">
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="add-item" @disabled($paidInvoice)>
                             <i class="bi bi-plus-lg"></i> Add Row
                         </button>
                     </div>
@@ -140,14 +149,14 @@
                             </div>
                             <div class="col-12 col-md-4">
                                 <label class="form-label">Tax Amount</label>
-                                <input type="number" step="0.01" min="0" name="tax_amount" class="form-control @error('tax_amount') is-invalid @enderror" value="{{ old('tax_amount', $invoice->tax_amount) }}">
+                                <input type="number" step="0.01" min="0" name="tax_amount" class="form-control @error('tax_amount') is-invalid @enderror" value="{{ old('tax_amount', $invoice->tax_amount) }}" @disabled($paidInvoice)>
                                 @error('tax_amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-12 col-md-4">
                                 <label class="form-label">Discount Amount</label>
-                                <input type="number" step="0.01" min="0" name="discount_amount" class="form-control @error('discount_amount') is-invalid @enderror" value="{{ old('discount_amount', $invoice->discount_amount) }}">
+                                <input type="number" step="0.01" min="0" name="discount_amount" class="form-control @error('discount_amount') is-invalid @enderror" value="{{ old('discount_amount', $invoice->discount_amount) }}" @disabled($paidInvoice)>
                                 @error('discount_amount')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -165,7 +174,7 @@
                 </div>
 
                 <div class="d-flex gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary">Save Invoice</button>
+                    <button type="submit" class="btn btn-primary">{{ $paidInvoice ? 'Save Notes' : 'Save Invoice' }}</button>
                     <a href="{{ route('invoices.show', [$workspace, $invoice]) }}" class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </form>

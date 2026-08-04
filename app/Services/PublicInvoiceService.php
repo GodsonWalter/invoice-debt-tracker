@@ -24,7 +24,7 @@ class PublicInvoiceService
             ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->firstOrFail();
 
-        if ($invoice->status === Invoice::STATUS_DRAFT) {
+        if (in_array($invoice->status, [Invoice::STATUS_DRAFT, Invoice::STATUS_VOID], true)) {
             throw (new ModelNotFoundException)->setModel(Invoice::class);
         }
 

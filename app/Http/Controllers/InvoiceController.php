@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\MessageBag;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
@@ -90,7 +92,7 @@ class InvoiceController extends Controller
             'currency_id' => ['required', $currencyService->activeCurrencyRule()],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'status' => ['required', 'in:'.implode(',', Invoice::STATUSES)],
+            'status' => ['required', Rule::in([Invoice::STATUS_DRAFT, Invoice::STATUS_SENT])],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
@@ -171,7 +173,9 @@ class InvoiceController extends Controller
         try {
             $invoiceEmailService->queueInvoice($workspace, $invoice, Auth::user());
         } catch (ValidationException $exception) {
-            return back()->withErrors($exception->errors())->with('error', collect($exception->errors())->flatten()->first());
+            return redirect()->route('invoices.show', [$workspace, $invoice])
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
         }
 
         return redirect()
@@ -184,6 +188,7 @@ class InvoiceController extends Controller
         $this->authorizeWorkspaceUser($workspace);
 
         $invoice = $workspace->invoices()->with(['currency', 'items'])->where('id', $invoice->id)->firstOrFail();
+        app(InvoiceService::class)->assertCanEdit($invoice);
         $clients = $workspace->clients()->orderBy('name')->get();
 
         return view('invoice.edit', [
@@ -200,27 +205,55 @@ class InvoiceController extends Controller
 
         $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
 
-        $validated = $request->validate([
-            'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,'.$invoice->id.',id,workspace_id,'.$workspace->id],
-            'client_id' => ['required', 'exists:clients,id'],
-            'currency_id' => ['required', $currencyService->activeCurrencyRule()],
-            'issue_date' => ['required', 'date'],
-
-            'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
-            'status' => ['required', 'in:'.implode(',', Invoice::STATUSES)],
-            'tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+        $rules = [
             'notes' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['nullable', 'integer', 'exists:invoice_items,id'],
-            'items.*.item_name' => ['required', 'string', 'max:255'],
-            'items.*.description' => ['nullable', 'string', 'max:255'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-        ]);
+        ];
+
+        if ($invoice->status !== Invoice::STATUS_PAID) {
+            $rules = array_merge($rules, [
+                'invoice_number' => ['required', 'string', 'max:255', 'unique:invoices,invoice_number,'.$invoice->id.',id,workspace_id,'.$workspace->id],
+                'client_id' => ['required', Rule::exists('clients', 'id')->where('workspace_id', $workspace->id)],
+                'currency_id' => ['required', $currencyService->activeCurrencyRule()],
+                'issue_date' => ['required', 'date'],
+                'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
+                'status' => ['required', Rule::in([
+                    Invoice::STATUS_DRAFT,
+                    Invoice::STATUS_SENT,
+                    Invoice::STATUS_PARTIAL,
+                    Invoice::STATUS_OVERDUE,
+                ])],
+                'tax_amount' => ['nullable', 'numeric', 'min:0'],
+                'discount_amount' => ['nullable', 'numeric', 'min:0'],
+                'items' => ['required', 'array', 'min:1'],
+                'items.*.id' => ['nullable', 'integer'],
+                'items.*.item_name' => ['required', 'string', 'max:255'],
+                'items.*.description' => ['nullable', 'string', 'max:255'],
+                'items.*.quantity' => ['required', 'integer', 'min:1'],
+                'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            ]);
+        } else {
+            $rules = array_merge($rules, [
+                'invoice_number' => ['sometimes', 'string', 'max:255'],
+                'client_id' => ['sometimes', 'integer'],
+                'currency_id' => ['sometimes', 'integer'],
+                'issue_date' => ['sometimes', 'date'],
+                'due_date' => ['sometimes', 'date'],
+                'status' => ['sometimes', 'string'],
+                'tax_amount' => ['sometimes', 'numeric', 'min:0'],
+                'discount_amount' => ['sometimes', 'numeric', 'min:0'],
+                'total_amount' => ['sometimes', 'numeric', 'min:0'],
+                'items' => ['sometimes', 'array'],
+                'items.*.item_name' => ['required_with:items', 'string', 'max:255'],
+                'items.*.description' => ['nullable', 'string', 'max:255'],
+                'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
+                'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            ]);
+        }
+
+        $validated = $request->validate($rules);
 
         try {
-            $invoice = $invoiceService->updateInvoice($workspace, $validated, $invoice);
+            $invoice = $invoiceService->updateInvoice($workspace, $validated, $invoice, Auth::user());
 
             return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
         } catch (\Exception $e) {
@@ -230,17 +263,73 @@ class InvoiceController extends Controller
             );
         }
 
-        return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice updated successfully.');
     }
 
-    public function destroy(Workspace $workspace, Invoice $invoice)
+    public function destroy(Workspace $workspace, Invoice $invoice, InvoiceService $invoiceService)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         $invoice = $workspace->invoices()->where('id', $invoice->id)->firstOrFail();
 
-        $invoice->delete();
+        try {
+            $invoiceService->softDeleteDraft($workspace, $invoice, Auth::user());
+        } catch (ValidationException $exception) {
+            return redirect()->route('invoices.show', [$workspace, $invoice])
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
+        }
 
-        return redirect()->route('invoices.index', $workspace)->with('success', 'Invoice deleted successfully.');
+        return redirect()->route('invoices.index', $workspace)->with('success', 'Draft invoice moved to the recycle bin.');
+    }
+
+    public function deleted(Workspace $workspace)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+
+        return view('invoice.deleted', [
+            'workspace' => $workspace,
+            'invoices' => $workspace->invoices()->onlyTrashed()->where('status', Invoice::STATUS_DRAFT)->latest('deleted_at')->paginate(15),
+        ]);
+    }
+
+    public function restore(Workspace $workspace, int $invoice, InvoiceService $invoiceService)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+        $invoiceService->restoreDraft($workspace, $invoice, Auth::user());
+
+        return redirect()->route('invoices.deleted', $workspace)->with('success', 'Draft invoice restored successfully.');
+    }
+
+    public function forceDelete(Workspace $workspace, int $invoice, InvoiceService $invoiceService)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+
+        try {
+            $invoiceService->forceDeleteDraft($workspace, $invoice, Auth::user());
+        } catch (ValidationException $exception) {
+            return redirect()->route('invoices.deleted', $workspace)
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
+        }
+
+        return redirect()->route('invoices.deleted', $workspace)->with('success', 'Draft invoice permanently deleted.');
+    }
+
+    public function void(Request $request, Workspace $workspace, Invoice $invoice, InvoiceService $invoiceService)
+    {
+        $this->authorizeWorkspaceUser($workspace);
+        $validated = $request->validate([
+            'void_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $invoiceService->voidInvoice($workspace, $invoice, $validated['void_reason'], Auth::user());
+        } catch (ValidationException $exception) {
+            return redirect()->route('invoices.show', [$workspace, $invoice])
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
+        }
+
+        return redirect()->route('invoices.show', [$workspace, $invoice])->with('success', 'Invoice voided successfully.');
     }
 }

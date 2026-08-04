@@ -26,6 +26,12 @@ class PaymentService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if ($invoice->status === Invoice::STATUS_VOID) {
+                throw ValidationException::withMessages([
+                    'invoice' => 'Void invoices cannot receive payments.',
+                ]);
+            }
+
             if (! empty($validated['idempotency_key'])) {
                 $existingPayment = Payment::query()
                     ->where('workspace_id', $workspace->id)

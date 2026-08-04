@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\ReminderMail;
 use App\Models\EmailTemplate;
+use App\Models\Invoice;
 use App\Models\ReminderLog;
 use App\Services\ReminderService;
 use App\Services\TemplateRenderer;
@@ -40,6 +41,12 @@ class SendReminderEmailJob implements ShouldQueue
 
             if (! $workspace || ! $workspace->is_active) {
                 $reminderService->markFailed($reminderLog, new \RuntimeException('The workspace is no longer active.'));
+
+                return;
+            }
+
+            if ($invoice->status === Invoice::STATUS_VOID) {
+                $reminderService->markFailed($reminderLog, new \RuntimeException('The invoice is void.'));
 
                 return;
             }

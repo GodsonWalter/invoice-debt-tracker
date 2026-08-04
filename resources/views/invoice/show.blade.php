@@ -102,6 +102,7 @@
         'partial' => 'warning',
         'paid' => 'success',
         'overdue' => 'danger',
+        'void' => 'dark',
         default => 'secondary'
     };
 @endphp
@@ -117,19 +118,32 @@
             <a href="{{ route('invoices.index', $workspace) }}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Back to Invoices
             </a>
-            <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-pencil-square"></i> Edit
-            </a>
+            @if ($invoice->status !== \App\Models\Invoice::STATUS_VOID)
+                <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-pencil-square"></i> Edit
+                </a>
+            @endif
             <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-file-earmark-pdf"></i> Download PDF
             </a>
-            <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="bi bi-send"></i>
-                    {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend Invoice' : 'Send Invoice' }}
-                </button>
-            </form>
+            @if (! in_array($invoice->status, [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_VOID], true))
+                <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-send"></i>
+                        {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend Invoice' : 'Send Invoice' }}
+                    </button>
+                </form>
+            @endif
+            @if (in_array($invoice->status, [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIAL, \App\Models\Invoice::STATUS_OVERDUE], true))
+                <form action="{{ route('invoices.void', [$workspace, $invoice]) }}" method="POST" class="d-flex align-items-center gap-2">
+                    @csrf
+                    <input type="text" name="void_reason" class="form-control form-control-sm" maxlength="1000" placeholder="Void reason" required aria-label="Void reason">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-slash-circle"></i> Void
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 
@@ -373,7 +387,7 @@
                 </div>
             </div>
 
-            @if (! $invoice->is_paid)
+            @if (! $invoice->is_paid && $invoice->status !== \App\Models\Invoice::STATUS_VOID)
                 <div class="card border-light shadow-sm rounded-4 overflow-hidden mt-3 invoice-payment-actions">
                     <div class="card-header bg-white p-4 border-bottom">
                         <h5 class="fw-bold text-dark mb-0 fs-6">Record Payment</h5>

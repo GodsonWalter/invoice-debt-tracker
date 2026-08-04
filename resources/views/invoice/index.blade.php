@@ -28,6 +28,9 @@
                 <a href="{{ route('invoices.create', $workspace) }}" class="btn btn-primary">
                     <i class="bi bi-plus-lg me-1"></i> Add invoice
                 </a>
+                <a href="{{ route('invoices.deleted', $workspace) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-archive me-1"></i> Deleted drafts
+                </a>
             </div>
         </div>
 
@@ -111,6 +114,7 @@
                                     'partial' => 'warning',
                                     'paid' => 'success',
                                     'overdue' => 'danger',
+                                    'void' => 'dark',
                                     default => 'secondary',
                                 };
                             @endphp
@@ -127,28 +131,34 @@
                                         class="btn btn-sm btn-outline-primary" title="View invoice">
                                         <i class="bi bi-eye me-1"></i> View
                                     </a>
-                                    <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}"
-                                        class="btn btn-sm btn-outline-secondary" title="Edit invoice">
-                                        <i class="bi bi-pencil-square me-1"></i> Edit
-                                    </a>
+                                    @if ($invoice->status !== \App\Models\Invoice::STATUS_VOID)
+                                        <a href="{{ route('invoices.edit', [$workspace, $invoice]) }}"
+                                            class="btn btn-sm btn-outline-secondary" title="Edit invoice">
+                                            <i class="bi bi-pencil-square me-1"></i> Edit
+                                        </a>
+                                    @endif
                                     <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}"
                                         class="btn btn-sm btn-outline-primary" title="Download PDF">
                                         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
                                     </a>
-                                    <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-primary" title="Send invoice">
-                                            <i class="bi bi-send me-1"></i> Send
-                                        </button>
-                                    </form>
-                                    <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST" class="d-inline"
-                                        data-delete-confirm>
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete invoice">
-                                            <i class="bi bi-trash me-1"></i> Delete
-                                        </button>
-                                    </form>
+                                    @if (! in_array($invoice->status, [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_VOID], true))
+                                        <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-primary" title="Send invoice">
+                                                <i class="bi bi-send me-1"></i> Send
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if ($invoice->status === \App\Models\Invoice::STATUS_DRAFT)
+                                        <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST" class="d-inline"
+                                            data-delete-confirm>
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete invoice">
+                                                <i class="bi bi-trash me-1"></i> Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

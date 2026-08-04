@@ -106,6 +106,12 @@ class InvoiceEmailService
 
     private function validateCanEmail(Invoice $invoice, bool $allowDraft = false): void
     {
+        if ($invoice->status === Invoice::STATUS_VOID) {
+            throw ValidationException::withMessages([
+                'invoice' => 'Void invoices cannot be emailed.',
+            ]);
+        }
+
         if (! $invoice->workspace || ! $invoice->workspace->is_active) {
             throw ValidationException::withMessages([
                 'invoice' => 'This invoice belongs to an inactive workspace.',
