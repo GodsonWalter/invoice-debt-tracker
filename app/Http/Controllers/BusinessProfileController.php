@@ -53,7 +53,7 @@ class BusinessProfileController extends Controller
             'state' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:50'],
             'country' => ['nullable', 'string', 'max:100'],
-            'business_description' => ['nullable', 'string'],
+            'business_description' => ['nullable', 'string', 'min:10', 'max:500'],
         ]);
 
         $logoPath = $businessProfile->logo;

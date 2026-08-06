@@ -85,7 +85,8 @@
                     <div class="mb-3">
                         <label class="form-label">Business Description</label>
                         <textarea name="business_description" class="form-control"
-                            rows="4">{{ old('business_description', $businessProfile->business_description) }}</textarea>
+                            rows="4" minlength="10" maxlength="500">{{ old('business_description', $businessProfile->business_description) }}</textarea>
+                        <div class="form-text">Optional. If provided, use between 10 and 500 characters.</div>
                     </div>
 
                     <div class="d-flex gap-2">
