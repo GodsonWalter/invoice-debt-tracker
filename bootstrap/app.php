@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAuthorizeWorkspaceUser;
 use App\Http\Middleware\EnsureRouteWorkspaceMatchesActiveWorkspace;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureWorkspaceIsActive;
+use App\Http\Middleware\ImpersonationMiddleware;
 use App\Http\Middleware\ResolveWorkspace;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active.user' => EnsureUserIsActive::class,
             'workspace.active' => EnsureWorkspaceIsActive::class,
             'resolve.workspace' => ResolveWorkspace::class,
+            'impersonation' => ImpersonationMiddleware::class,
             'authorized-workspace-user' => EnsureAuthorizeWorkspaceUser::class,
             'active.route.workspace' => EnsureRouteWorkspaceMatchesActiveWorkspace::class,
         ]);

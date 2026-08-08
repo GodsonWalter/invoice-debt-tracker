@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\ImpersonationService;
 use App\Services\PlatformUserManagementService;
 use App\Services\UserAccountService;
 use Illuminate\Pagination\Paginator;
@@ -29,16 +30,19 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         Gate::define('manage-platform-workspace-recovery', function (?User $user): bool {
-            return $user?->isPlatformOwner() ?? false;
+            return ($user?->isPlatformOwner() ?? false)
+                && ! app(ImpersonationService::class)->isImpersonating();
         });
 
         Gate::define('manage-platform-user-recovery', function (?User $user): bool {
             return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
                 && app(UserAccountService::class)->canRestoreDeletedUsers($user);
         });
 
         Gate::define('restore-deleted-user', function (?User $user): bool {
             return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
                 && app(UserAccountService::class)->canRestoreDeletedUsers($user);
         });
 
@@ -48,23 +52,37 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('manage-platform-users', function (?User $user): bool {
-            return $user instanceof User && $user->canManagePlatformUsers();
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
         });
 
         Gate::define('manage-platform-workspaces', function (?User $user): bool {
-            return $user instanceof User && $user->canManagePlatformUsers();
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
         });
 
         Gate::define('manage-platform-workspace-lifecycle', function (?User $user): bool {
-            return $user?->isPlatformOwner() ?? false;
+            return ($user?->isPlatformOwner() ?? false)
+                && ! app(ImpersonationService::class)->isImpersonating();
         });
 
         Gate::define('view-platform-dashboard', function (?User $user): bool {
-            return $user instanceof User && $user->canManagePlatformUsers();
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
+        });
+
+        Gate::define('impersonate-platform-user', function (?User $user): bool {
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && in_array($user->role, ['owner', 'admin'], true);
         });
 
         Gate::define('manage-platform-user-target', function (User $user, User $target): bool {
-            return app(PlatformUserManagementService::class)->canModifyTarget($user, $target);
+            return ! app(ImpersonationService::class)->isImpersonating()
+                && app(PlatformUserManagementService::class)->canModifyTarget($user, $target);
         });
     }
 }

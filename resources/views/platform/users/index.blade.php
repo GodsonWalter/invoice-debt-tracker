@@ -118,6 +118,19 @@
                                         @else
                                             <span class="text-muted small">View only</span>
                                         @endcan
+                                        @can('impersonate-platform-user')
+                                            @if ($user->is_active && ! $user->is(request()->user()) && $user->ownedWorkspaces->isNotEmpty())
+                                                @foreach ($user->ownedWorkspaces as $ownedWorkspace)
+                                                    <form method="POST" action="{{ route('platform.users.impersonate', [$user, $ownedWorkspace]) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                            title="Impersonate the owner of {{ $ownedWorkspace->name }}">
+                                                            Impersonate
+                                                        </button>
+                                                    </form>
+                                                @endforeach
+                                            @endif
+                                        @endcan
                                     @endif
                                 </td>
                             </tr>

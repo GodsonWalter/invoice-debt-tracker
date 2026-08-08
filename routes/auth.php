@@ -29,7 +29,7 @@ Route::middleware('guest')->group(function () {
 
 });
 
-Route::middleware(['auth', 'active.user'])->group(function () {
+Route::middleware(['auth', 'active.user', 'resolve.workspace', 'impersonation'])->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

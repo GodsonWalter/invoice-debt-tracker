@@ -18,12 +18,12 @@ class WorkspaceSeeder extends Seeder
 
         $workspaces = [
             [
-                'name' => 'Acme Corporation',
-                'slug' => 'acme-corp',
-                'subdomain' => 'acme',
+                'name' => 'Waltech ICT',
+                'slug' => 'waltech-ict',
+                'subdomain' => 'waltechict',
                 'metadata' => ['timezone' => 'UTC', 'currency' => 'USD'],
                 'is_active' => true,
-                'owner_email' => 'amina@example.com',
+                'owner_email' => 'walter.godson.nazike@gmail.com',
             ],
             [
                 'name' => 'Blue Horizon',

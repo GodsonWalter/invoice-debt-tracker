@@ -150,6 +150,11 @@
             background: #1e293b;
         }
 
+        .sidebar-dropdown-menu li a.active {
+            color: #fff;
+            background: #1e293b;
+        }
+
         /* The chevron arrow indicator */
         .dropdown-toggle-icon {
             margin-left: auto;
@@ -466,7 +471,27 @@
 
 
 
-            <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">                
+            <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">
+                @if (! empty($impersonationContext))
+                    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-sm"
+                        role="status">
+                        <div>
+                            <strong>Impersonation Mode</strong>
+                            <span class="ms-1">
+                                Viewing {{ $impersonationContext['workspace']->name }} as
+                                {{ $impersonationContext['workspaceOwner']->name ?: $impersonationContext['workspaceOwner']->email }}.
+                            </span>
+                            <small class="d-block text-muted">
+                                Platform user: {{ $impersonationContext['impersonator']->name ?: $impersonationContext['impersonator']->email }}
+                            </small>
+                        </div>
+                        <form method="POST" action="{{ route('impersonation.exit') }}" class="m-0">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-dark">Exit Impersonation</button>
+                        </form>
+                    </div>
+                @endif
+
                 <div class="m-0">                 
                     <h1 class="h2 fw-bold mb-1">{{ $currentWorkspace->name ?? '' }}</h1>
                 </div>
@@ -522,6 +547,7 @@
                 if (sidebar.classList.contains('collapsed')) {
                     document.querySelectorAll('.has-dropdown.open').forEach(el => {
                         el.classList.remove('open');
+                        el.querySelector(':scope > .nav-link')?.setAttribute('aria-expanded', 'false');
                     });
                 }
             }
@@ -546,10 +572,39 @@
                     const parentItem = this.parentElement;
 
                     // Toggle the 'open' class on the parent <li>
-                    parentItem.classList.toggle('open');
+                    const isOpen = parentItem.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
                 }
             });
         });
+
+        function revealActiveSidebarLink() {
+            const activeChildLink = sidebar.querySelector('.sidebar-dropdown-menu a.active');
+            const activeLink = sidebar.classList.contains('collapsed') && activeChildLink
+                ? activeChildLink.closest('.has-dropdown')?.querySelector(':scope > .nav-link')
+                : activeChildLink || sidebar.querySelector('a.nav-link.active[aria-current="page"]');
+
+            if (!activeLink) {
+                return;
+            }
+
+            const activeDropdown = activeChildLink?.closest('.has-dropdown');
+            if (activeDropdown) {
+                activeDropdown.classList.add('open');
+                activeDropdown.querySelector(':scope > .nav-link')?.setAttribute('aria-expanded', 'true');
+            }
+
+            const sidebarRect = sidebar.getBoundingClientRect();
+            const activeLinkRect = activeLink.getBoundingClientRect();
+
+            if (activeLinkRect.top < sidebarRect.top) {
+                sidebar.scrollTop -= sidebarRect.top - activeLinkRect.top;
+            } else if (activeLinkRect.bottom > sidebarRect.bottom) {
+                sidebar.scrollTop += activeLinkRect.bottom - sidebarRect.bottom;
+            }
+        }
+
+        window.requestAnimationFrame(revealActiveSidebarLink);
         // ------------------------------------
 
         // Fullscreen Logic

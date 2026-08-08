@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -22,6 +23,13 @@ class PlatformUserManagementService
         $direction = $filters['direction'] ?? 'desc';
 
         $query = User::query()
+            ->with([
+                'ownedWorkspaces' => function (Relation $workspaceQuery): void {
+                    $workspaceQuery
+                        ->where('workspaces.is_active', true)
+                        ->orderBy('workspaces.name');
+                },
+            ])
             ->withCount([
                 'workspaces as active_workspaces_count' => function (Builder $workspaceQuery): void {
                     $workspaceQuery
