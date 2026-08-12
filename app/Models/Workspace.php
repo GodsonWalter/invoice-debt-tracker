@@ -108,6 +108,11 @@ class Workspace extends Model
         return $this->hasMany(EmailTemplate::class, 'workspace_id');
     }
 
+    public function testimonials(): HasMany
+    {
+        return $this->hasMany(Testimonial::class, 'workspace_id');
+    }
+
     public function getCurrencySymbolAttribute(): string
     {
         return $this->currency?->symbol ?? '';

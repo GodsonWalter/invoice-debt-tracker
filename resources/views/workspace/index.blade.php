@@ -188,7 +188,7 @@
                                                 </button>
                                             </form>
                                         @endif
-                                    @elseif ($workspace->is_active && filled($workspace->subdomain))
+                                    @elseif (($workspace->pivot->is_active ?? false) && $workspace->is_active && filled($workspace->subdomain))
                                         <a href="{{ route('workspace.switch', ['workspace' => $workspace->subdomain]) }}"
                                             class="btn btn-sm btn-outline-primary" title="Switch to workspace">
                                             <i class="bi bi-arrow-repeat me-1"></i> Switch

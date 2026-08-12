@@ -28,7 +28,14 @@ class DashboardController extends Controller
 
         return view('dashboard.index', [
             'workspace' => $workspace,
-            'hasAuthorizedWorkspace' => false,
+            'workspaces' => Auth::user()->workspaces()
+                ->with(['businessProfile:id,workspace_id,business_name,logo'])
+                ->wherePivot('is_active', true)
+                ->where('workspaces.is_active', true)
+                ->whereNotNull('workspaces.subdomain')
+                ->where('workspaces.subdomain', '<>', '')
+                ->orderBy('workspaces.name')
+                ->get(),
         ]);
     }
 }

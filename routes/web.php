@@ -10,6 +10,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlatformDashboardController;
+use App\Http\Controllers\PlatformTestimonialController;
 use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserRecoveryController;
 use App\Http\Controllers\PlatformWorkspaceController;
@@ -20,15 +21,19 @@ use App\Http\Controllers\ReadinessController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceDashboardController;
 use App\Http\Controllers\WorkspaceRecoveryController;
 use App\Http\Controllers\WorkspaceUserController;
+use App\Services\TestimonialService;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', function (TestimonialService $testimonialService) {
+    return view('welcome', [
+        'testimonials' => $testimonialService->homepageTestimonials(),
+    ]);
+})->name('home');
 
 Route::get('/ready', ReadinessController::class)
     ->middleware('throttle:60,1')
@@ -95,6 +100,21 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
     Route::put('/business-profile/{businessProfile}/update', [BusinessProfileController::class, 'update'])
         ->middleware('authorized-workspace-user')
         ->name('business-profile.update');
+
+    Route::prefix('workspace/{workspace}/testimonials')
+        ->middleware('active.route.workspace')
+        ->scopeBindings()
+        ->name('testimonials.')
+        ->group(function () {
+            Route::get('/', [TestimonialController::class, 'index'])->name('index');
+            Route::get('/create', [TestimonialController::class, 'create'])->name('create');
+            Route::post('/', [TestimonialController::class, 'store'])->name('store');
+            Route::get('/{testimonial}', [TestimonialController::class, 'show'])->name('show');
+            Route::get('/{testimonial}/edit', [TestimonialController::class, 'edit'])->name('edit');
+            Route::put('/{testimonial}', [TestimonialController::class, 'update'])->name('update');
+            Route::post('/{testimonial}/submit', [TestimonialController::class, 'submit'])->name('submit');
+            Route::delete('/{testimonial}', [TestimonialController::class, 'destroy'])->name('destroy');
+        });
 
     // clients routes (workspace scoped)
     Route::prefix('workspace/{workspace}/clients')
@@ -182,6 +202,17 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 've
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:view-platform-dashboard'])->prefix('platform')->name('platform.')->group(function () {
     Route::get('/dashboard', PlatformDashboardController::class)->name('dashboard');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-testimonials'])->prefix('platform/testimonials')->name('platform.testimonials.')->group(function () {
+    Route::get('/', [PlatformTestimonialController::class, 'index'])->name('index');
+    Route::get('/{testimonial}', [PlatformTestimonialController::class, 'show'])->name('show');
+    Route::post('/{testimonial}/approve', [PlatformTestimonialController::class, 'approve'])->name('approve');
+    Route::post('/{testimonial}/reject', [PlatformTestimonialController::class, 'reject'])->name('reject');
+    Route::post('/{testimonial}/publish', [PlatformTestimonialController::class, 'publish'])->name('publish');
+    Route::post('/{testimonial}/unpublish', [PlatformTestimonialController::class, 'unpublish'])->name('unpublish');
+    Route::post('/{testimonial}/return-to-draft', [PlatformTestimonialController::class, 'returnToDraft'])->name('return-to-draft');
+    Route::patch('/{testimonial}/presentation', [PlatformTestimonialController::class, 'presentation'])->name('presentation');
 });
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-workspaces'])->prefix('platform/workspaces')->name('platform.workspaces.')->group(function () {

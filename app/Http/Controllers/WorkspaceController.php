@@ -76,7 +76,9 @@ class WorkspaceController extends Controller
             ->withQueryString();
 
         $activeWorkSpaces = Auth::user()->workspaces()
+            ->wherePivot('is_active', true)
             ->whereNotNull('workspaces.subdomain')
+            ->where('workspaces.subdomain', '<>', '')
             ->where('workspaces.is_active', true)
             ->orderBy('workspaces.name')
             ->get();

@@ -422,7 +422,9 @@
                                 </li>
                                 @php
                                     $switchableWorkspaces = Auth::user()->workspaces()
+                                        ->wherePivot('is_active', true)
                                         ->whereNotNull('subdomain')
+                                        ->where('workspaces.subdomain', '<>', '')
                                         ->where('workspaces.is_active', true)
                                         ->get();
                                 @endphp

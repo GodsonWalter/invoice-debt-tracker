@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Testimonial;
 use App\Models\User;
+use App\Models\Workspace;
+use App\Policies\TestimonialPolicy;
 use App\Services\ImpersonationService;
 use App\Services\PlatformUserManagementService;
 use App\Services\UserAccountService;
@@ -28,6 +31,15 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Paginator::useBootstrapFive();
+        Gate::policy(Testimonial::class, TestimonialPolicy::class);
+
+        Gate::define('view-testimonials', function (User $user, Workspace $workspace): bool {
+            return app(TestimonialPolicy::class)->viewAny($user, $workspace);
+        });
+
+        Gate::define('manage-testimonials', function (User $user, Workspace $workspace): bool {
+            return app(TestimonialPolicy::class)->create($user, $workspace);
+        });
 
         Gate::define('manage-platform-workspace-recovery', function (?User $user): bool {
             return ($user?->isPlatformOwner() ?? false)
@@ -69,6 +81,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-platform-dashboard', function (?User $user): bool {
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
+        });
+
+        Gate::define('manage-platform-testimonials', function (?User $user): bool {
             return $user instanceof User
                 && ! app(ImpersonationService::class)->isImpersonating()
                 && $user->canManagePlatformUsers();

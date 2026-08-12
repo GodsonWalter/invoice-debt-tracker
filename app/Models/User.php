@@ -85,4 +85,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsTo(Currency::class, 'default_currency_id');
     }
+
+    public function createdTestimonials(): HasMany
+    {
+        return $this->hasMany(Testimonial::class, 'created_by');
+    }
+
+    public function reviewedTestimonials(): HasMany
+    {
+        return $this->hasMany(Testimonial::class, 'reviewed_by');
+    }
 }

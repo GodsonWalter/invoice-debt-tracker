@@ -41,8 +41,9 @@ test('sidebar renders without an active workspace', function () {
     $response
         ->assertOk()
         ->assertSee('Workspaces')
+        ->assertSee(route('home'), false)
         ->assertDontSee('AI Query')
-        ->assertDontSee('/workspace/', false);
+        ->assertSee('/workspace/create', false);
 });
 
 test('sidebar shows workspace links for an active workspace', function () {
@@ -53,6 +54,7 @@ test('sidebar shows workspace links for an active workspace', function () {
     $response
         ->assertOk()
         ->assertSee('Sidebar Workspace')
+        ->assertSee(route('home'), false)
         ->assertSee('AI Query')
         ->assertSee('Invoices')
         ->assertSee('Clients')
@@ -73,7 +75,7 @@ test('sidebar hides workspace links for a user outside the active workspace', fu
     $response
         ->assertOk()
         ->assertDontSee('AI Query')
-        ->assertDontSee('/workspace/', false);
+        ->assertSee('/workspace/create', false);
 
     $this->actingAs($user)
         ->get('http://isolated-sidebar-workspace.idt.test/workspace/'.$workspace->id.'/invoices')

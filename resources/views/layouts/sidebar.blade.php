@@ -26,6 +26,11 @@
                 <i class="fa-solid fa-house fa-fw"></i> <span>Dashboard</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('home') }}" class="nav-link">
+                <i class="fa-solid fa-globe fa-fw"></i> <span>Home</span>
+            </a>
+        </li>
 
         {{-- workspaces --}}
         <li class="nav-item">
@@ -72,6 +77,12 @@
                 <a href="{{ route('platform.workspaces.index') }}" class="nav-link {{ $sidebarRouteIs('platform.workspaces.*') ? 'active' : '' }}"
                     @if ($sidebarRouteIs('platform.workspaces.*')) aria-current="page" @endif>
                     <i class="fa-solid fa-building-shield fa-fw"></i> <span>Platform Workspaces</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('platform.testimonials.index') }}" class="nav-link {{ $sidebarRouteIs('platform.testimonials.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('platform.testimonials.*')) aria-current="page" @endif>
+                    <i class="fa-solid fa-quote-left fa-fw"></i> <span>Testimonials</span>
                 </a>
             </li>
         @endcan
@@ -166,6 +177,13 @@
                 <a href="{{ route('clients.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('clients.*') ? 'active' : '' }}"
                     @if ($sidebarRouteIs('clients.*')) aria-current="page" @endif>
                     <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('testimonials.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('testimonials.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('testimonials.*')) aria-current="page" @endif>
+                    <i class="fa-solid fa-quote-left fa-fw"></i> <span>Testimonials</span>
                 </a>
             </li>
 
