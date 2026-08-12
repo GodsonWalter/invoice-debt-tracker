@@ -1,0 +1,376 @@
+:root {
+    color-scheme: light;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+.theme-toggle {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d9e2ef;
+    border-radius: 0.65rem;
+    color: #334155;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 1rem;
+    height: 2.45rem;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    width: 2.45rem;
+}
+
+.theme-toggle:hover {
+    background: #eff5ff;
+    border-color: #9db9e9;
+    color: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.28);
+    outline-offset: 3px;
+}
+
+.theme-toggle [hidden] {
+    display: none !important;
+}
+
+[data-theme="dark"] .theme-toggle {
+    background: #172236;
+    border-color: #334155;
+    color: #dbeafe;
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+    background: #22324c;
+    border-color: #5276a8;
+    color: #bfdbfe;
+}
+
+/* Public homepage */
+[data-theme="dark"] body.public-home {
+    --idt-navy: #f1f5f9;
+    --idt-navy-soft: #cbd5e1;
+    --idt-ink: #e5e7eb;
+    --idt-muted: #aab8cc;
+    --idt-surface: #0f172a;
+    --idt-border: #26364e;
+    --idt-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+    background: #0b1220;
+    color: var(--idt-ink);
+}
+
+[data-theme="dark"] body.public-home .site-header {
+    background: rgba(11, 18, 32, 0.96);
+    border-color: #26364e;
+}
+
+[data-theme="dark"] body.public-home .brand-link,
+[data-theme="dark"] body.public-home .section-heading,
+[data-theme="dark"] body.public-home .hero-heading,
+[data-theme="dark"] body.public-home .preview-heading,
+[data-theme="dark"] body.public-home .preview-summary .value,
+[data-theme="dark"] body.public-home .preview-payment .name,
+[data-theme="dark"] body.public-home .feature-card h3,
+[data-theme="dark"] body.public-home .audience-card h3,
+[data-theme="dark"] body.public-home .process-item h3,
+[data-theme="dark"] body.public-home .testimonial-quote,
+[data-theme="dark"] body.public-home .testimonial-name,
+[data-theme="dark"] body.public-home .faq-wrap .accordion-button {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] body.public-home .public-nav .nav-link,
+[data-theme="dark"] body.public-home .section-lead,
+[data-theme="dark"] body.public-home .hero-copy,
+[data-theme="dark"] body.public-home .hero-note,
+[data-theme="dark"] body.public-home .feature-card p,
+[data-theme="dark"] body.public-home .audience-card p,
+[data-theme="dark"] body.public-home .process-item p,
+[data-theme="dark"] body.public-home .text-muted,
+[data-theme="dark"] body.public-home .footer-link {
+    color: #aab8cc !important;
+}
+
+[data-theme="dark"] body.public-home .hero-section,
+[data-theme="dark"] body.public-home .section-surface {
+    background: #0f172a;
+}
+
+[data-theme="dark"] body.public-home .cta-section {
+    background: #102044;
+}
+
+[data-theme="dark"] body.public-home .dashboard-preview,
+[data-theme="dark"] body.public-home .preview-summary,
+[data-theme="dark"] body.public-home .preview-panel,
+[data-theme="dark"] body.public-home .feature-card,
+[data-theme="dark"] body.public-home .audience-card,
+[data-theme="dark"] body.public-home .process-item,
+[data-theme="dark"] body.public-home .pricing-card,
+[data-theme="dark"] body.public-home .faq-wrap .accordion-item,
+[data-theme="dark"] body.public-home .benefit-dashboard {
+    background: #111c2e;
+    border-color: #2b3b54;
+    box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] body.public-home .preview-toolbar {
+    background: #0b1220;
+    border-color: #26364e;
+}
+
+[data-theme="dark"] body.public-home .preview-muted,
+[data-theme="dark"] body.public-home .preview-summary .label,
+[data-theme="dark"] body.public-home .preview-payment .meta,
+[data-theme="dark"] body.public-home .preview-chart-labels {
+    color: #91a0b7;
+}
+
+[data-theme="dark"] body.public-home .feature-icon,
+[data-theme="dark"] body.public-home .testimonial-avatar-fallback {
+    background: #172844;
+}
+
+[data-theme="dark"] body.public-home .faq-wrap .accordion-button:not(.collapsed) {
+    background: #172844;
+    color: #bfdbfe !important;
+}
+
+[data-theme="dark"] body.public-home .faq-wrap .accordion-body {
+    color: #aab8cc;
+}
+
+[data-theme="dark"] body.public-home .site-footer {
+    background: #0b1220;
+    border-color: #26364e;
+}
+
+[data-theme="dark"] body.public-home .public-nav {
+    border-color: #26364e;
+}
+
+[data-theme="dark"] body.public-home .public-home .btn-outline-primary,
+[data-theme="dark"] body.public-home .btn-outline-primary {
+    border-color: #5276a8;
+    color: #bfdbfe;
+}
+
+[data-theme="dark"] body.public-home .btn-outline-primary:hover,
+[data-theme="dark"] body.public-home .btn-outline-primary:focus-visible {
+    background: #172844;
+    border-color: #7ba8e8;
+    color: #dbeafe;
+}
+
+/* Authentication pages */
+[data-theme="dark"] body.auth-page {
+    --auth-ink: #eef4ff;
+    --auth-muted: #aab8cc;
+    --auth-border: #34445c;
+    background: #0b1220;
+    color: var(--auth-ink);
+}
+
+[data-theme="dark"] body.auth-page .auth-panel {
+    background: #0b1220;
+}
+
+[data-theme="dark"] body.auth-page .auth-input-wrap,
+[data-theme="dark"] body.auth-page .auth-remember input {
+    background: #111c2e;
+}
+
+[data-theme="dark"] body.auth-page .auth-input {
+    color: #eef4ff;
+}
+
+[data-theme="dark"] body.auth-page .auth-input::placeholder {
+    color: #91a0b7;
+}
+
+[data-theme="dark"] body.auth-page .auth-input-icon,
+[data-theme="dark"] body.auth-page .auth-password-toggle {
+    color: #c3d0e3;
+}
+
+[data-theme="dark"] body.auth-page .auth-password-toggle:hover,
+[data-theme="dark"] body.auth-page .auth-password-toggle:focus-visible {
+    background: #172844;
+    color: #bfdbfe;
+}
+
+[data-theme="dark"] body.auth-page .auth-divider::before,
+[data-theme="dark"] body.auth-page .auth-divider::after {
+    background: #34445c;
+}
+
+[data-theme="dark"] body.auth-page .auth-divider {
+    color: #91a0b7;
+}
+
+[data-theme="dark"] body.auth-page .auth-signup {
+    color: #eef4ff;
+}
+
+.auth-theme-control {
+    position: fixed;
+    right: 30px;
+    top: 26px;
+    z-index: 20;
+}
+
+/* Authenticated dashboard pages */
+[data-theme="dark"] body.app-shell {
+    background: #0b1220;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] body.app-shell #content,
+[data-theme="dark"] body.app-shell #content > main {
+    background: #0b1220;
+}
+
+[data-theme="dark"] body.app-shell .navbar {
+    background: #111c2e !important;
+    border-color: #26364e !important;
+}
+
+[data-theme="dark"] body.app-shell .btn-light,
+[data-theme="dark"] body.app-shell .btn-light:hover,
+[data-theme="dark"] body.app-shell .btn-light:focus-visible {
+    background: #172236;
+    border-color: #334155;
+    color: #dbeafe;
+}
+
+[data-theme="dark"] body.app-shell .text-dark {
+    color: #eef4ff !important;
+}
+
+[data-theme="dark"] body.app-shell .text-muted {
+    color: #aab8cc !important;
+}
+
+[data-theme="dark"] body.app-shell .bg-white,
+[data-theme="dark"] body.app-shell .card,
+[data-theme="dark"] body.app-shell .list-group-item,
+[data-theme="dark"] body.app-shell .modal-content,
+[data-theme="dark"] body.app-shell .dropdown-menu,
+[data-theme="dark"] body.app-shell .popover {
+    background-color: #111c2e !important;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] body.app-shell .bg-light {
+    background-color: #172236 !important;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] body.app-shell .border,
+[data-theme="dark"] body.app-shell .border-bottom,
+[data-theme="dark"] body.app-shell .border-top,
+[data-theme="dark"] body.app-shell .dropdown-divider {
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] body.app-shell .dropdown-item,
+[data-theme="dark"] body.app-shell .dropdown-header {
+    color: #dbeafe;
+}
+
+[data-theme="dark"] body.app-shell .dropdown-item:hover,
+[data-theme="dark"] body.app-shell .dropdown-item:focus {
+    background: #172844;
+    color: #fff;
+}
+
+[data-theme="dark"] body.app-shell .form-control,
+[data-theme="dark"] body.app-shell .form-select,
+[data-theme="dark"] body.app-shell textarea,
+[data-theme="dark"] body.app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    background-color: #111c2e;
+    border-color: #34445c;
+    color: #eef4ff;
+}
+
+[data-theme="dark"] body.app-shell .form-control::placeholder,
+[data-theme="dark"] body.app-shell textarea::placeholder {
+    color: #91a0b7;
+}
+
+[data-theme="dark"] body.app-shell .input-group-text {
+    background: #172236;
+    border-color: #34445c;
+    color: #c3d0e3;
+}
+
+[data-theme="dark"] body.app-shell #wrapper .table-responsive {
+    background: #111c2e;
+    border-color: #2b3b54;
+}
+
+[data-theme="dark"] body.app-shell #wrapper .table {
+    --bs-table-bg: #111c2e;
+    --bs-table-color: #e5e7eb;
+    --bs-table-border-color: #26364e;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] body.app-shell #wrapper .table thead th {
+    background: #172236;
+    color: #b8c6d9;
+}
+
+[data-theme="dark"] body.app-shell #wrapper .table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: #172844;
+}
+
+[data-theme="dark"] body.app-shell .page-link {
+    background: #111c2e;
+    border-color: #34445c;
+    color: #bfdbfe;
+}
+
+[data-theme="dark"] body.app-shell .page-item.active .page-link {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+[data-theme="dark"] body.app-shell #sidebar {
+    background: #080f1c;
+    scrollbar-color: #475569 #080f1c;
+}
+
+[data-theme="dark"] body.app-shell #sidebar::-webkit-scrollbar-track {
+    background: #080f1c;
+}
+
+[data-theme="dark"] body.app-shell #sidebar .nav-link:hover,
+[data-theme="dark"] body.app-shell #sidebar .nav-link.active,
+[data-theme="dark"] body.app-shell .sidebar-dropdown-menu li a:hover,
+[data-theme="dark"] body.app-shell .sidebar-dropdown-menu li a.active {
+    background: #172844;
+}
+
+@media (max-width: 575.98px) {
+    .auth-theme-control {
+        right: 18px;
+        top: 18px;
+    }
+
+    body.auth-page .auth-panel {
+        padding-top: 78px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle {
+        transition: none;
+    }
+}

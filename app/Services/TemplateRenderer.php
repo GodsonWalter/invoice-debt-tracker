@@ -33,7 +33,7 @@ class TemplateRenderer
             '{{invoice_total}}' => $invoice->formatMoney($invoice->total_amount),
             '{{balance_due}}' => $invoice->formatMoney($invoice->remaining_balance),
             '{{due_date}}' => $invoice->due_date?->format('M j, Y') ?? '',
-            '{{business_name}}' => $businessProfile?->display_name ?? $workspace?->name ?? config('app.name'),
+            '{{business_name}}' => $businessProfile?->display_name ?? $workspace?->name ?? app(PlatformConfigurationService::class)->settings()->product_name,
             '{{workspace_name}}' => $workspace?->name ?? '',
             '{{reminder_type}}' => $context['reminder_type'] ?? str($invoice->reminder_status)->replace('_', ' ')->title()->toString(),
             '{{current_date}}' => Carbon::now()->format('M j, Y'),

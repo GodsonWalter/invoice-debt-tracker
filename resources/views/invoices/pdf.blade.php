@@ -152,6 +152,7 @@
 <body>
 @php
     $businessProfile = $invoice->businessProfile();
+    $platform = app(\App\Services\PlatformConfigurationService::class)->settings();
     $businessName = $businessProfile?->display_name ?? $workspace->name;
     $businessAddress = $businessProfile?->formatted_address;
     $businessTaxLabel = $businessProfile?->tax_label;
@@ -275,5 +276,9 @@
         <p class="muted">{{ $invoice->notes }}</p>
     </div>
 @endif
+
+<p class="muted" style="border-top:1px solid #e2e8f0;margin-top:32px;padding-top:12px;text-align:center;font-size:10px;">
+    {{ $platform->product_name }}{{ $platform->support_url ? ' · '.$platform->support_url : '' }}
+</p>
 </body>
 </html>

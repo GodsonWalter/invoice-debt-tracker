@@ -1,6 +1,7 @@
 <nav id="sidebar" class="d-flex flex-column flex-shrink-0">
     @php
         $workspace = $currentWorkspace ?? null;
+        $platform = $platformSettings['settings'];
         $canViewWorkspaceDashboard = Auth::check()
             && $workspace instanceof \App\Models\Workspace
             && $workspace->canBeManagedBy(Auth::user());
@@ -11,11 +12,12 @@
     <div class="p-3 fs-4 fw-bold border-bottom border-secondary text-center d-flex justify-content-center align-items-center"
         style="height: 73px;">
 
-        <span class="sidebar-text">
-            {{-- get the app name --}}
-            {{ config('app.name', 'IDT') }}
-        </span>
-        <i class="fa-solid fa-water d-none collapsed-show text-info"></i>
+        @if ($platformSettings['logoUrl'])
+            <img src="{{ $platformSettings['logoUrl'] }}" alt="{{ $platform->product_name }}" class="sidebar-text" style="max-width:145px;max-height:38px;object-fit:contain">
+        @else
+            <span class="sidebar-text">{{ $platform->product_name }}</span>
+        @endif
+        <i class="fa-solid fa-receipt d-none collapsed-show text-info"></i>
     </div>
 
     <ul class="nav flex-column mt-2 pb-4">
@@ -85,6 +87,14 @@
                     <i class="fa-solid fa-quote-left fa-fw"></i> <span>Testimonials</span>
                 </a>
             </li>
+            @can('manage-platform-settings')
+                <li class="nav-item">
+                    <a href="{{ route('platform.configuration.edit') }}" class="nav-link {{ $sidebarRouteIs('platform.configuration.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.configuration.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-sliders fa-fw"></i> <span>Platform Configuration</span>
+                    </a>
+                </li>
+            @endcan
         @endcan
 
         @if (! $isImpersonating && $sidebarUser?->isPlatformOwner())

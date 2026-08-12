@@ -51,7 +51,7 @@
 
         <div class="auth-divider" aria-hidden="true"><span>or</span></div>
 
-        <p class="auth-signup">New to IDT? <a href="{{ route('register') }}">Create an account</a></p>
+        <p class="auth-signup">New to {{ $platformSettings['settings']->product_name }}? <a href="{{ route('register') }}">Create an account</a></p>
     </form>
 @endsection
 

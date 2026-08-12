@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Testimonial;
+use App\Services\PlatformConfigurationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -49,6 +50,6 @@ class TestimonialStatusNotification extends Notification implements ShouldQueue
             ]));
         }
 
-        return $message->line('This notification was sent by IDT.');
+        return $message->line('This notification was sent by '.app(PlatformConfigurationService::class)->settings()->product_name.'.');
     }
 }

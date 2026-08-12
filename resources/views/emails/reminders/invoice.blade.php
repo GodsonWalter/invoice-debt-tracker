@@ -7,7 +7,8 @@
 </head>
 <body style="margin:0;padding:0;background:#f3f6fb;color:#1f2937;font-family:Arial,Helvetica,sans-serif;">
 @php
-    $businessName = $businessProfile?->display_name ?? $workspace?->name ?? config('app.name');
+    $platform = $platformSettings['settings'];
+    $businessName = $businessProfile?->display_name ?? $workspace?->name ?? $platform->product_name;
     $invoiceUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
         'public.invoice.show',
         now()->addDays(30),

@@ -377,6 +377,70 @@ body.public-home {
     margin-bottom: 0;
 }
 
+.testimonial-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.testimonial-header {
+    min-height: 3.25rem;
+}
+
+.testimonial-quote {
+    color: var(--idt-navy);
+    font-size: 1rem;
+    line-height: 1.75;
+    margin: 0;
+}
+
+.testimonial-rating {
+    align-self: flex-end;
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    margin-top: 0.85rem;
+    text-align: right;
+}
+
+.testimonial-divider {
+    border-top: 1px solid var(--idt-border);
+    margin: 1.35rem 0 1.15rem;
+}
+
+.testimonial-author {
+    min-width: 0;
+}
+
+.testimonial-avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 3.25rem;
+    width: 3.25rem;
+}
+
+.testimonial-avatar-fallback {
+    align-items: center;
+    background: #eff5ff;
+    border-radius: 50%;
+    color: var(--idt-blue);
+    font-size: 1.35rem;
+    justify-content: center;
+}
+
+.testimonial-name {
+    color: var(--idt-navy);
+    display: block;
+    font-size: 0.98rem;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.testimonial-meta {
+    line-height: 1.45;
+}
+
 .roadmap-badge {
     color: #087f73;
     font-size: 0.68rem;

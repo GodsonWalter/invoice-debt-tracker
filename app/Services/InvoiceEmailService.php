@@ -99,7 +99,9 @@ class InvoiceEmailService
 
     public function subject(Invoice $invoice): string
     {
-        $businessName = $invoice->businessProfile()?->display_name ?? $invoice->workspace?->name ?? config('app.name');
+        $businessName = $invoice->businessProfile()?->display_name
+            ?? $invoice->workspace?->name
+            ?? app(PlatformConfigurationService::class)->settings()->product_name;
 
         return 'Invoice '.$invoice->invoice_number.' from '.$businessName;
     }

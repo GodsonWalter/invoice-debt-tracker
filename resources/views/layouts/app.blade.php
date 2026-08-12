@@ -2,10 +2,13 @@
 <html lang="en">
 
 <head>
+    <x-theme-init />
+    @php($platform = $platformSettings['settings'])
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title> {{ config('app.name', 'IDT') }} || @yield('page_title', '')</title>
+    <title>{{ trim($__env->yieldContent('page_title', $platform->product_name)) }}{{ $platform->default_page_title_suffix ? ' | '.$platform->default_page_title_suffix : '' }}</title>
+    @if ($platformSettings['faviconUrl'])<link rel="icon" href="{{ $platformSettings['faviconUrl'] }}">@endif
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -325,9 +328,13 @@
             }
         }
     </style>
+
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/theme.css', 'resources/js/theme.js'])
+    @endif
 </head>
 
-<body>
+<body class="app-shell">
     <div class="mobile-backdrop" id="sidebarBackdrop"></div>
     <div id="wrapper">
 
@@ -367,6 +374,8 @@
                     </div>
 
                     <div class="d-flex align-items-center">
+                        <x-theme-toggle class="app-theme-toggle me-2" />
+
                         <button class="btn btn-light border-0 me-2 shadow-sm d-none d-sm-inline-block"
                             onclick="toggleFullScreen()" title="Full Screen">
                             <i class="fa-solid fa-expand"></i>
@@ -420,14 +429,7 @@
                                 <li>
                                     <hr class="dropdown-divider mx-3 my-1">
                                 </li>
-                                @php
-                                    $switchableWorkspaces = Auth::user()->workspaces()
-                                        ->wherePivot('is_active', true)
-                                        ->whereNotNull('subdomain')
-                                        ->where('workspaces.subdomain', '<>', '')
-                                        ->where('workspaces.is_active', true)
-                                        ->get();
-                                @endphp
+                                @php($switchableWorkspaces = Auth::user()->workspaces()->wherePivot('is_active', true)->whereNotNull('subdomain')->where('workspaces.subdomain', '<>', '')->where('workspaces.is_active', true)->get())
                                 @forelse ($switchableWorkspaces as $switchWorkspace)
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center py-2 px-4"
@@ -474,6 +476,10 @@
 
 
             <main class="container-fluid p-2 p-md-4 flex-grow-1 overflow-y-auto">
+                @if ($platform->maintenance_banner_enabled && $platform->maintenance_banner_text)
+                    <div class="alert alert-warning" role="status"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ $platform->maintenance_banner_text }}</div>
+                @endif
+
                 @if (! empty($impersonationContext))
                     <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-sm"
                         role="status">

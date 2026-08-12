@@ -34,7 +34,7 @@
             
             <p>
                 Best regards,<br>
-                {{ config('app.name') }}
+                {{ $platformSettings['settings']->product_name }}
             </p>
         </div>
         <div class="footer">

@@ -7,12 +7,15 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Policies\TestimonialPolicy;
 use App\Services\ImpersonationService;
+use App\Services\PlatformConfigurationService;
 use App\Services\PlatformUserManagementService;
 use App\Services\UserAccountService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -90,6 +93,16 @@ class AppServiceProvider extends ServiceProvider
             return $user instanceof User
                 && ! app(ImpersonationService::class)->isImpersonating()
                 && $user->canManagePlatformUsers();
+        });
+
+        Gate::define('manage-platform-settings', function (?User $user): bool {
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && in_array($user->role, ['owner', 'admin'], true);
+        });
+
+        View::composer('*', function (ViewContract $view): void {
+            $view->with('platformSettings', app(PlatformConfigurationService::class)->viewData());
         });
 
         Gate::define('impersonate-platform-user', function (?User $user): bool {

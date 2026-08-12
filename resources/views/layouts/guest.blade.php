@@ -2,9 +2,14 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
+    <x-theme-init />
+    @php
+        $platform = $platformSettings['settings'];
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config('app.name', 'Invoice & Debt Tracker') }}</title>
+    <title>{{ $platform->product_name }}</title>
+    @if ($platformSettings['faviconUrl'])<link rel="icon" href="{{ $platformSettings['faviconUrl'] }}">@endif
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -509,10 +514,14 @@
         }
     </style>
 
+    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+        @vite(['resources/css/theme.css', 'resources/js/theme.js'])
+    @endif
+
     @stack('styles')
 </head>
 
-<body>
+<body class="auth-page">
     @php
         $authCopy = match (request()->route()?->getName()) {
             'register' => ['title' => 'Create your account', 'subtitle' => 'Start managing your invoices today'],
@@ -521,15 +530,23 @@
             'password.confirm' => ['title' => 'Confirm your password', 'subtitle' => 'This is a secure area of your account'],
             'verification.notice' => ['title' => 'Verify your email', 'subtitle' => 'One quick step before you get started'],
             'account.status' => ['title' => 'Account unavailable', 'subtitle' => 'We could not sign you in'],
-            default => ['title' => 'Welcome back', 'subtitle' => 'Sign in to your IDT account'],
+            default => ['title' => $platform->login_title ?: 'Welcome back', 'subtitle' => $platform->login_description ?: 'Sign in to your account'],
         };
     @endphp
+
+    <div class="auth-theme-control">
+        <x-theme-toggle />
+    </div>
 
     <main class="auth-shell">
         <aside class="auth-aside" aria-label="Invoice and debt tracker overview">
             <a href="{{ route('home') }}" class="auth-brand">
-                <span class="auth-brand-mark" aria-hidden="true">IDT</span>
-                <span class="auth-brand-name">Invoice &amp; Debt Tracker</span>
+                @if ($platformSettings['logoUrl'])
+                    <img src="{{ $platformSettings['logoUrl'] }}" alt="{{ $platform->product_name }}" class="auth-brand-mark" style="object-fit:contain;padding:8px;background:#fff">
+                @else
+                    <span class="auth-brand-mark" aria-hidden="true">{{ str($platform->product_name)->limit(4, '') }}</span>
+                @endif
+                <span class="auth-brand-name">{{ $platform->product_title }}</span>
             </a>
 
             <div class="auth-aside-copy">

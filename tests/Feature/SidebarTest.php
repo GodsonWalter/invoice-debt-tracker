@@ -41,6 +41,7 @@ test('sidebar renders without an active workspace', function () {
     $response
         ->assertOk()
         ->assertSee('Workspaces')
+        ->assertSee('data-theme-toggle', false)
         ->assertSee(route('home'), false)
         ->assertDontSee('AI Query')
         ->assertSee('/workspace/create', false);
@@ -54,6 +55,7 @@ test('sidebar shows workspace links for an active workspace', function () {
     $response
         ->assertOk()
         ->assertSee('Sidebar Workspace')
+        ->assertSee('data-theme-toggle', false)
         ->assertSee(route('home'), false)
         ->assertSee('AI Query')
         ->assertSee('Invoices')

@@ -1,16 +1,18 @@
 @extends('layouts.public')
 
-@section('meta_title', 'IDT | Invoice and debt management for growing businesses')
-@section('meta_description', 'Create professional invoices, track payments, automate reminders, and manage customer debts from one secure IDT workspace.')
+@php($platform = $platformSettings['settings'])
+
+@section('meta_title', $platform->seo_title ?: $platform->product_title)
+@section('meta_description', $platform->seo_description ?: $platform->tagline)
 
 @section('content')
     <header class="site-header">
         <nav class="navbar navbar-expand-lg" aria-label="Primary navigation">
             <div class="container">
                 <a class="brand-link align-items-center d-inline-flex fw-bold text-decoration-none" href="{{ route('home') }}"
-                    aria-label="IDT home">
-                    <span class="brand-mark" aria-hidden="true"><i class="bi bi-receipt-cutoff"></i></span>
-                    <span>IDT</span>
+                    aria-label="{{ $platform->product_name }} home">
+                    @if ($platformSettings['logoUrl'])<img src="{{ $platformSettings['logoUrl'] }}" alt="{{ $platform->product_name }}" style="max-width:132px;height:36px;object-fit:contain">@else<span class="brand-mark" aria-hidden="true"><i class="bi bi-receipt-cutoff"></i></span>@endif
+                    <span>{{ $platform->product_name }}</span>
                 </a>
 
                 <button class="navbar-toggler border-0 p-2" type="button" data-bs-toggle="collapse"
@@ -29,7 +31,9 @@
                         <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                     </ul>
 
-                    <div class="d-flex flex-column flex-lg-row gap-2">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
+                        <x-theme-toggle class="public-theme-toggle" />
+
                         @auth
                             <a href="{{ route('dashboard') }}" class="btn btn-primary px-4">Open Dashboard</a>
                         @else
@@ -47,7 +51,7 @@
             <div class="container">
                 <div class="row align-items-center g-5">
                     <div class="col-lg-6">
-                        <p class="eyebrow">Invoice clarity for growing businesses</p>
+                        <p class="eyebrow">{{ $platform->tagline ?: 'Invoice clarity for growing businesses' }}</p>
                         <h1 class="hero-heading mb-4">
                             Create Invoices. <span class="accent">Track Payments.</span> Recover Debts Faster.
                         </h1>
@@ -74,7 +78,7 @@
                         <div class="dashboard-preview" role="region" aria-label="Sample IDT dashboard preview">
                             <div class="preview-toolbar">
                                 <div class="preview-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-                                <span class="preview-label">IDT workspace</span>
+                                <span class="preview-label">{{ $platform->product_name }} workspace</span>
                                 <span class="sample-badge">Sample data</span>
                             </div>
                             <div class="preview-content">
@@ -246,17 +250,31 @@
                     <div class="row g-4">
                         @foreach ($testimonials as $testimonial)
                             <div class="col-md-6 col-lg-4">
-                                <article class="feature-card h-100">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        @if ($testimonial->image_url)
-                                            <img src="{{ $testimonial->image_url }}" alt="{{ $testimonial->display_name }}" class="rounded-circle object-fit-cover" style="width: 52px; height: 52px;">
-                                        @else
-                                            <span class="feature-icon mb-0"><i class="bi bi-quote" aria-hidden="true"></i></span>
-                                        @endif
-                                        <div><h3 class="mb-1">{{ $testimonial->display_name }}</h3><p class="text-muted small mb-0">{{ $testimonial->job_title }}{{ $testimonial->job_title && $testimonial->business_name ? ' · ' : '' }}{{ $testimonial->business_name }}</p></div>
+                                <article class="feature-card testimonial-card h-100">
+                                    <header class="testimonial-header d-flex align-items-center">
+                                        <div class="testimonial-author d-flex align-items-center gap-3">
+                                            @if ($testimonial->image_url)
+                                                <img src="{{ $testimonial->image_url }}" alt="{{ $testimonial->display_name }}" class="testimonial-avatar rounded-circle object-fit-cover">
+                                            @else
+                                                <span class="testimonial-avatar testimonial-avatar-fallback" aria-hidden="true">
+                                                    <i class="bi bi-person-fill"></i>
+                                                </span>
+                                            @endif
+
+                                            <div>
+                                                <cite class="testimonial-name">{{ $testimonial->display_name }}</cite>
+                                                <p class="testimonial-meta text-muted small mb-0">{{ $testimonial->job_title }}{{ $testimonial->job_title && $testimonial->business_name ? ' · ' : '' }}{{ $testimonial->business_name }}</p>
+                                            </div>
+                                        </div>
+                                    </header>
+
+                                    <div class="testimonial-rating text-warning" role="img" aria-label="{{ $testimonial->rating }} out of 5 stars">
+                                        {{ str_repeat('★', $testimonial->rating) }}
                                     </div>
-                                    <div class="text-warning mb-3" aria-label="{{ $testimonial->rating }} out of 5 stars">{{ str_repeat('★', $testimonial->rating) }}</div>
-                                    <p class="mb-0">{{ $testimonial->content }}</p>
+
+                                    <div class="testimonial-divider" aria-hidden="true"></div>
+
+                                    <blockquote class="testimonial-quote">{{ $testimonial->content }}</blockquote>
                                 </article>
                             </div>
                         @endforeach
@@ -430,9 +448,9 @@
     <footer class="site-footer">
         <div class="container">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                <a class="brand-link align-items-center d-inline-flex fw-bold text-decoration-none" href="{{ route('home') }}" aria-label="IDT home">
-                    <span class="brand-mark" aria-hidden="true"><i class="bi bi-receipt-cutoff"></i></span>
-                    <span>IDT</span>
+                <a class="brand-link align-items-center d-inline-flex fw-bold text-decoration-none" href="{{ route('home') }}" aria-label="{{ $platform->product_name }} home">
+                    @if ($platformSettings['logoUrl'])<img src="{{ $platformSettings['logoUrl'] }}" alt="{{ $platform->product_name }}" style="max-width:132px;height:36px;object-fit:contain">@else<span class="brand-mark" aria-hidden="true"><i class="bi bi-receipt-cutoff"></i></span>@endif
+                    <span>{{ $platform->product_name }}</span>
                 </a>
                 <nav class="d-flex flex-wrap gap-3" aria-label="Footer navigation">
                     <a class="footer-link" href="#features">Features</a>
@@ -441,7 +459,16 @@
                     <a class="footer-link" href="#faqs">FAQs</a>
                     <a class="footer-link" href="#contact">Contact</a>
                 </nav>
-                <span class="copyright">&copy; {{ now()->year }} IDT. All rights reserved.</span>
+                @if (collect($platform->social_links ?? [])->filter()->isNotEmpty())
+                    <nav class="d-flex gap-2" aria-label="Social links">
+                        @foreach (($platform->social_links ?? []) as $social => $url)
+                            @if ($url)
+                                <a class="footer-link" href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ ucfirst($social) }}</a>
+                            @endif
+                        @endforeach
+                    </nav>
+                @endif
+                <span class="copyright">{{ $platform->footer_copyright ?: 'Copyright '.now()->year.' '.$platform->product_name.'. All rights reserved.' }}</span>
             </div>
         </div>
     </footer>

@@ -9,6 +9,7 @@ use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformConfigurationController;
 use App\Http\Controllers\PlatformDashboardController;
 use App\Http\Controllers\PlatformTestimonialController;
 use App\Http\Controllers\PlatformUserController;
@@ -202,6 +203,11 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 've
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:view-platform-dashboard'])->prefix('platform')->name('platform.')->group(function () {
     Route::get('/dashboard', PlatformDashboardController::class)->name('dashboard');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-settings'])->prefix('platform/configuration')->name('platform.configuration.')->group(function () {
+    Route::get('/', [PlatformConfigurationController::class, 'edit'])->name('edit');
+    Route::put('/', [PlatformConfigurationController::class, 'update'])->name('update');
 });
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-testimonials'])->prefix('platform/testimonials')->name('platform.testimonials.')->group(function () {

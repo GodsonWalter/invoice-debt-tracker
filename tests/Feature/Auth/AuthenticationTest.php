@@ -7,11 +7,13 @@ test('login screen can be rendered', function () {
 
     $response->assertStatus(200)
         ->assertSee('Welcome back')
-        ->assertSee('Sign in to your IDT account')
+        ->assertSee('Sign in to your account')
         ->assertSee('Email address')
         ->assertSee('Forgot password?')
         ->assertSee('Create an account')
-        ->assertSee('togglePassword');
+        ->assertSee('togglePassword')
+        ->assertSee('data-theme-toggle', false)
+        ->assertSee('idt.theme', false);
 });
 
 test('users can authenticate using the login screen', function () {
