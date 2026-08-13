@@ -6,6 +6,7 @@ use App\Mail\ReminderMail;
 use App\Models\EmailTemplate;
 use App\Models\Invoice;
 use App\Models\ReminderLog;
+use App\Services\InvoicePdfService;
 use App\Services\ReminderService;
 use App\Services\TemplateRenderer;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,8 +32,11 @@ class SendReminderEmailJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(ReminderService $reminderService, TemplateRenderer $templateRenderer): void
-    {
+    public function handle(
+        ReminderService $reminderService,
+        TemplateRenderer $templateRenderer,
+        InvoicePdfService $invoicePdfService,
+    ): void {
         $reminderLog = $this->reminderLog();
 
         try {
@@ -51,8 +55,20 @@ class SendReminderEmailJob implements ShouldQueue
                 return;
             }
 
+            if ($invoice->status === Invoice::STATUS_PAID || $invoice->remaining_balance <= 0) {
+                $reminderService->markFailed($reminderLog, new \RuntimeException('The invoice has no outstanding balance.'));
+
+                return;
+            }
+
             $invoice->ensurePublicToken();
             [$subject, $body] = $this->renderTemplate($reminderLog, $templateRenderer);
+            $pdfContent = $reminderLog->reminderSchedule->include_invoice_pdf
+                ? $invoicePdfService->content($invoice)
+                : null;
+            $pdfFilename = $reminderLog->reminderSchedule->include_invoice_pdf
+                ? $invoicePdfService->filename($invoice)
+                : null;
 
             Mail::to($reminderLog->recipient_email)->send(new ReminderMail(
                 invoice: $invoice,
@@ -60,6 +76,8 @@ class SendReminderEmailJob implements ShouldQueue
                 reminderSchedule: $reminderLog->reminderSchedule,
                 renderedSubject: $subject,
                 renderedBody: $body,
+                pdfContent: $pdfContent,
+                pdfFilename: $pdfFilename,
             ));
 
             $reminderService->markSent($reminderLog);

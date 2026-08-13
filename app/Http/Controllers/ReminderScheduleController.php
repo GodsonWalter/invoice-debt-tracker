@@ -37,6 +37,7 @@ class ReminderScheduleController extends Controller
                 'direction' => ReminderSchedule::DIRECTION_BEFORE_DUE,
                 'days_offset' => 0,
                 'is_active' => true,
+                'include_invoice_pdf' => false,
             ]),
         ]);
     }

@@ -186,7 +186,7 @@
             <li class="nav-item">
                 <a href="{{ route('email-templates.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('email-templates.*') ? 'active' : '' }}"
                     @if ($sidebarRouteIs('email-templates.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-envelope-open-text fa-fw"></i> <span>Email Templates</span>
+                    <i class="fa-solid fa-envelope-open-text fa-fw"></i> <span>Email Reminder Templates</span>
                 </a>
             </li>
 

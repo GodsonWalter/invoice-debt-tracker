@@ -41,6 +41,13 @@
                         <label class="form-check-label" for="isActive">Enable Reminder</label>
                     </div>
 
+                    <div class="form-check form-switch mb-3">
+                        <input type="hidden" name="include_invoice_pdf" value="0">
+                        <input class="form-check-input" type="checkbox" name="include_invoice_pdf" id="includeInvoicePdf" value="1" {{ old('include_invoice_pdf', $reminderSchedule->include_invoice_pdf) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="includeInvoicePdf">Attach latest invoice PDF</label>
+                        <div class="form-text">Include the current invoice PDF with this reminder email.</div>
+                    </div>
+
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">{{ $submitLabel }}</button>
                         <a href="{{ route('reminder-schedules.index', $workspace) }}" class="btn btn-outline-secondary">Cancel</a>

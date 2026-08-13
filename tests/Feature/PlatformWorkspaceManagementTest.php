@@ -103,6 +103,35 @@ test('platform managers can create a workspace with an owner and membership', fu
         ->and($workspace->users()->whereKey($workspaceOwner->id)->wherePivot('role', 'owner')->exists())->toBeTrue();
 });
 
+test('platform workspace creation and update reject subdomains with unsupported symbols', function (): void {
+    $manager = User::factory()->create(['role' => 'manager']);
+    $workspaceOwner = User::factory()->create(['role' => 'user']);
+
+    $this->actingAs($manager)
+        ->post(platformWorkspaceManagementUrl('platform.workspaces.store'), [
+            'name' => 'Invalid Platform Workspace',
+            'slug' => 'invalid-platform-workspace',
+            'subdomain' => 'invalid.subdomain',
+            'owner_id' => $workspaceOwner->id,
+            'is_active' => true,
+        ])
+        ->assertSessionHasErrors('subdomain');
+
+    [, $workspace] = platformManagedWorkspaceFixture('platform-subdomain-validation');
+
+    $this->actingAs($manager)
+        ->put(platformWorkspaceManagementUrl('platform.workspaces.update', $workspace), [
+            'name' => $workspace->name,
+            'slug' => $workspace->slug,
+            'subdomain' => 'invalid/subdomain',
+            'owner_id' => $workspace->owner_id,
+            'is_active' => true,
+        ])
+        ->assertSessionHasErrors('subdomain');
+
+    expect($workspace->refresh()->subdomain)->toBe($workspace->slug);
+});
+
 test('platform managers can update workspace configuration and transfer ownership safely', function (): void {
     $manager = User::factory()->create(['role' => 'manager']);
     [$oldOwner, $workspace] = platformManagedWorkspaceFixture('transfer-platform');

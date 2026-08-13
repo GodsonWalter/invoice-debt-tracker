@@ -9,6 +9,7 @@ use App\Models\ReminderLog;
 use App\Models\ReminderSchedule;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\InvoicePdfService;
 use App\Services\ReminderService;
 use App\Services\TemplateRenderer;
 use Illuminate\Support\Carbon;
@@ -77,6 +78,7 @@ function createReminderScheduleFixture(
     int $daysOffset,
     string $direction,
     string $name = 'Reminder Schedule',
+    bool $includeInvoicePdf = false,
 ): ReminderSchedule {
     return ReminderSchedule::create([
         'workspace_id' => $workspace->id,
@@ -84,6 +86,7 @@ function createReminderScheduleFixture(
         'days_offset' => $daysOffset,
         'direction' => $direction,
         'is_active' => true,
+        'include_invoice_pdf' => $includeInvoicePdf,
     ]);
 }
 
@@ -248,7 +251,11 @@ test('queued reminder jobs do not send after the workspace is deactivated', func
     ]);
     $workspace->update(['is_active' => false]);
 
-    (new SendReminderEmailJob($reminderLog->id))->handle(app(ReminderService::class), app(TemplateRenderer::class));
+    (new SendReminderEmailJob($reminderLog->id))->handle(
+        app(ReminderService::class),
+        app(TemplateRenderer::class),
+        app(InvoicePdfService::class),
+    );
 
     Mail::assertNothingSent();
     expect($reminderLog->refresh())
@@ -275,11 +282,16 @@ test('reminder email job sends mail and marks log as sent', function () {
         'status' => ReminderLog::STATUS_PENDING,
     ]);
 
-    (new SendReminderEmailJob($reminderLog->id))->handle(app(ReminderService::class), app(TemplateRenderer::class));
+    (new SendReminderEmailJob($reminderLog->id))->handle(
+        app(ReminderService::class),
+        app(TemplateRenderer::class),
+        app(InvoicePdfService::class),
+    );
 
     Mail::assertSent(ReminderMail::class, function (ReminderMail $mail) use ($invoice, $schedule): bool {
         return $mail->invoice->id === $invoice->id
-            && $mail->reminderSchedule->id === $schedule->id;
+            && $mail->reminderSchedule->id === $schedule->id
+            && $mail->attachments() === [];
     });
 
     expect($reminderLog->refresh())
@@ -289,6 +301,78 @@ test('reminder email job sends mail and marks log as sent', function () {
         ->error_message->toBeNull();
 
     expect($invoice->refresh()->reminder_status)->toBe(Invoice::REMINDER_STATUS_SENT);
+});
+
+test('reminder email can include the latest invoice pdf when enabled', function (): void {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Mail::fake();
+
+    app()->bind(InvoicePdfService::class, fn (): InvoicePdfService => new class extends InvoicePdfService
+    {
+        public function content(Invoice $invoice): string
+        {
+            return '%PDF-1.4 reminder invoice';
+        }
+    });
+
+    [$workspace, $client, $invoice] = createReminderInvoiceFixture('2026-06-20');
+    $schedule = createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 0,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+        name: 'Due Today',
+        includeInvoicePdf: true,
+    );
+    $reminderLog = ReminderLog::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $invoice->id,
+        'reminder_schedule_id' => $schedule->id,
+        'recipient_email' => $client->email,
+        'status' => ReminderLog::STATUS_PENDING,
+    ]);
+
+    (new SendReminderEmailJob($reminderLog->id))->handle(
+        app(ReminderService::class),
+        app(TemplateRenderer::class),
+        app(InvoicePdfService::class),
+    );
+
+    Mail::assertSent(ReminderMail::class, function (ReminderMail $mail) use ($invoice, $schedule): bool {
+        return $mail->invoice->id === $invoice->id
+            && $mail->reminderSchedule->id === $schedule->id
+            && count($mail->attachments()) === 1;
+    });
+});
+
+test('queued reminder is not sent when the invoice is paid before delivery', function (): void {
+    Carbon::setTestNow('2026-06-17 09:00:00');
+    Mail::fake();
+
+    [$workspace, $client, $invoice] = createReminderInvoiceFixture('2026-06-20');
+    $schedule = createReminderScheduleFixture(
+        workspace: $workspace,
+        daysOffset: 3,
+        direction: ReminderSchedule::DIRECTION_BEFORE_DUE,
+    );
+    $reminderLog = ReminderLog::create([
+        'workspace_id' => $workspace->id,
+        'invoice_id' => $invoice->id,
+        'reminder_schedule_id' => $schedule->id,
+        'recipient_email' => $client->email,
+        'status' => ReminderLog::STATUS_PENDING,
+    ]);
+    $invoice->update(['status' => Invoice::STATUS_PAID]);
+
+    (new SendReminderEmailJob($reminderLog->id))->handle(
+        app(ReminderService::class),
+        app(TemplateRenderer::class),
+        app(InvoicePdfService::class),
+    );
+
+    Mail::assertNothingSent();
+    expect($reminderLog->refresh())
+        ->status->toBe(ReminderLog::STATUS_FAILED)
+        ->error_message->toBe('The invoice has no outstanding balance.');
 });
 
 test('reminder logs remain isolated between workspaces', function () {
@@ -366,6 +450,7 @@ test('failed reminder email attempts retain the correct workspace', function () 
     expect(fn () => (new SendReminderEmailJob($reminderLog->id))->handle(
         app(ReminderService::class),
         app(TemplateRenderer::class),
+        app(InvoicePdfService::class),
     ))->toThrow(RuntimeException::class, 'SMTP connection failed.');
 
     expect($reminderLog->refresh())

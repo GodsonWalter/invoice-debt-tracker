@@ -35,7 +35,7 @@ class StorePlatformWorkspaceRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('workspaces', 'slug')],
-            'subdomain' => ['nullable', 'string', 'max:255', Rule::unique('workspaces', 'subdomain')],
+            'subdomain' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/D', Rule::unique('workspaces', 'subdomain')],
             'invoice_prefix' => ['nullable', 'string', 'max:50'],
             'metadata' => ['nullable', 'json'],
             'currency_id' => [

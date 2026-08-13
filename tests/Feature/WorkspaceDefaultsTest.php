@@ -27,6 +27,8 @@ test('regular workspace creation provisions the standard reminders and email tem
     expect($workspace->reminderSchedules()->count())->toBe(4)
         ->and($workspace->emailTemplates()->count())->toBe(count(EmailTemplate::TYPES))
         ->and($workspace->reminderSchedules()->where('direction', ReminderSchedule::DIRECTION_BEFORE_DUE)->where('days_offset', 0)->exists())->toBeTrue()
+        ->and($workspace->reminderSchedules()->where('direction', ReminderSchedule::DIRECTION_BEFORE_DUE)->where('days_offset', 0)->value('include_invoice_pdf'))->toBeTrue()
+        ->and($workspace->reminderSchedules()->where('direction', ReminderSchedule::DIRECTION_AFTER_DUE)->where('include_invoice_pdf', true)->count())->toBe(2)
         ->and($workspace->emailTemplates()->where('type', EmailTemplate::TYPE_DUE_TODAY)->where('is_default', true)->exists())->toBeTrue();
 });
 

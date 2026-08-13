@@ -28,6 +28,7 @@ class WorkspaceDefaultsService
                 [
                     'name' => $attributes['name'],
                     'is_active' => true,
+                    'include_invoice_pdf' => $attributes['include_invoice_pdf'],
                 ],
             );
         }
@@ -52,7 +53,7 @@ class WorkspaceDefaultsService
     }
 
     /**
-     * @return array<int, array{name: string, days_offset: int, direction: string}>
+     * @return array<int, array{name: string, days_offset: int, direction: string, include_invoice_pdf: bool}>
      */
     private function reminderScheduleDefaults(): array
     {
@@ -61,21 +62,25 @@ class WorkspaceDefaultsService
                 'name' => '3 Days Before Due',
                 'days_offset' => 3,
                 'direction' => ReminderSchedule::DIRECTION_BEFORE_DUE,
+                'include_invoice_pdf' => false,
             ],
             [
                 'name' => 'Due Today',
                 'days_offset' => 0,
                 'direction' => ReminderSchedule::DIRECTION_BEFORE_DUE,
+                'include_invoice_pdf' => true,
             ],
             [
                 'name' => '7 Days Overdue',
                 'days_offset' => 7,
                 'direction' => ReminderSchedule::DIRECTION_AFTER_DUE,
+                'include_invoice_pdf' => true,
             ],
             [
                 'name' => '14 Days Overdue',
                 'days_offset' => 14,
                 'direction' => ReminderSchedule::DIRECTION_AFTER_DUE,
+                'include_invoice_pdf' => true,
             ],
         ];
     }

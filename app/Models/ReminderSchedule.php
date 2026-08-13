@@ -23,11 +23,13 @@ class ReminderSchedule extends Model
         'days_offset',
         'direction',
         'is_active',
+        'include_invoice_pdf',
     ];
 
     protected $casts = [
         'days_offset' => 'integer',
         'is_active' => 'boolean',
+        'include_invoice_pdf' => 'boolean',
     ];
 
     public function workspace(): BelongsTo

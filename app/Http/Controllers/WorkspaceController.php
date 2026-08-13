@@ -118,7 +118,7 @@ class WorkspaceController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug'],
-            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain'],
+            'subdomain' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/D', 'unique:workspaces,subdomain'],
             'metadata' => ['nullable', 'json'],
         ]);
 
@@ -179,7 +179,7 @@ class WorkspaceController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:workspaces,slug,'.$workspace->id],
-            'subdomain' => ['nullable', 'string', 'max:255', 'unique:workspaces,subdomain,'.$workspace->id],
+            'subdomain' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/D', 'unique:workspaces,subdomain,'.$workspace->id],
             'metadata' => ['nullable', 'json'],
             'invoice_prefix' => ['nullable', 'string', 'max:50'],
             'currency_id' => ['required', $currencyService->activeCurrencyRule()],

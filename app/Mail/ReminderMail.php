@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\ReminderSchedule;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -24,6 +25,8 @@ class ReminderMail extends Mailable
         public ReminderSchedule $reminderSchedule,
         public string $renderedSubject,
         public string $renderedBody,
+        private ?string $pdfContent = null,
+        private ?string $pdfFilename = null,
     ) {}
 
     /**
@@ -54,5 +57,22 @@ class ReminderMail extends Mailable
                 'renderedBody' => $this->renderedBody,
             ],
         );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, Attachment>
+     */
+    public function attachments(): array
+    {
+        if ($this->pdfContent === null || $this->pdfFilename === null) {
+            return [];
+        }
+
+        return [
+            Attachment::fromData(fn (): string => $this->pdfContent, $this->pdfFilename)
+                ->withMime('application/pdf'),
+        ];
     }
 }

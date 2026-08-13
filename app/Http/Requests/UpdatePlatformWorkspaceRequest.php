@@ -45,6 +45,7 @@ class UpdatePlatformWorkspaceRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
+                'regex:/^[A-Za-z0-9_-]+$/D',
                 Rule::unique('workspaces', 'subdomain')->ignore($this->workspaceId()),
             ],
             'invoice_prefix' => ['nullable', 'string', 'max:50'],

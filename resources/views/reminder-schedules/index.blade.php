@@ -34,6 +34,7 @@
                                     <th>Name</th>
                                     <th>Direction</th>
                                     <th>Days Offset</th>
+                                    <th>Invoice PDF</th>
                                     <th>Status</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
@@ -48,6 +49,11 @@
                                             </span>
                                         </td>
                                         <td>{{ $schedule->days_offset }} day{{ $schedule->days_offset === 1 ? '' : 's' }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ $schedule->include_invoice_pdf ? 'info' : 'light text-dark border' }}">
+                                                {{ $schedule->include_invoice_pdf ? 'Attached' : 'Link only' }}
+                                            </span>
+                                        </td>
                                         <td>
                                             <span class="badge bg-{{ $schedule->is_active ? 'success' : 'secondary' }}">
                                                 {{ $schedule->is_active ? 'Active' : 'Inactive' }}

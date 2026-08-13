@@ -22,6 +22,7 @@ class StoreReminderScheduleRequest extends FormRequest
             'direction' => ['required', Rule::in(ReminderSchedule::DIRECTIONS)],
             'days_offset' => ['required', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
+            'include_invoice_pdf' => ['nullable', 'boolean'],
         ];
     }
 }

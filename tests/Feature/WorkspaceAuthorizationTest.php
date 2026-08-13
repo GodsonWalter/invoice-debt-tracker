@@ -90,6 +90,31 @@ test('a workspace owner sees and can use workspace editing', function () {
     expect($workspace->refresh()->name)->toBe('Updated Workspace');
 });
 
+test('regular workspace creation and update reject subdomains with unsupported symbols', function (): void {
+    $this->withoutMiddleware([EnsureWorkspaceIsActive::class, ResolveWorkspace::class]);
+
+    [$user, $workspace, $currency] = createWorkspaceAuthorizationFixture('owner');
+    $originalSubdomain = $workspace->subdomain;
+
+    $this->actingAs($user)
+        ->post(route('workspace.store'), [
+            'name' => 'Invalid Subdomain Workspace',
+            'slug' => 'invalid-subdomain-workspace',
+            'subdomain' => 'invalid.subdomain',
+        ])
+        ->assertSessionHasErrors('subdomain');
+
+    $this->actingAs($user)
+        ->withMiddleware()
+        ->put(activeWorkspaceRoute('workspace.update', $workspace), array_merge(
+            workspaceUpdatePayload($currency, 'valid-workspace-update'),
+            ['subdomain' => 'invalid/subdomain'],
+        ))
+        ->assertSessionHasErrors('subdomain');
+
+    expect($workspace->refresh()->subdomain)->toBe($originalSubdomain);
+});
+
 test('a workspace admin sees and can use workspace editing', function () {
     [$user, $workspace, $currency] = createWorkspaceAuthorizationFixture('admin');
 
