@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class PlatformWorkspaceManagementService
 {
-    public function __construct(private readonly WorkspaceLifecycleService $lifecycleService) {}
+    public function __construct(
+        private readonly WorkspaceLifecycleService $lifecycleService,
+        private readonly WorkspaceDefaultsService $workspaceDefaultsService,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $filters
@@ -110,6 +113,7 @@ class PlatformWorkspaceManagementService
                 'role' => 'owner',
                 'is_active' => true,
             ]);
+            $this->workspaceDefaultsService->provision($workspace);
 
             return $workspace->fresh();
         });

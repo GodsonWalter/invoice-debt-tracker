@@ -5,14 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\WorkspaceIndexRequest;
 use App\Models\Workspace;
 use App\Services\CurrencyService;
+use App\Services\WorkspaceDefaultsService;
 use App\Services\WorkspaceLifecycleService;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class WorkspaceController extends Controller
 {
-    public function __construct(private WorkspaceLifecycleService $lifecycleService) {}
+    public function __construct(
+        private readonly WorkspaceLifecycleService $lifecycleService,
+        private readonly WorkspaceDefaultsService $workspaceDefaultsService,
+    ) {}
 
     private function authorizeActiveWorkspace(Workspace $workspace): void
     {
@@ -105,7 +111,7 @@ class WorkspaceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Workspace $workspace, CurrencyService $currencyService)
+    public function store(Request $request, Workspace $workspace, CurrencyService $currencyService): RedirectResponse
     {
         //  $this->authorizeWorkspaceUser($workspace);
 
@@ -116,18 +122,19 @@ class WorkspaceController extends Controller
             'metadata' => ['nullable', 'json'],
         ]);
 
-        $workspace = Workspace::create(
-            [
+        DB::transaction(function () use ($validated, $currencyService): void {
+            $workspace = Workspace::create([
                 'owner_id' => Auth::id(),
                 'name' => $validated['name'],
                 'slug' => $validated['slug'],
                 'subdomain' => $validated['subdomain'] ?? null,
                 'currency_id' => $currencyService->defaultCurrencyForUser(Auth::user())?->id,
                 'metadata' => isset($validated['metadata']) ? json_decode($validated['metadata'], true) : null,
-            ]
-        );
+            ]);
 
-        $workspace->users()->attach(Auth::id(), ['role' => 'owner', 'is_active' => true]);
+            $workspace->users()->attach(Auth::id(), ['role' => 'owner', 'is_active' => true]);
+            $this->workspaceDefaultsService->provision($workspace);
+        });
 
         return redirect()->route('workspace.index')->with('success', 'Workspace created successfully.');
     }

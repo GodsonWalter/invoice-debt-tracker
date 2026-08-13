@@ -26,6 +26,14 @@ test('guests can view the public homepage and its authentication links', functio
         ->assertSee(route('register', [], false), false);
 });
 
+test('mobile homepage navigation closes after selecting an in-page menu item', function (): void {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('id="publicNavigation"', false)
+        ->assertSee('window.innerWidth >= 992', false)
+        ->assertSee('navigationCollapse.hide()', false);
+});
+
 test('authenticated users can access the public homepage without workspace data', function (): void {
     $user = User::factory()->create();
 

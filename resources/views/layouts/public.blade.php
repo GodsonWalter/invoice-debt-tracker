@@ -43,6 +43,29 @@
     @yield('content')
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navigation = document.getElementById('publicNavigation');
+
+            if (!navigation || !window.bootstrap) {
+                return;
+            }
+
+            const navigationCollapse = window.bootstrap.Collapse.getOrCreateInstance(navigation, {
+                toggle: false,
+            });
+
+            navigation.addEventListener('click', function (event) {
+                const menuItem = event.target.closest('a[href^="#"]');
+
+                if (!menuItem || window.innerWidth >= 992 || !navigation.classList.contains('show')) {
+                    return;
+                }
+
+                navigationCollapse.hide();
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 

@@ -68,6 +68,26 @@ test('sidebar shows workspace links for an active workspace', function () {
         ->assertSee('/workspace/'.$workspace->id.'/reminder-schedules', false);
 });
 
+test('sidebar places platform management below workspace navigation', function (): void {
+    $owner = User::factory()->create(['role' => User::PLATFORM_ROLE_OWNER]);
+    [$owner, $workspace] = createSidebarWorkspace('platform-sidebar-workspace', $owner);
+
+    $response = $this->actingAs($owner)->get('http://platform-sidebar-workspace.idt.test/dashboard');
+
+    $response
+        ->assertOk()
+        ->assertSee('Platform Management')
+        ->assertSee('Platform Dashboard')
+        ->assertSee('Platform Configuration');
+
+    $content = $response->getContent();
+
+    expect(strpos($content, 'Platform Management'))
+        ->toBeGreaterThan(strpos($content, 'Workspace Settings'))
+        ->and(strpos($content, '/platform/dashboard'))
+        ->toBeGreaterThan(strpos($content, '/workspace/'.$workspace->id.'/dashboard'));
+});
+
 test('sidebar hides workspace links for a user outside the active workspace', function () {
     $user = User::factory()->create();
     [, $workspace] = createSidebarWorkspace('isolated-sidebar-workspace');

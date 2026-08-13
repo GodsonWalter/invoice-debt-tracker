@@ -6,6 +6,15 @@
             && $workspace instanceof \App\Models\Workspace
             && $workspace->canBeManagedBy(Auth::user());
         $isImpersonating = app(\App\Services\ImpersonationService::class)->isImpersonating();
+        $sidebarUser = Auth::user();
+        $recoverableWorkspaceCount = $sidebarUser
+            ? $sidebarUser->ownedDeletedWorkspaces()
+                ->where('deleted_at', '>=', now()->subDays((int) config('workspace-lifecycle.self_service_restore_days')))
+                ->count()
+            : 0;
+        $canAccessPlatformManagement = $sidebarUser
+            && ! $isImpersonating
+            && ($sidebarUser->canManagePlatformUsers() || in_array($sidebarUser->role, ['owner', 'admin'], true));
         $sidebarRouteIs = static fn (string ...$patterns): bool => request()->routeIs(...$patterns);
     @endphp
 
@@ -21,6 +30,7 @@
     </div>
 
     <ul class="nav flex-column mt-2 pb-4">
+        <li class="nav-section-title">Overview</li>
         <li class="nav-item">
             <a href="{{ $canViewWorkspaceDashboard ? route('workspace.dashboard', $workspace, false) : route('dashboard') }}"
                 class="nav-link {{ $sidebarRouteIs('dashboard', 'workspace.dashboard') ? 'active' : '' }}"
@@ -29,12 +39,14 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('home') }}" class="nav-link">
+            <a href="{{ route('home') }}" class="nav-link {{ $sidebarRouteIs('home') ? 'active' : '' }}"
+                @if ($sidebarRouteIs('home')) aria-current="page" @endif>
                 <i class="fa-solid fa-globe fa-fw"></i> <span>Home</span>
             </a>
         </li>
 
-        {{-- workspaces --}}
+        <li class="nav-divider"></li>
+        <li class="nav-section-title">Workspace Access</li>
         <li class="nav-item">
             <a href="{{ route('workspace.index', [], false) }}"
                 class="nav-link {{ $sidebarRouteIs('workspace.index', 'workspace.create', 'workspace.show') ? 'active' : '' }}"
@@ -42,16 +54,6 @@
                 <i class="fa-solid fa-building fa-fw"></i> <span>Workspaces</span>
             </a>
         </li>
-
-        @php
-            $sidebarUser = Auth::user();
-            $recoverableWorkspaceCount = $sidebarUser
-                ? $sidebarUser->ownedDeletedWorkspaces()
-                    ->where('deleted_at', '>=', now()->subDays((int) config('workspace-lifecycle.self_service_restore_days')))
-                    ->count()
-                : 0;
-        @endphp
-
         @if (! $isImpersonating && $sidebarUser && ($sidebarUser->ownedDeletedWorkspaces()->exists() || $sidebarUser->isPlatformOwner()))
             <li class="nav-item">
                 <a href="{{ route('workspace.recovery.index') }}"
@@ -66,80 +68,6 @@
             </li>
         @endif
 
-        @can('view-platform-dashboard')
-            <li class="nav-divider"></li>
-            <li class="nav-section-title">Platform Management</li>
-            <li class="nav-item">
-                <a href="{{ route('platform.dashboard') }}" class="nav-link {{ $sidebarRouteIs('platform.dashboard') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.dashboard')) aria-current="page" @endif>
-                    <i class="fa-solid fa-gauge-high fa-fw"></i> <span>Platform Dashboard</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('platform.workspaces.index') }}" class="nav-link {{ $sidebarRouteIs('platform.workspaces.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.workspaces.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-building-shield fa-fw"></i> <span>Platform Workspaces</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('platform.testimonials.index') }}" class="nav-link {{ $sidebarRouteIs('platform.testimonials.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.testimonials.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-quote-left fa-fw"></i> <span>Testimonials</span>
-                </a>
-            </li>
-            @can('manage-platform-settings')
-                <li class="nav-item">
-                    <a href="{{ route('platform.configuration.edit') }}" class="nav-link {{ $sidebarRouteIs('platform.configuration.*') ? 'active' : '' }}"
-                        @if ($sidebarRouteIs('platform.configuration.*')) aria-current="page" @endif>
-                        <i class="fa-solid fa-sliders fa-fw"></i> <span>Platform Configuration</span>
-                    </a>
-                </li>
-            @endcan
-        @endcan
-
-        @if (! $isImpersonating && $sidebarUser?->isPlatformOwner())
-            <li class="nav-item">
-                <a href="{{ route('platform.recovery.index') }}"
-                    class="nav-link {{ $sidebarRouteIs('platform.recovery.index', 'platform.recovery.show') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.recovery.index', 'platform.recovery.show')) aria-current="page" @endif>
-                    <i class="fa-solid fa-shield-halved fa-fw"></i> <span>Deleted Workspaces</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('platform.recovery.audits') }}"
-                    class="nav-link {{ $sidebarRouteIs('platform.recovery.audits') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.recovery.audits')) aria-current="page" @endif>
-                    <i class="fa-solid fa-clipboard-list fa-fw"></i> <span>Lifecycle Audit</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('platform.user-recovery.index') }}"
-                    class="nav-link {{ $sidebarRouteIs('platform.user-recovery.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.user-recovery.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-user-shield fa-fw"></i> <span>Deleted User Accounts</span>
-                </a>
-            </li>
-        @endif
-
-        @can('manage-platform-users')
-            <li class="nav-item">
-                <a href="{{ route('platform.users.index') }}"
-                    class="nav-link {{ $sidebarRouteIs('platform.users.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('platform.users.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-user-gear fa-fw"></i> <span>Platform Users</span>
-                </a>
-            </li>
-        @endcan
-
-        @if (! $isImpersonating && in_array(Auth::user()?->role, ['owner', 'admin'], true))
-            <li class="nav-item">
-                <a href="{{ route('currencies.index') }}" class="nav-link {{ $sidebarRouteIs('currencies.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('currencies.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-coins fa-fw"></i> <span>Currencies</span>
-                </a>
-            </li>
-        @endif
-
         @if ($canViewWorkspaceDashboard)
 
 
@@ -147,7 +75,7 @@
             <li class="nav-section-title">{{ $workspace->name }}</li>
 
 
-            {{-- dashboard --}}
+            <li class="nav-section-title">Overview</li>
             <li class="nav-item">
                 <a href="{{ route('workspace.dashboard', $workspace, false) }}"
                     class="nav-link {{ $sidebarRouteIs('workspace.dashboard') ? 'active' : '' }}"
@@ -172,6 +100,7 @@
             </li>
 
 
+            <li class="nav-section-title">Billing & Customers</li>
             {{-- invoices --}}
             <li class="nav-item">
                 <a href="{{ route('invoices.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('invoices.*') ? 'active' : '' }}"
@@ -197,16 +126,7 @@
                 </a>
             </li>
 
-            {{-- users --}}
-            <li class="nav-item">
-                <a href="{{ route('workspace.users.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('workspace.users.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('workspace.users.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
-                </a>
-            </li>
-
-
-            {{-- reminder dashboard dropdown - only visible to owners and admins --}}
+            <li class="nav-section-title">Automation</li>
             <li class="nav-item has-dropdown {{ $sidebarRouteIs('reminders.*') ? 'open' : '' }}">
                 <a href="#" class="nav-link {{ $sidebarRouteIs('reminders.*') ? 'active' : '' }}"
                     aria-expanded="{{ $sidebarRouteIs('reminders.*') ? 'true' : 'false' }}"
@@ -236,9 +156,15 @@
                 </ul>
             </li>
 
+            <li class="nav-section-title">Team</li>
+            <li class="nav-item">
+                <a href="{{ route('workspace.users.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('workspace.users.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('workspace.users.*')) aria-current="page" @endif>
+                    <i class="fa-solid fa-users fa-fw"></i> <span>Users</span>
+                </a>
+            </li>
 
-            {{-- <li class="nav-divider"></li> --}}
-            <li class="nav-section-title">Settings</li>
+            <li class="nav-section-title">Workspace Settings</li>
 
             {{-- workspace settings --}}
             <li class="nav-item">
@@ -279,19 +205,85 @@
 
 
 
-        {{-- drop down example --}}
-        {{-- <li class="nav-item has-dropdown">
-            <a href="#" class="nav-link">
-                <i class="fa-solid fa-users fa-fw"></i>
-                <span>Users</span>
-                <i class="fa-solid fa-chevron-down dropdown-toggle-icon"></i>
-            </a>
-            <ul class="sidebar-dropdown-menu">
-                <li><a href="#">All Users</a></li>
-                <li><a href="#">Active Users</a></li>
-                <li><a href="#">Banned Users</a></li>
-            </ul>
-        </li> --}}
+        @if ($canAccessPlatformManagement)
+            <li class="nav-divider"></li>
+            <li class="nav-section-title">Platform Management</li>
+
+            @can('view-platform-dashboard')
+                <li class="nav-item">
+                    <a href="{{ route('platform.dashboard') }}" class="nav-link {{ $sidebarRouteIs('platform.dashboard') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.dashboard')) aria-current="page" @endif>
+                        <i class="fa-solid fa-gauge-high fa-fw"></i> <span>Platform Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.workspaces.index') }}" class="nav-link {{ $sidebarRouteIs('platform.workspaces.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.workspaces.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-building-shield fa-fw"></i> <span>Platform Workspaces</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.testimonials.index') }}" class="nav-link {{ $sidebarRouteIs('platform.testimonials.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.testimonials.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-quote-left fa-fw"></i> <span>Testimonials</span>
+                    </a>
+                </li>
+            @endcan
+
+            @can('manage-platform-settings')
+                <li class="nav-item">
+                    <a href="{{ route('platform.configuration.edit') }}" class="nav-link {{ $sidebarRouteIs('platform.configuration.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.configuration.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-sliders fa-fw"></i> <span>Platform Configuration</span>
+                    </a>
+                </li>
+            @endcan
+
+            @can('manage-platform-users')
+                <li class="nav-item">
+                    <a href="{{ route('platform.users.index') }}"
+                        class="nav-link {{ $sidebarRouteIs('platform.users.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.users.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-user-gear fa-fw"></i> <span>Platform Users</span>
+                    </a>
+                </li>
+            @endcan
+
+            @if (! $isImpersonating && $sidebarUser?->isPlatformOwner())
+                <li class="nav-section-title">Recovery & Auditing</li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.recovery.index') }}"
+                        class="nav-link {{ $sidebarRouteIs('platform.recovery.index', 'platform.recovery.show') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.recovery.index', 'platform.recovery.show')) aria-current="page" @endif>
+                        <i class="fa-solid fa-shield-halved fa-fw"></i> <span>Deleted Workspaces</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.recovery.audits') }}"
+                        class="nav-link {{ $sidebarRouteIs('platform.recovery.audits') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.recovery.audits')) aria-current="page" @endif>
+                        <i class="fa-solid fa-clipboard-list fa-fw"></i> <span>Lifecycle Audit</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.user-recovery.index') }}"
+                        class="nav-link {{ $sidebarRouteIs('platform.user-recovery.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.user-recovery.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-user-shield fa-fw"></i> <span>Deleted User Accounts</span>
+                    </a>
+                </li>
+            @endif
+
+            @if (! $isImpersonating && in_array($sidebarUser?->role, ['owner', 'admin'], true))
+                <li class="nav-section-title">System</li>
+                <li class="nav-item">
+                    <a href="{{ route('currencies.index') }}" class="nav-link {{ $sidebarRouteIs('currencies.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('currencies.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-coins fa-fw"></i> <span>Currencies</span>
+                    </a>
+                </li>
+            @endif
+        @endif
 
     </ul>
 </nav>

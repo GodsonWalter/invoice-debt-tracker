@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\EmailTemplate;
 use App\Models\Workspace;
+use App\Services\WorkspaceDefaultsService;
 use Illuminate\Database\Seeder;
 
 class EmailTemplateSeeder extends Seeder
@@ -13,33 +13,10 @@ class EmailTemplateSeeder extends Seeder
      */
     public function run(): void
     {
-        Workspace::query()->each(function (Workspace $workspace): void {
-            foreach (EmailTemplate::TYPES as $type) {
-                $content = EmailTemplate::defaultContentForType($type);
+        $workspaceDefaultsService = app(WorkspaceDefaultsService::class);
 
-                EmailTemplate::updateOrCreate(
-                    [
-                        'workspace_id' => $workspace->id,
-                        'type' => $type,
-                    ],
-                    [
-                        'name' => $this->nameForType($type),
-                        'subject' => $content['subject'],
-                        'body' => $content['body'],
-                        'is_default' => true,
-                        'is_active' => true,
-                    ],
-                );
-            }
+        Workspace::query()->each(function (Workspace $workspace) use ($workspaceDefaultsService): void {
+            $workspaceDefaultsService->provisionEmailTemplates($workspace);
         });
-    }
-
-    private function nameForType(string $type): string
-    {
-        return match ($type) {
-            EmailTemplate::TYPE_DUE_TODAY => 'Invoice Due Today',
-            EmailTemplate::TYPE_OVERDUE => 'Payment Overdue Notice',
-            default => 'Invoice Reminder',
-        };
     }
 }
