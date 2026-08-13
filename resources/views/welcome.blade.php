@@ -6,6 +6,8 @@
 @section('meta_description', $platform->seo_description ?: $platform->tagline)
 
 @section('content')
+    @php($homepageCurrencySymbol = $homepageCurrency['symbol'] ?? '$')
+
     <header class="site-header">
         <nav class="navbar navbar-expand-lg" aria-label="Primary navigation">
             <div class="container">
@@ -75,7 +77,7 @@
                     </div>
 
                     <div class="col-lg-6">
-                        <div class="dashboard-preview" role="region" aria-label="Sample IDT dashboard preview">
+                        <div class="dashboard-preview" role="region" aria-label="Sample {{ $platform->product_name }} dashboard preview">
                             <div class="preview-toolbar">
                                 <div class="preview-dots" aria-hidden="true"><span></span><span></span><span></span></div>
                                 <span class="preview-label">{{ $platform->product_name }} workspace</span>
@@ -94,14 +96,14 @@
                                     <div class="col-6 col-xl-3">
                                         <div class="preview-summary">
                                             <div class="label mb-2">Revenue</div>
-                                            <div class="value">₦1.28m</div>
+                                            <div class="value">{{ $homepageCurrencySymbol }}1.28m</div>
                                             <div class="trend mt-1"><i class="bi bi-arrow-up-right" aria-hidden="true"></i> 12.4%</div>
                                         </div>
                                     </div>
                                     <div class="col-6 col-xl-3">
                                         <div class="preview-summary">
                                             <div class="label mb-2">Outstanding debt</div>
-                                            <div class="value">₦486k</div>
+                                            <div class="value">{{ $homepageCurrencySymbol }}486k</div>
                                             <div class="trend mt-1"><i class="bi bi-activity" aria-hidden="true"></i> Current</div>
                                         </div>
                                     </div>
@@ -115,7 +117,7 @@
                                     <div class="col-6 col-xl-3">
                                         <div class="preview-summary">
                                             <div class="label mb-2">Recent payments</div>
-                                            <div class="value">₦245k</div>
+                                            <div class="value">{{ $homepageCurrencySymbol }}245k</div>
                                             <div class="trend mt-1"><i class="bi bi-check2-circle" aria-hidden="true"></i> This week</div>
                                         </div>
                                     </div>
@@ -153,17 +155,17 @@
                                                 <div class="preview-payment">
                                                     <span class="avatar" aria-hidden="true">GS</span>
                                                     <span class="flex-grow-1"><span class="name">Grace Stores</span><span class="meta">INV-2026-0041</span></span>
-                                                    <span class="amount">₦120k</span>
+                                                    <span class="amount">{{ $homepageCurrencySymbol }}120k</span>
                                                 </div>
                                                 <div class="preview-payment">
                                                     <span class="avatar" aria-hidden="true">MV</span>
                                                     <span class="flex-grow-1"><span class="name">Midas Ventures</span><span class="meta">INV-2026-0038</span></span>
-                                                    <span class="amount">₦80k</span>
+                                                    <span class="amount">{{ $homepageCurrencySymbol }}80k</span>
                                                 </div>
                                                 <div class="preview-payment">
                                                     <span class="avatar" aria-hidden="true">AC</span>
                                                     <span class="flex-grow-1"><span class="name">Ayo Catering</span><span class="meta">INV-2026-0035</span></span>
-                                                    <span class="amount">₦45k</span>
+                                                    <span class="amount">{{ $homepageCurrencySymbol }}45k</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -224,7 +226,7 @@
                                 <h3 class="mb-0">WhatsApp &amp; SMS</h3>
                                 <span class="roadmap-badge">Roadmap</span>
                             </div>
-                            <p>Keep customer follow-up organized as WhatsApp and SMS workflows are added to IDT.</p>
+                            <p>Keep customer follow-up organized as WhatsApp and SMS workflows are added to {{ $platform->product_name }}.</p>
                         </article>
                     </div>
                     <div class="col-md-6 col-lg-4">
@@ -242,7 +244,7 @@
             <div class="container">
                 <div class="text-center mx-auto mb-5" style="max-width: 700px;">
                     <p class="eyebrow">Customer stories</p>
-                    <h2 id="homepage-testimonials-heading" class="section-heading mb-3">Trusted by teams using IDT</h2>
+                    <h2 id="homepage-testimonials-heading" class="section-heading mb-3">Trusted by teams using {{ $platform->product_name }}</h2>
                     <p class="section-lead mx-auto mb-0">See how businesses are bringing their invoicing and payment follow-up into focus.</p>
                 </div>
 
@@ -283,7 +285,7 @@
                     <div class="pricing-card text-center mx-auto" style="max-width: 720px;">
                         <span class="pricing-icon mb-3" aria-hidden="true"><i class="bi bi-chat-quote"></i></span>
                         <h3 class="h4 fw-bold text-dark mb-2">Customer stories will appear here</h3>
-                        <p class="text-muted mb-0">Approved customer testimonials will be published here as businesses share their IDT experience.</p>
+                        <p class="text-muted mb-0">Approved customer testimonials will be published here as businesses share their {{ $platform->product_name }} experience.</p>
                     </div>
                 @endif
             </div>
@@ -329,7 +331,7 @@
                         <div class="col-lg-6">
                             <p class="eyebrow">More control, less chasing</p>
                             <h2 class="mb-3">Make every payment follow-up easier to act on.</h2>
-                            <p class="mb-0">IDT gives your team a shared place to understand what has been invoiced, what has been paid, and what needs attention next.</p>
+                            <p class="mb-0">{{ $platform->product_name }} gives your team a shared place to understand what has been invoiced, what has been paid, and what needs attention next.</p>
                             <ul class="benefit-list">
                                 <li><i class="bi bi-check2-circle" aria-hidden="true"></i><span>Spend less time searching for payment status.</span></li>
                                 <li><i class="bi bi-check2-circle" aria-hidden="true"></i><span>Make customer follow-up part of a repeatable process.</span></li>
@@ -342,8 +344,8 @@
                                     <strong>Cash flow focus</strong>
                                     <i class="bi bi-bar-chart-line text-primary" aria-hidden="true"></i>
                                 </div>
-                                <div class="mini-row"><span class="mini-label">Payments received</span><span class="mini-value text-success">₦845,200</span></div>
-                                <div class="mini-row"><span class="mini-label">Open customer balances</span><span class="mini-value">₦486,300</span></div>
+                                <div class="mini-row"><span class="mini-label">Payments received</span><span class="mini-value text-success">{{ $homepageCurrencySymbol }}845,200</span></div>
+                                <div class="mini-row"><span class="mini-label">Open customer balances</span><span class="mini-value">{{ $homepageCurrencySymbol }}486,300</span></div>
                                 <div class="mini-row"><span class="mini-label">Invoices needing follow-up</span><span class="mini-value text-danger">18</span></div>
                                 <div class="mt-3 small text-muted"><i class="bi bi-info-circle me-1" aria-hidden="true"></i> Sample figures for illustration only.</div>
                             </div>
@@ -358,7 +360,7 @@
                 <div class="text-center mx-auto mb-5" style="max-width: 700px;">
                     <p class="eyebrow">Made to fit real workflows</p>
                     <h2 class="section-heading mb-3">A clearer way to run the money side of your business</h2>
-                    <p class="section-lead mx-auto mb-0">IDT is for teams that invoice customers, receive payments, and need a reliable view of what happens next.</p>
+                    <p class="section-lead mx-auto mb-0">{{ $platform->product_name }} is for teams that invoice customers, receive payments, and need a reliable view of what happens next.</p>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -382,7 +384,7 @@
                         <div class="col-lg">
                             <p class="eyebrow mb-2">Pricing</p>
                             <h2 class="h3 fw-bold text-dark mb-2">Start with a workspace built around your workflow.</h2>
-                            <p class="text-muted mb-0">Create an account to explore IDT and set up the right invoicing and collections workflow for your business.</p>
+                            <p class="text-muted mb-0">Create an account to explore {{ $platform->product_name }} and set up the right invoicing and collections workflow for your business.</p>
                         </div>
                         <div class="col-lg-auto">
                             @guest
@@ -402,25 +404,25 @@
                     <div class="col-lg-4">
                         <p class="eyebrow">Questions, answered</p>
                         <h2 class="section-heading mb-3">Frequently asked questions</h2>
-                        <p class="section-lead mb-0">A quick overview of how IDT fits into your invoicing and payment workflow.</p>
+                        <p class="section-lead mb-0">A quick overview of how {{ $platform->product_name }} fits into your invoicing and payment workflow.</p>
                     </div>
                     <div class="col-lg-7">
                         <div class="accordion faq-wrap" id="faqAccordion">
                             <div class="accordion-item">
-                                <h3 class="accordion-header" id="faq-heading-one"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq-one" aria-expanded="true" aria-controls="faq-one">What can I manage in IDT?</button></h3>
-                                <div id="faq-one" class="accordion-collapse collapse show" aria-labelledby="faq-heading-one" data-bs-parent="#faqAccordion"><div class="accordion-body">IDT brings customers, invoices, payments, outstanding balances, reminder workflows, and workspace-scoped reports together in one place.</div></div>
+                                <h3 class="accordion-header" id="faq-heading-one"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq-one" aria-expanded="true" aria-controls="faq-one">What can I manage in {{ $platform->product_name }}?</button></h3>
+                                <div id="faq-one" class="accordion-collapse collapse show" aria-labelledby="faq-heading-one" data-bs-parent="#faqAccordion"><div class="accordion-body">{{ $platform->product_name }} brings customers, invoices, payments, outstanding balances, reminder workflows, and workspace-scoped reports together in one place.</div></div>
                             </div>
                             <div class="accordion-item">
                                 <h3 class="accordion-header" id="faq-heading-two"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-two" aria-expanded="false" aria-controls="faq-two">Can I manage more than one business?</button></h3>
-                                <div id="faq-two" class="accordion-collapse collapse" aria-labelledby="faq-heading-two" data-bs-parent="#faqAccordion"><div class="accordion-body">Yes. IDT organizes work by workspace, so you can switch between active workspaces while keeping each business’s records separate.</div></div>
+                                <div id="faq-two" class="accordion-collapse collapse" aria-labelledby="faq-heading-two" data-bs-parent="#faqAccordion"><div class="accordion-body">Yes. {{ $platform->product_name }} organizes work by workspace, so you can switch between active workspaces while keeping each business’s records separate.</div></div>
                             </div>
                             <div class="accordion-item">
-                                <h3 class="accordion-header" id="faq-heading-three"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-three" aria-expanded="false" aria-controls="faq-three">Does IDT support reminders?</button></h3>
-                                <div id="faq-three" class="accordion-collapse collapse" aria-labelledby="faq-heading-three" data-bs-parent="#faqAccordion"><div class="accordion-body">IDT supports reminder schedules and reusable email templates to help teams follow up on invoices before and after their due dates.</div></div>
+                                <h3 class="accordion-header" id="faq-heading-three"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-three" aria-expanded="false" aria-controls="faq-three">Does {{ $platform->product_name }} support reminders?</button></h3>
+                                <div id="faq-three" class="accordion-collapse collapse" aria-labelledby="faq-heading-three" data-bs-parent="#faqAccordion"><div class="accordion-body">{{ $platform->product_name }} supports reminder schedules and reusable email templates to help teams follow up on invoices before and after their due dates.</div></div>
                             </div>
                             <div class="accordion-item">
                                 <h3 class="accordion-header" id="faq-heading-four"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-four" aria-expanded="false" aria-controls="faq-four">What about WhatsApp and SMS reminders?</button></h3>
-                                <div id="faq-four" class="accordion-collapse collapse" aria-labelledby="faq-heading-four" data-bs-parent="#faqAccordion"><div class="accordion-body">WhatsApp and SMS workflows are on the IDT roadmap. The current reminder workflow provides a clear foundation for consistent customer follow-up.</div></div>
+                                <div id="faq-four" class="accordion-collapse collapse" aria-labelledby="faq-heading-four" data-bs-parent="#faqAccordion"><div class="accordion-body">WhatsApp and SMS workflows are on the {{ $platform->product_name }} roadmap. The current reminder workflow provides a clear foundation for consistent customer follow-up.</div></div>
                             </div>
                         </div>
                     </div>

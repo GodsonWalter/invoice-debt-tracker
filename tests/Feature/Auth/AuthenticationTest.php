@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PlatformSetting;
 use App\Models\User;
 
 test('login screen can be rendered', function () {
@@ -14,6 +15,18 @@ test('login screen can be rendered', function () {
         ->assertSee('togglePassword')
         ->assertSee('data-theme-toggle', false)
         ->assertSee('idt.theme', false);
+});
+
+test('login screen uses the configured platform product name', function (): void {
+    PlatformSetting::factory()->create([
+        'product_name' => 'LedgerPro',
+        'product_title' => 'Legacy Product Title',
+    ]);
+
+    $this->get('/login')
+        ->assertOk()
+        ->assertSee('LedgerPro')
+        ->assertDontSee('Legacy Product Title');
 });
 
 test('users can authenticate using the login screen', function () {

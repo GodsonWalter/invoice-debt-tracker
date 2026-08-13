@@ -27,12 +27,14 @@ use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceDashboardController;
 use App\Http\Controllers\WorkspaceRecoveryController;
 use App\Http\Controllers\WorkspaceUserController;
+use App\Services\HomepageCurrencyService;
 use App\Services\TestimonialService;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function (TestimonialService $testimonialService) {
+Route::get('/', function (TestimonialService $testimonialService, HomepageCurrencyService $homepageCurrencyService) {
     return view('welcome', [
         'testimonials' => $testimonialService->homepageTestimonials(),
+        'homepageCurrency' => $homepageCurrencyService->resolve(request()->ip()),
     ]);
 })->name('home');
 

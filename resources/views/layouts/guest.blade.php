@@ -546,7 +546,7 @@
                 @else
                     <span class="auth-brand-mark" aria-hidden="true">{{ str($platform->product_name)->limit(4, '') }}</span>
                 @endif
-                <span class="auth-brand-name">{{ $platform->product_title }}</span>
+                <span class="auth-brand-name">{{ $platform->product_name }}</span>
             </a>
 
             <div class="auth-aside-copy">

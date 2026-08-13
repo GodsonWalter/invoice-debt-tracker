@@ -39,4 +39,12 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'ip_geolocation' => [
+        'enabled' => (bool) env('IP_GEOLOCATION_ENABLED', true),
+        'url' => env('IP_GEOLOCATION_URL', 'https://ipwho.is/{ip}'),
+        'connect_timeout' => (float) env('IP_GEOLOCATION_CONNECT_TIMEOUT', 0.5),
+        'timeout' => (float) env('IP_GEOLOCATION_TIMEOUT', 1.5),
+        'cache_ttl' => (int) env('IP_GEOLOCATION_CACHE_TTL', 86400),
+    ],
+
 ];
