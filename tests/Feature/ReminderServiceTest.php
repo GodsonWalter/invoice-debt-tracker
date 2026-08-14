@@ -289,9 +289,12 @@ test('reminder email job sends mail and marks log as sent', function () {
     );
 
     Mail::assertSent(ReminderMail::class, function (ReminderMail $mail) use ($invoice, $schedule): bool {
+        $content = $mail->content();
+
         return $mail->invoice->id === $invoice->id
             && $mail->reminderSchedule->id === $schedule->id
-            && $mail->attachments() === [];
+            && $mail->attachments() === []
+            && array_key_exists('platformSettings', $content->with);
     });
 
     expect($reminderLog->refresh())
@@ -338,9 +341,12 @@ test('reminder email can include the latest invoice pdf when enabled', function 
     );
 
     Mail::assertSent(ReminderMail::class, function (ReminderMail $mail) use ($invoice, $schedule): bool {
+        $content = $mail->content();
+
         return $mail->invoice->id === $invoice->id
             && $mail->reminderSchedule->id === $schedule->id
-            && count($mail->attachments()) === 1;
+            && count($mail->attachments()) === 1
+            && array_key_exists('platformSettings', $content->with);
     });
 });
 

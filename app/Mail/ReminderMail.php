@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\ReminderSchedule;
+use App\Services\PlatformConfigurationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -55,6 +56,7 @@ class ReminderMail extends Mailable
                 'outstandingBalance' => $this->invoice->remaining_balance,
                 'renderedSubject' => $this->renderedSubject,
                 'renderedBody' => $this->renderedBody,
+                'platformSettings' => app(PlatformConfigurationService::class)->viewData(),
             ],
         );
     }

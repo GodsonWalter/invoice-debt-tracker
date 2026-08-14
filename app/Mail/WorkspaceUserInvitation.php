@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\PlatformConfigurationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -32,6 +33,9 @@ class WorkspaceUserInvitation extends Mailable
     {
         return new Content(
             view: 'emails.workspace-user-invitation',
+            with: [
+                'platformSettings' => app(PlatformConfigurationService::class)->viewData(),
+            ],
         );
     }
 }

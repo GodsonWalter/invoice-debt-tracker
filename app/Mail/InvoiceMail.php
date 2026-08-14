@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Invoice;
+use App\Services\PlatformConfigurationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -46,6 +47,7 @@ class InvoiceMail extends Mailable
                 'workspace' => $this->invoice->workspace,
                 'businessProfile' => $this->invoice->businessProfile(),
                 'subject' => $this->mailSubject,
+                'platformSettings' => app(PlatformConfigurationService::class)->viewData(),
             ],
         );
     }

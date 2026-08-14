@@ -130,10 +130,12 @@ test('invoice email job sends mail and marks log as sent', function () {
 
     Mail::assertSent(InvoiceMail::class, function (InvoiceMail $mail) use ($invoice): bool {
         $html = $mail->render();
+        $content = $mail->content();
 
         return str($html)->contains('/invoice/public/'.$invoice->public_token)
             && str($html)->contains('signature=')
-            && ! str($html)->contains('/workspace/'.$invoice->workspace_id.'/invoices/'.$invoice->id);
+            && ! str($html)->contains('/workspace/'.$invoice->workspace_id.'/invoices/'.$invoice->id)
+            && array_key_exists('platformSettings', $content->with);
     });
 
     expect($emailLog->refresh())
