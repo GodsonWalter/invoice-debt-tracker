@@ -101,21 +101,18 @@
 
 
             <li class="nav-section-title">Billing & Customers</li>
-            {{-- invoices --}}
-            <li class="nav-item">
-                <a href="{{ route('invoices.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('invoices.*') ? 'active' : '' }}"
-                    @if ($sidebarRouteIs('invoices.*')) aria-current="page" @endif>
-                    <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
-                </a>
-            </li>
-
-
             {{-- clients --}}
-
             <li class="nav-item">
                 <a href="{{ route('clients.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('clients.*') ? 'active' : '' }}"
                     @if ($sidebarRouteIs('clients.*')) aria-current="page" @endif>
                     <i class="fa-solid fa-user-tie fa-fw"></i> <span>Clients</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ route('invoices.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('invoices.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('invoices.*')) aria-current="page" @endif>
+                    <i class="fa-solid fa-receipt fa-fw"></i> <span>Invoices</span>
                 </a>
             </li>
 
@@ -197,6 +194,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('whatsapp.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('whatsapp.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('whatsapp.*')) aria-current="page" @endif>
+                    <i class="fa-brands fa-whatsapp fa-fw"></i> <span>WhatsApp Reminders</span>
+                </a>
+            </li>
+
         @endif
 
 
@@ -235,6 +239,15 @@
                     <a href="{{ route('platform.configuration.edit') }}" class="nav-link {{ $sidebarRouteIs('platform.configuration.*') ? 'active' : '' }}"
                         @if ($sidebarRouteIs('platform.configuration.*')) aria-current="page" @endif>
                         <i class="fa-solid fa-sliders fa-fw"></i> <span>Platform Configuration</span>
+                    </a>
+                </li>
+            @endcan
+
+            @can('manage-platform-whatsapp')
+                <li class="nav-item">
+                    <a href="{{ route('platform.whatsapp.index') }}" class="nav-link {{ $sidebarRouteIs('platform.whatsapp.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.whatsapp.*')) aria-current="page" @endif>
+                        <i class="fa-brands fa-whatsapp fa-fw"></i> <span>WhatsApp Configuration</span>
                     </a>
                 </li>
             @endcan

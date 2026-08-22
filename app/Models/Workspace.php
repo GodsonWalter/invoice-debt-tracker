@@ -24,11 +24,14 @@ class Workspace extends Model
         'invoice_prefix',
         'currency_id',
         'is_active',
+        'whatsapp_auto_reminders_enabled',
+        'whatsapp_architecture',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'is_active' => 'boolean',
+        'whatsapp_auto_reminders_enabled' => 'boolean',
     ];
 
     public function owner()
@@ -111,6 +114,16 @@ class Workspace extends Model
     public function testimonials(): HasMany
     {
         return $this->hasMany(Testimonial::class, 'workspace_id');
+    }
+
+    public function whatsappConnections(): HasMany
+    {
+        return $this->hasMany(WhatsAppConnection::class);
+    }
+
+    public function whatsappMessageLogs(): HasMany
+    {
+        return $this->hasMany(WhatsAppMessageLog::class);
     }
 
     public function getCurrencySymbolAttribute(): string

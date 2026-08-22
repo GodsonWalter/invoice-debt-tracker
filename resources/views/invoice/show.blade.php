@@ -130,10 +130,18 @@
                 <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-send"></i>
-                        {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend Invoice' : 'Send Invoice' }}
+                        <i class="bi bi-envelope"></i>
+                        {{ $invoice->emailLogs->where('status', 'sent')->isNotEmpty() ? 'Resend to Mail' : 'Send to Mail' }}
                     </button>
                 </form>
+                @if (filled($invoice->client?->phone))
+                    <form action="{{ route('invoices.send-whatsapp', [$workspace, $invoice]) }}" method="POST" class="d-inline" target="_blank">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fa-brands fa-whatsapp"></i> Send to WhatsApp
+                        </button>
+                    </form>
+                @endif
             @endif
             @if (in_array($invoice->status, [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIAL, \App\Models\Invoice::STATUS_OVERDUE], true))
                 <form action="{{ route('invoices.void', [$workspace, $invoice]) }}" method="POST" class="d-flex align-items-center gap-2">

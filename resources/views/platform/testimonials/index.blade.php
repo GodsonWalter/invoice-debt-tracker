@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container-fluid px-0">
-        <div class="mb-4"><p class="text-muted mb-1">Platform moderation</p><h1 class="h3 fw-bold mb-1">Testimonials</h1><p class="text-muted mb-0">Review customer stories across all IDT workspaces before publication.</p></div>
+        <div class="mb-4"><p class="text-muted mb-1">Platform moderation</p><h1 class="h3 fw-bold mb-1">Testimonials</h1><p class="text-muted mb-0">Review customer stories across all {{ $platformSettings['settings']->product_name }} workspaces before publication.</p></div>
 
         <div class="card border-0 shadow-sm rounded-4 mb-4"><div class="card-body">
             <form method="GET" class="row g-2 align-items-end">

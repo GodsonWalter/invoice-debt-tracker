@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ClientIndexRequest;
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ClientController extends Controller
@@ -63,17 +64,11 @@ class ClientController extends Controller
         ]);
     }
 
-    public function store(Request $request, Workspace $workspace)
+    public function store(StoreClientRequest $request, Workspace $workspace)
     {
         $this->authorizeWorkspaceUser($workspace);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $email = $validated['email'] ?? null;
 
@@ -126,19 +121,13 @@ class ClientController extends Controller
         ]);
     }
 
-    public function update(Request $request, Workspace $workspace, Client $client)
+    public function update(UpdateClientRequest $request, Workspace $workspace, Client $client)
     {
         $this->authorizeWorkspaceUser($workspace);
 
         $client = $workspace->clients()->where('id', $client->id)->firstOrFail();
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $email = $validated['email'] ?? null;
 

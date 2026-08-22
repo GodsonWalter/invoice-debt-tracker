@@ -8,6 +8,7 @@ use App\Http\Requests\RejectTestimonialRequest;
 use App\Http\Requests\ReturnTestimonialToDraftRequest;
 use App\Models\Testimonial;
 use App\Models\Workspace;
+use App\Services\PlatformConfigurationService;
 use App\Services\TestimonialService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,7 +98,7 @@ class PlatformTestimonialController extends Controller
         return back()->with('success', 'Testimonial rejected and the workspace has been notified.');
     }
 
-    public function publish(Testimonial $testimonial, TestimonialService $testimonialService): RedirectResponse
+    public function publish(Testimonial $testimonial, TestimonialService $testimonialService, PlatformConfigurationService $platformConfigurationService): RedirectResponse
     {
         Gate::authorize('moderate', $testimonial);
 
@@ -107,10 +108,10 @@ class PlatformTestimonialController extends Controller
             return back()->withErrors($exception->errors())->with('error', $this->firstValidationError($exception));
         }
 
-        return back()->with('success', 'Testimonial published on the IDT homepage.');
+        return back()->with('success', 'Testimonial published on the '.$platformConfigurationService->settings()->product_name.' homepage.');
     }
 
-    public function unpublish(Testimonial $testimonial, TestimonialService $testimonialService): RedirectResponse
+    public function unpublish(Testimonial $testimonial, TestimonialService $testimonialService, PlatformConfigurationService $platformConfigurationService): RedirectResponse
     {
         Gate::authorize('moderate', $testimonial);
 
@@ -120,7 +121,7 @@ class PlatformTestimonialController extends Controller
             return back()->withErrors($exception->errors())->with('error', $this->firstValidationError($exception));
         }
 
-        return back()->with('success', 'Testimonial unpublished from the IDT homepage.');
+        return back()->with('success', 'Testimonial unpublished from the '.$platformConfigurationService->settings()->product_name.' homepage.');
     }
 
     public function returnToDraft(ReturnTestimonialToDraftRequest $request, Testimonial $testimonial, TestimonialService $testimonialService): RedirectResponse

@@ -20,8 +20,11 @@ use Illuminate\Validation\ValidationException;
 /**
  * @return array{0: User, 1: Workspace, 2: Invoice}
  */
-function createInvoiceEmailFixture(string $status = Invoice::STATUS_SENT, ?string $clientEmail = 'client@example.test'): array
-{
+function createInvoiceEmailFixture(
+    string $status = Invoice::STATUS_SENT,
+    ?string $clientEmail = 'client@example.test',
+    ?string $clientPhone = null,
+): array {
     $user = User::factory()->create();
 
     $workspace = Workspace::create([
@@ -42,6 +45,7 @@ function createInvoiceEmailFixture(string $status = Invoice::STATUS_SENT, ?strin
         'workspace_id' => $workspace->id,
         'name' => 'Email Client',
         'email' => $clientEmail,
+        'phone' => $clientPhone,
     ]);
 
     $invoice = Invoice::create([
@@ -68,6 +72,51 @@ function createInvoiceEmailFixture(string $status = Invoice::STATUS_SENT, ?strin
 
     return [$user, $workspace, $invoice];
 }
+
+test('invoice list and details expose separate mail and WhatsApp actions', function (): void {
+    [$user, $workspace, $invoice] = createInvoiceEmailFixture(
+        clientPhone: '+234 800 000 0000',
+    );
+    $host = 'http://'.$workspace->subdomain.'.'.config('app.base_domain');
+
+    $this->actingAs($user)
+        ->get($host.route('invoices.index', $workspace, false))
+        ->assertOk()
+        ->assertSee('Send to Mail')
+        ->assertSee('bi bi-envelope', false)
+        ->assertSee('Send to WhatsApp')
+        ->assertSee(route('invoices.send-whatsapp', [$workspace, $invoice], false), false);
+
+    $this->actingAs($user)
+        ->get($host.route('invoices.show', [$workspace, $invoice], false))
+        ->assertOk()
+        ->assertSee('Send to Mail')
+        ->assertSee('bi bi-envelope', false)
+        ->assertSee('Send to WhatsApp');
+});
+
+test('workspace user can open a secure invoice share message in WhatsApp', function (): void {
+    [$user, $workspace, $invoice] = createInvoiceEmailFixture(
+        clientPhone: '+234 800 000 0000',
+    );
+    $url = 'http://'.$workspace->subdomain.'.'.config('app.base_domain')
+        .route('invoices.send-whatsapp', [$workspace, $invoice], false);
+
+    $response = $this->actingAs($user)
+        ->post($url);
+
+    $response->assertRedirect();
+
+    $location = (string) $response->headers->get('Location');
+
+    expect($location)
+        ->toStartWith('https://wa.me/2348000000000?text=')
+        ->and(urldecode($location))
+        ->toContain('EML-2026-0001')
+        ->toContain("View your invoice here:\nhttp://")
+        ->toContain('/invoice/public/')
+        ->toContain('signature=');
+});
 
 test('workspace user can queue an invoice email', function () {
     $this->withoutMiddleware([

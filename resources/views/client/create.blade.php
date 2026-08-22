@@ -37,8 +37,9 @@
                     </div>
 
                     <div class="col-12 col-md-6">
-                        <label class="form-label">Phone</label>
-                        <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}">
+                        <label class="form-label">Phone (WhatsApp)</label>
+                        <input type="tel" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}" placeholder="+2348000000000" inputmode="tel" autocomplete="tel">
+                        <div class="form-text">Use international E.164 format, for example +2348000000000. Spaces and hyphens are normalized.</div>
                         @error('phone')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -70,4 +71,3 @@
     </div>
 </div>
 @endsection
-

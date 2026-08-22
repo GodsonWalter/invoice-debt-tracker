@@ -101,6 +101,12 @@ class AppServiceProvider extends ServiceProvider
                 && in_array($user->role, ['owner', 'admin'], true);
         });
 
+        Gate::define('manage-platform-whatsapp', function (?User $user): bool {
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
+        });
+
         View::composer('*', function (ViewContract $view): void {
             $view->with('platformSettings', app(PlatformConfigurationService::class)->viewData());
         });

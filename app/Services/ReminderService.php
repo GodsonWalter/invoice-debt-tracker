@@ -15,7 +15,7 @@ use LogicException;
 class ReminderService
 {
     /**
-     * @return array{schedules_processed: int, invoices_found: int, reminders_created: int}
+     * @return array{schedules_processed: int, invoices_found: int, reminders_created: int, whatsapp_reminders_created: int}
      */
     public function process(?CarbonInterface $date = null): array
     {
@@ -24,6 +24,7 @@ class ReminderService
             'schedules_processed' => 0,
             'invoices_found' => 0,
             'reminders_created' => 0,
+            'whatsapp_reminders_created' => 0,
         ];
 
         ReminderSchedule::query()
@@ -41,14 +42,23 @@ class ReminderService
                 foreach ($invoices as $invoice) {
                     $reminderLog = $this->createReminderLog($invoice, $schedule);
 
-                    if (! $reminderLog) {
-                        continue;
+                    if ($reminderLog) {
+                        SendReminderEmailJob::dispatch($reminderLog->id);
                     }
 
-                    SendReminderEmailJob::dispatch($reminderLog->id);
-                    $this->markInvoiceScheduled($invoice, $today);
+                    $whatsappLog = app(WhatsAppMessageService::class)->queueReminder($invoice, $schedule);
 
-                    $summary['reminders_created']++;
+                    if ($whatsappLog?->wasRecentlyCreated) {
+                        $summary['whatsapp_reminders_created']++;
+                    }
+
+                    if ($reminderLog || $whatsappLog) {
+                        $this->markInvoiceScheduled($invoice, $today);
+                    }
+
+                    if ($reminderLog) {
+                        $summary['reminders_created']++;
+                    }
                 }
             });
 
@@ -99,8 +109,13 @@ class ReminderService
             ])
             ->whereHas('workspace', fn ($query) => $query->where('is_active', true))
             ->whereHas('client', function ($query): void {
-                $query->whereNotNull('email')
-                    ->where('email', '!=', '');
+                $query->where(function ($query): void {
+                    $query->where(function ($query): void {
+                        $query->whereNotNull('email')->where('email', '!=', '');
+                    })->orWhere(function ($query): void {
+                        $query->whereNotNull('phone')->where('phone', '!=', '');
+                    });
+                });
             })
             ->get()
             ->filter(fn (Invoice $invoice): bool => $invoice->remaining_balance > 0)
@@ -124,6 +139,10 @@ class ReminderService
 
         if ((int) $invoice->workspace_id !== $workspaceId) {
             throw new LogicException('The invoice and reminder schedule must belong to the same workspace.');
+        }
+
+        if (! filled($invoice->client?->email)) {
+            return null;
         }
 
         $reminderLog = ReminderLog::query()->firstOrCreate(

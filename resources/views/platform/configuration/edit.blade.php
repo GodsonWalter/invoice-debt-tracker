@@ -10,7 +10,7 @@
             <div>
                 <p class="text-muted mb-1">Platform administration</p>
                 <h1 class="h3 fw-bold mb-1">Platform Configuration</h1>
-                <p class="text-muted mb-0">Manage the product identity, public metadata, support links, and shared branding used across IDT.</p>
+                <p class="text-muted mb-0">Manage the product identity, public metadata, support links, and shared branding used across {{ $settings->product_name }}.</p>
             </div>
             <span class="badge text-bg-primary align-self-center"><i class="fa-solid fa-shield-halved me-1"></i> Owner/Admin only</span>
         </div>

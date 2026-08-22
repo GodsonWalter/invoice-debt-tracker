@@ -41,7 +41,7 @@
                         <dt class="col-6 text-muted">Submitted</dt><dd class="col-6 text-end">{{ $testimonial->submitted_at?->format('M j, Y') ?: 'Not submitted' }}</dd>
                         <dt class="col-6 text-muted">Reviewed</dt><dd class="col-6 text-end">{{ $testimonial->reviewed_at?->format('M j, Y') ?: 'Not reviewed' }}</dd>
                     </dl>
-                    <div class="alert alert-light border small mt-4 mb-0">Platform approval is required before this testimonial can appear on the public IDT homepage.</div>
+                    <div class="alert alert-light border small mt-4 mb-0">Platform approval is required before this testimonial can appear on the public {{ $platformSettings['settings']->product_name }} homepage.</div>
                 </div></div>
             </div>
         </div>

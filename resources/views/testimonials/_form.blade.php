@@ -59,7 +59,7 @@
                 class="form-check-input @error('consent_confirmed') is-invalid @enderror"
                 @checked(old('consent_confirmed', $testimonial?->consent_confirmed)) required>
             <label for="consent-confirmed" class="form-check-label">
-                I confirm that I have permission to publish this customer’s name, business information, image, and testimonial on IDT.
+                I confirm that I have permission to publish this customer’s name, business information, image, and testimonial on {{ $platformSettings['settings']->product_name }}.
             </label>
             @error('consent_confirmed')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>

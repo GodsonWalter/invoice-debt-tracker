@@ -8,7 +8,7 @@
             <div>
                 <p class="text-muted mb-1">Workspace reputation</p>
                 <h1 class="h3 fw-bold mb-1">Testimonials</h1>
-                <p class="text-muted mb-0">Collect customer feedback and submit approved consented stories for IDT review.</p>
+                <p class="text-muted mb-0">Collect customer feedback and submit approved consented stories for {{ $platformSettings['settings']->product_name }} review.</p>
             </div>
             @can('manage-testimonials', $workspace)
                 <a href="{{ route('testimonials.create', $workspace) }}" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>New testimonial</a>

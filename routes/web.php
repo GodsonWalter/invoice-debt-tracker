@@ -14,6 +14,7 @@ use App\Http\Controllers\PlatformDashboardController;
 use App\Http\Controllers\PlatformTestimonialController;
 use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserRecoveryController;
+use App\Http\Controllers\PlatformWhatsAppController;
 use App\Http\Controllers\PlatformWorkspaceController;
 use App\Http\Controllers\PlatformWorkspaceRecoveryController;
 use App\Http\Controllers\ProfileController;
@@ -23,6 +24,8 @@ use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceDashboardController;
 use App\Http\Controllers\WorkspaceRecoveryController;
@@ -41,6 +44,9 @@ Route::get('/', function (TestimonialService $testimonialService, HomepageCurren
 Route::get('/ready', ReadinessController::class)
     ->middleware('throttle:60,1')
     ->name('health.ready');
+
+Route::match(['get', 'post'], '/webhooks/whatsapp/meta', [WhatsAppWebhookController::class, 'handle'])
+    ->name('webhooks.whatsapp.meta');
 
 Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
     Route::get('/{token}', [PublicInvoiceController::class, 'show'])->middleware('signed')->name('show');
@@ -145,6 +151,19 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
             Route::patch('reminder-schedules/{reminderSchedule}/toggle', [ReminderScheduleController::class, 'toggle'])->name('reminder-schedules.toggle');
         });
 
+    Route::prefix('workspace/{workspace}/whatsapp')
+        ->middleware('active.route.workspace')
+        ->scopeBindings()
+        ->name('whatsapp.')
+        ->group(function () {
+            Route::get('/', [WhatsAppController::class, 'index'])->name('index');
+            Route::put('/settings', [WhatsAppController::class, 'updateSettings'])->name('settings.update');
+            Route::post('/connect', [WhatsAppController::class, 'connect'])->name('connect');
+            Route::post('/disconnect', [WhatsAppController::class, 'disconnect'])->name('disconnect');
+            Route::post('/messages/{messageLog}/retry', [WhatsAppController::class, 'retry'])->name('messages.retry');
+            Route::put('/templates', [WhatsAppController::class, 'saveTemplate'])->name('templates.update');
+        });
+
     // invoices routes (workspace scoped)
     Route::prefix('workspace/{workspace}/invoices')
         ->middleware('active.route.workspace')
@@ -159,6 +178,7 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
             Route::post('/{invoice}/void', [InvoiceController::class, 'void'])->name('void');
             Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
             Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
+            Route::post('/{invoice}/send-whatsapp', [InvoiceController::class, 'sendToWhatsApp'])->name('send-whatsapp');
             Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
             Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
             Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
@@ -210,6 +230,14 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 've
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-settings'])->prefix('platform/configuration')->name('platform.configuration.')->group(function () {
     Route::get('/', [PlatformConfigurationController::class, 'edit'])->name('edit');
     Route::put('/', [PlatformConfigurationController::class, 'update'])->name('update');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-whatsapp'])->prefix('platform/whatsapp')->name('platform.whatsapp.')->group(function () {
+    Route::get('/', [PlatformWhatsAppController::class, 'index'])->name('index');
+    Route::put('/', [PlatformWhatsAppController::class, 'update'])->name('update');
+    Route::post('/disconnect', [PlatformWhatsAppController::class, 'disconnect'])->name('disconnect');
+    Route::post('/tenant/{workspace}/disconnect', [PlatformWhatsAppController::class, 'disconnectTenant'])->name('tenant.disconnect');
+    Route::put('/templates', [PlatformWhatsAppController::class, 'saveTemplate'])->name('templates.update');
 });
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-testimonials'])->prefix('platform/testimonials')->name('platform.testimonials.')->group(function () {

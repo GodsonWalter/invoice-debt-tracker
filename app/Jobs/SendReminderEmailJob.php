@@ -3,10 +3,10 @@
 namespace App\Jobs;
 
 use App\Mail\ReminderMail;
-use App\Models\EmailTemplate;
 use App\Models\Invoice;
 use App\Models\ReminderLog;
 use App\Services\InvoicePdfService;
+use App\Services\ReminderContentService;
 use App\Services\ReminderService;
 use App\Services\TemplateRenderer;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,8 +35,9 @@ class SendReminderEmailJob implements ShouldQueue
     public function handle(
         ReminderService $reminderService,
         TemplateRenderer $templateRenderer,
-        InvoicePdfService $invoicePdfService,
+        ?InvoicePdfService $invoicePdfService = null,
     ): void {
+        $invoicePdfService ??= app(InvoicePdfService::class);
         $reminderLog = $this->reminderLog();
 
         try {
@@ -62,7 +63,7 @@ class SendReminderEmailJob implements ShouldQueue
             }
 
             $invoice->ensurePublicToken();
-            [$subject, $body] = $this->renderTemplate($reminderLog, $templateRenderer);
+            [$subject, $body] = $this->renderTemplate($reminderLog);
             $pdfContent = $reminderLog->reminderSchedule->include_invoice_pdf
                 ? $invoicePdfService->content($invoice)
                 : null;
@@ -114,33 +115,13 @@ class SendReminderEmailJob implements ShouldQueue
     /**
      * @return array{0: string, 1: string}
      */
-    private function renderTemplate(ReminderLog $reminderLog, TemplateRenderer $templateRenderer): array
+    private function renderTemplate(ReminderLog $reminderLog): array
     {
-        $invoice = $reminderLog->invoice;
-        $templateType = EmailTemplate::typeForReminderSchedule($reminderLog->reminderSchedule);
-        $template = EmailTemplate::query()
-            ->where('workspace_id', $invoice->workspace_id)
-            ->where('type', $templateType)
-            ->where('is_active', true)
-            ->first();
-
-        if ($template) {
-            return [
-                $template->renderSubject($invoice, $templateRenderer),
-                $template->renderBody($invoice, $templateRenderer),
-            ];
-        }
-
-        $defaultContent = EmailTemplate::defaultContentForType($templateType);
-        $reminderType = match ($templateType) {
-            EmailTemplate::TYPE_DUE_TODAY => 'Due Today',
-            EmailTemplate::TYPE_OVERDUE => 'Overdue',
-            default => 'Before Due',
-        };
+        $content = app(ReminderContentService::class)->render($reminderLog->invoice, $reminderLog->reminderSchedule);
 
         return [
-            $templateRenderer->render($defaultContent['subject'], $invoice, ['reminder_type' => $reminderType]),
-            $templateRenderer->render($defaultContent['body'], $invoice, ['reminder_type' => $reminderType]),
+            $content['subject'],
+            $content['body'],
         ];
     }
 }

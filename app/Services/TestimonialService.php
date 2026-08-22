@@ -21,6 +21,8 @@ class TestimonialService
 {
     private const HOMEPAGE_CACHE_KEY = 'testimonials.homepage';
 
+    public function __construct(private readonly PlatformConfigurationService $platformConfigurationService) {}
+
     public function create(Workspace $workspace, User $actor, array $attributes, ?UploadedFile $image = null): Testimonial
     {
         $this->assertConsent($attributes);
@@ -221,7 +223,7 @@ class TestimonialService
                 'unpublished_at' => null,
             ])->save();
 
-            $this->recordActivity($testimonial->workspace, $actor, $testimonial, 'testimonial.published', 'Testimonial published on the IDT homepage.');
+            $this->recordActivity($testimonial->workspace, $actor, $testimonial, 'testimonial.published', 'Testimonial published on the '.$this->productName().' homepage.');
 
             return $testimonial->refresh();
         });
@@ -243,7 +245,7 @@ class TestimonialService
                 'unpublished_at' => now(),
             ])->save();
 
-            $this->recordActivity($testimonial->workspace, $actor, $testimonial, 'testimonial.unpublished', 'Testimonial unpublished from the IDT homepage.');
+            $this->recordActivity($testimonial->workspace, $actor, $testimonial, 'testimonial.unpublished', 'Testimonial unpublished from the '.$this->productName().' homepage.');
 
             return $testimonial->refresh();
         });
@@ -428,6 +430,11 @@ class TestimonialService
         if ($path) {
             Storage::disk('public')->delete($path);
         }
+    }
+
+    private function productName(): string
+    {
+        return (string) $this->platformConfigurationService->settings()->product_name;
     }
 
     /**

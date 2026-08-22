@@ -10,8 +10,10 @@ use App\Services\InvoiceEmailService;
 use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
+use App\Services\WhatsAppMessageService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\MessageBag;
@@ -181,6 +183,36 @@ class InvoiceController extends Controller
         return redirect()
             ->route('invoices.show', [$workspace, $invoice])
             ->with('success', 'Invoice email has been queued for sending.');
+    }
+
+    public function sendToWhatsApp(
+        Workspace $workspace,
+        Invoice $invoice,
+        WhatsAppMessageService $whatsappMessageService,
+    ): RedirectResponse {
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()
+            ->with(['client', 'currency', 'workspace.currency'])
+            ->whereKey($invoice->id)
+            ->firstOrFail();
+
+        if (in_array($invoice->status, [Invoice::STATUS_DRAFT, Invoice::STATUS_VOID], true)) {
+            return redirect()
+                ->route('invoices.index', $workspace)
+                ->with('error', 'Draft and void invoices cannot be sent to WhatsApp.');
+        }
+
+        try {
+            $whatsappUrl = $whatsappMessageService->invoiceShareUrl($invoice);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('invoices.index', $workspace)
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
+        }
+
+        return redirect()->away($whatsappUrl);
     }
 
     public function edit(Workspace $workspace, Invoice $invoice, CurrencyService $currencyService)

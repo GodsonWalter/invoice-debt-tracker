@@ -47,4 +47,24 @@ return [
         'cache_ttl' => (int) env('IP_GEOLOCATION_CACHE_TTL', 86400),
     ],
 
+    'whatsapp' => [
+        'enabled' => (bool) env('WHATSAPP_ENABLED', false),
+        'api_version' => env('WHATSAPP_CLOUD_API_VERSION', 'v23.0'),
+        'base_url' => env('WHATSAPP_CLOUD_API_BASE_URL', 'https://graph.facebook.com'),
+        'app_id' => env('WHATSAPP_APP_ID'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),
+        'system_user_access_token' => env('WHATSAPP_SYSTEM_USER_ACCESS_TOKEN'),
+        'business_portfolio_id' => env('WHATSAPP_BUSINESS_PORTFOLIO_ID'),
+        'embedded_signup_config_id' => env('WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID'),
+        'redirect_uri' => env('WHATSAPP_REDIRECT_URI'),
+        'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN'),
+        'shared_waba_id' => env('WHATSAPP_SHARED_WABA_ID'),
+        'shared_phone_number_id' => env('WHATSAPP_SHARED_PHONE_NUMBER_ID'),
+        'shared_display_phone_number' => env('WHATSAPP_SHARED_DISPLAY_PHONE_NUMBER'),
+        'shared_verified_name' => env('WHATSAPP_SHARED_VERIFIED_NAME'),
+        'shared_access_token' => env('WHATSAPP_SHARED_ACCESS_TOKEN'),
+        'request_timeout' => (int) env('WHATSAPP_REQUEST_TIMEOUT', 20),
+        'allow_text_reminders' => (bool) env('WHATSAPP_ALLOW_TEXT_REMINDERS', false),
+    ],
+
 ];

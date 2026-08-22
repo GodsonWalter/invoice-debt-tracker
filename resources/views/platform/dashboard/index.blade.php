@@ -33,7 +33,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
                 <h1 class="fs-4 fw-bold mb-1">Platform Dashboard</h1>
-                <p class="text-muted mb-0">Global operational health across IDT workspaces and accounts.</p>
+                <p class="text-muted mb-0">Global operational health across {{ $platformSettings['settings']->product_name }} workspaces and accounts.</p>
             </div>
             <form method="GET" class="row g-2 align-items-end">
                 <div class="col-auto">

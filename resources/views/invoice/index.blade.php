@@ -140,14 +140,22 @@
                                     <a href="{{ route('invoices.pdf', [$workspace, $invoice]) }}"
                                         class="btn btn-sm btn-outline-primary" title="Download PDF">
                                         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-                                    </a>
+                                    </a><br>
                                     @if (! in_array($invoice->status, [\App\Models\Invoice::STATUS_DRAFT, \App\Models\Invoice::STATUS_VOID], true))
                                         <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-primary" title="Send invoice">
-                                                <i class="bi bi-send me-1"></i> Send
+                                            <button type="submit" class="my-1 btn btn-sm btn-primary" title="Send invoice by email">
+                                                <i class="bi bi-envelope me-1"></i> Send
                                             </button>
                                         </form>
+                                        @if (filled($invoice->client?->phone))
+                                            <form action="{{ route('invoices.send-whatsapp', [$workspace, $invoice]) }}" method="POST" class="d-inline" target="_blank">
+                                                @csrf
+                                                <button type="submit" class="my-1 btn btn-sm btn-success" title="Send invoice to WhatsApp">
+                                                    <i class="fa-brands fa-whatsapp me-1"></i> Send 
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
                                     @if ($invoice->status === \App\Models\Invoice::STATUS_DRAFT)
                                         <form action="{{ route('invoices.destroy', [$workspace, $invoice]) }}" method="POST" class="d-inline"
