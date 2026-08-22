@@ -10,6 +10,7 @@ use App\Services\InvoiceEmailService;
 use App\Services\InvoicePdfService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
+use App\Services\SmsMessageService;
 use App\Services\WhatsAppMessageService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -213,6 +214,38 @@ class InvoiceController extends Controller
         }
 
         return redirect()->away($whatsappUrl);
+    }
+
+    public function sendToSms(
+        Workspace $workspace,
+        Invoice $invoice,
+        SmsMessageService $smsMessageService,
+    ): RedirectResponse {
+        $this->authorizeWorkspaceUser($workspace);
+
+        $invoice = $workspace->invoices()
+            ->with(['client', 'currency', 'workspace.currency'])
+            ->whereKey($invoice->id)
+            ->firstOrFail();
+
+        if (in_array($invoice->status, [Invoice::STATUS_DRAFT, Invoice::STATUS_VOID], true)) {
+            return redirect()
+                ->route('invoices.index', $workspace)
+                ->with('error', 'Draft and void invoices cannot be sent by SMS.');
+        }
+
+        try {
+            $smsMessageService->queueInvoice($workspace, $invoice);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('invoices.index', $workspace)
+                ->withErrors(new MessageBag($exception->errors()))
+                ->with('error', collect($exception->errors())->flatten()->first());
+        }
+
+        return redirect()
+            ->route('invoices.show', [$workspace, $invoice])
+            ->with('success', 'Invoice SMS has been queued for sending.');
     }
 
     public function edit(Workspace $workspace, Invoice $invoice, CurrencyService $currencyService)

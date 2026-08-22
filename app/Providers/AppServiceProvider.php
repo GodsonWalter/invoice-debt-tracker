@@ -107,6 +107,12 @@ class AppServiceProvider extends ServiceProvider
                 && $user->canManagePlatformUsers();
         });
 
+        Gate::define('manage-platform-sms', function (?User $user): bool {
+            return $user instanceof User
+                && ! app(ImpersonationService::class)->isImpersonating()
+                && $user->canManagePlatformUsers();
+        });
+
         View::composer('*', function (ViewContract $view): void {
             $view->with('platformSettings', app(PlatformConfigurationService::class)->viewData());
         });

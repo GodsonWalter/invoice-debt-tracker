@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->validateCsrfTokens(except: ['webhooks/whatsapp/meta']);
+        $middleware->validateCsrfTokens(except: ['webhooks/whatsapp/meta', 'webhooks/sms/twilio']);
 
         $middleware->alias([
             'active.user' => EnsureUserIsActive::class,

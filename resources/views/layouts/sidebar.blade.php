@@ -201,6 +201,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a href="{{ route('sms.index', $workspace, false) }}" class="nav-link {{ $sidebarRouteIs('sms.*') ? 'active' : '' }}"
+                    @if ($sidebarRouteIs('sms.*')) aria-current="page" @endif>
+                    <i class="fa-solid fa-comment-sms fa-fw"></i> <span>SMS Reminders</span>
+                </a>
+            </li>
+
         @endif
 
 
@@ -248,6 +255,15 @@
                     <a href="{{ route('platform.whatsapp.index') }}" class="nav-link {{ $sidebarRouteIs('platform.whatsapp.*') ? 'active' : '' }}"
                         @if ($sidebarRouteIs('platform.whatsapp.*')) aria-current="page" @endif>
                         <i class="fa-brands fa-whatsapp fa-fw"></i> <span>WhatsApp Configuration</span>
+                    </a>
+                </li>
+            @endcan
+
+            @can('manage-platform-sms')
+                <li class="nav-item">
+                    <a href="{{ route('platform.sms.index') }}" class="nav-link {{ $sidebarRouteIs('platform.sms.*') ? 'active' : '' }}"
+                        @if ($sidebarRouteIs('platform.sms.*')) aria-current="page" @endif>
+                        <i class="fa-solid fa-comment-sms fa-fw"></i> <span>SMS Configuration</span>
                     </a>
                 </li>
             @endcan

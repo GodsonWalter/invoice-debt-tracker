@@ -121,7 +121,9 @@
                             <tr>
                                 <th scope="row">{{ ($invoices->firstItem() ?? 1) + $loop->index }}</th>
                                 <td class="fw-semibold">{{ $invoice->invoice_number }}</td>
-                                <td>{{ $invoice->client?->name ?? '—' }}</td>
+                                <td>{{ $invoice->client?->name ?? '—' }}<br>
+                                    {{ $invoice->client?->phone ?? '—' }}
+                                </td>
                                 <td>{{ $invoice->issue_date?->format('Y-m-d') ?? '—' }}</td>
                                 <td>{{ $invoice->due_date?->format('Y-m-d') ?? '—' }}</td>
                                 <td><span class="badge text-bg-{{ $statusTone }}">{{ ucfirst($invoice->status) }}</span></td>
@@ -145,14 +147,21 @@
                                         <form action="{{ route('invoices.send', [$workspace, $invoice]) }}" method="POST" class="d-inline">
                                             @csrf
                                             <button type="submit" class="my-1 btn btn-sm btn-primary" title="Send invoice by email">
-                                                <i class="bi bi-envelope me-1"></i> Send
+                                                <i class="bi bi-envelope me-1"></i> Send to Mail
                                             </button>
                                         </form>
                                         @if (filled($invoice->client?->phone))
                                             <form action="{{ route('invoices.send-whatsapp', [$workspace, $invoice]) }}" method="POST" class="d-inline" target="_blank">
                                                 @csrf
                                                 <button type="submit" class="my-1 btn btn-sm btn-success" title="Send invoice to WhatsApp">
-                                                    <i class="fa-brands fa-whatsapp me-1"></i> Send 
+                                                    <i class="fa-brands fa-whatsapp me-1"></i> Send to WhatsApp
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('invoices.send-sms', [$workspace, $invoice]) }}" method="POST" class="d-inline"
+                                                data-lifecycle-confirm data-lifecycle-title="Send invoice by SMS?" data-lifecycle-text="This invoice will be queued for SMS delivery to the client." data-lifecycle-confirm-text="Queue SMS">
+                                                @csrf
+                                                <button type="submit" class="my-1 btn btn-sm btn-info" title="Send invoice by SMS">
+                                                    <i class="bi bi-chat-text me-1"></i> Send by SMS
                                                 </button>
                                             </form>
                                         @endif

@@ -15,7 +15,7 @@ use LogicException;
 class ReminderService
 {
     /**
-     * @return array{schedules_processed: int, invoices_found: int, reminders_created: int, whatsapp_reminders_created: int}
+     * @return array{schedules_processed: int, invoices_found: int, reminders_created: int, whatsapp_reminders_created: int, sms_reminders_created: int}
      */
     public function process(?CarbonInterface $date = null): array
     {
@@ -25,6 +25,7 @@ class ReminderService
             'invoices_found' => 0,
             'reminders_created' => 0,
             'whatsapp_reminders_created' => 0,
+            'sms_reminders_created' => 0,
         ];
 
         ReminderSchedule::query()
@@ -52,7 +53,13 @@ class ReminderService
                         $summary['whatsapp_reminders_created']++;
                     }
 
-                    if ($reminderLog || $whatsappLog) {
+                    $smsLog = app(SmsMessageService::class)->queueReminder($invoice, $schedule);
+
+                    if ($smsLog?->wasRecentlyCreated) {
+                        $summary['sms_reminders_created']++;
+                    }
+
+                    if ($reminderLog || $whatsappLog || $smsLog) {
                         $this->markInvoiceScheduled($invoice, $today);
                     }
 

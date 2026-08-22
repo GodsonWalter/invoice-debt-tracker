@@ -11,6 +11,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlatformConfigurationController;
 use App\Http\Controllers\PlatformDashboardController;
+use App\Http\Controllers\PlatformSmsController;
 use App\Http\Controllers\PlatformTestimonialController;
 use App\Http\Controllers\PlatformUserController;
 use App\Http\Controllers\PlatformUserRecoveryController;
@@ -23,6 +24,8 @@ use App\Http\Controllers\ReadinessController;
 use App\Http\Controllers\ReminderDashboardController;
 use App\Http\Controllers\ReminderScheduleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SmsController;
+use App\Http\Controllers\SmsWebhookController;
 use App\Http\Controllers\TestimonialController;
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -47,6 +50,9 @@ Route::get('/ready', ReadinessController::class)
 
 Route::match(['get', 'post'], '/webhooks/whatsapp/meta', [WhatsAppWebhookController::class, 'handle'])
     ->name('webhooks.whatsapp.meta');
+
+Route::post('/webhooks/sms/twilio', [SmsWebhookController::class, 'handle'])
+    ->name('webhooks.sms.twilio');
 
 Route::prefix('invoice/public')->name('public.invoice.')->group(function () {
     Route::get('/{token}', [PublicInvoiceController::class, 'show'])->middleware('signed')->name('show');
@@ -164,6 +170,19 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
             Route::put('/templates', [WhatsAppController::class, 'saveTemplate'])->name('templates.update');
         });
 
+    Route::prefix('workspace/{workspace}/sms')
+        ->middleware('active.route.workspace')
+        ->scopeBindings()
+        ->name('sms.')
+        ->group(function () {
+            Route::get('/', [SmsController::class, 'index'])->name('index');
+            Route::put('/settings', [SmsController::class, 'updateSettings'])->name('settings.update');
+            Route::post('/connect', [SmsController::class, 'connect'])->name('connect');
+            Route::post('/disconnect', [SmsController::class, 'disconnect'])->name('disconnect');
+            Route::post('/messages/{messageLog}/retry', [SmsController::class, 'retry'])->name('messages.retry');
+            Route::put('/templates', [SmsController::class, 'saveTemplate'])->name('templates.update');
+        });
+
     // invoices routes (workspace scoped)
     Route::prefix('workspace/{workspace}/invoices')
         ->middleware('active.route.workspace')
@@ -179,6 +198,7 @@ Route::middleware(['auth', 'active.user', 'verified', 'workspace.active', 'resol
             Route::get('/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('pdf');
             Route::post('/{invoice}/send', [InvoiceController::class, 'send'])->name('send');
             Route::post('/{invoice}/send-whatsapp', [InvoiceController::class, 'sendToWhatsApp'])->name('send-whatsapp');
+            Route::post('/{invoice}/send-sms', [InvoiceController::class, 'sendToSms'])->name('send-sms');
             Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
             Route::post('/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
             Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
@@ -238,6 +258,14 @@ Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 've
     Route::post('/disconnect', [PlatformWhatsAppController::class, 'disconnect'])->name('disconnect');
     Route::post('/tenant/{workspace}/disconnect', [PlatformWhatsAppController::class, 'disconnectTenant'])->name('tenant.disconnect');
     Route::put('/templates', [PlatformWhatsAppController::class, 'saveTemplate'])->name('templates.update');
+});
+
+Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-sms'])->prefix('platform/sms')->name('platform.sms.')->group(function () {
+    Route::get('/', [PlatformSmsController::class, 'index'])->name('index');
+    Route::put('/', [PlatformSmsController::class, 'update'])->name('update');
+    Route::post('/disconnect', [PlatformSmsController::class, 'disconnect'])->name('disconnect');
+    Route::post('/workspace/{workspace}/disconnect', [PlatformSmsController::class, 'disconnectWorkspace'])->name('workspace.disconnect');
+    Route::put('/templates', [PlatformSmsController::class, 'saveTemplate'])->name('templates.update');
 });
 
 Route::domain(config('app.base_domain'))->middleware(['auth', 'active.user', 'verified', 'resolve.workspace', 'impersonation', 'can:manage-platform-testimonials'])->prefix('platform/testimonials')->name('platform.testimonials.')->group(function () {

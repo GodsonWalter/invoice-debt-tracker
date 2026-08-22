@@ -67,4 +67,17 @@ return [
         'allow_text_reminders' => (bool) env('WHATSAPP_ALLOW_TEXT_REMINDERS', false),
     ],
 
+    'sms' => [
+        'enabled' => (bool) env('SMS_ENABLED', false),
+        'provider' => env('SMS_PROVIDER', 'twilio'),
+        'api_base_url' => env('SMS_API_BASE_URL', 'https://api.twilio.com'),
+        'request_timeout' => (int) env('SMS_REQUEST_TIMEOUT', 20),
+        'webhook_url' => env('SMS_WEBHOOK_URL'),
+        'webhook_auth_token' => env('SMS_WEBHOOK_AUTH_TOKEN'),
+        'shared_account_sid' => env('SMS_SHARED_ACCOUNT_SID'),
+        'shared_auth_token' => env('SMS_SHARED_AUTH_TOKEN'),
+        'shared_from' => env('SMS_SHARED_FROM'),
+        'shared_messaging_service_sid' => env('SMS_SHARED_MESSAGING_SERVICE_SID'),
+    ],
+
 ];

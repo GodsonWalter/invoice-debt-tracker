@@ -141,6 +141,13 @@
                             <i class="fa-brands fa-whatsapp"></i> Send to WhatsApp
                         </button>
                     </form>
+                    <form action="{{ route('invoices.send-sms', [$workspace, $invoice]) }}" method="POST" class="d-inline"
+                        data-lifecycle-confirm data-lifecycle-title="Send invoice by SMS?" data-lifecycle-text="This invoice will be queued for SMS delivery to the client." data-lifecycle-confirm-text="Queue SMS">
+                        @csrf
+                        <button type="submit" class="btn btn-info btn-sm">
+                            <i class="bi bi-chat-text"></i> Send by SMS
+                        </button>
+                    </form>
                 @endif
             @endif
             @if (in_array($invoice->status, [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIAL, \App\Models\Invoice::STATUS_OVERDUE], true))

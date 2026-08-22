@@ -85,14 +85,17 @@ test('invoice list and details expose separate mail and WhatsApp actions', funct
         ->assertSee('Send to Mail')
         ->assertSee('bi bi-envelope', false)
         ->assertSee('Send to WhatsApp')
-        ->assertSee(route('invoices.send-whatsapp', [$workspace, $invoice], false), false);
+        ->assertSee(route('invoices.send-whatsapp', [$workspace, $invoice], false), false)
+        ->assertSee('Send by SMS')
+        ->assertSee(route('invoices.send-sms', [$workspace, $invoice], false), false);
 
     $this->actingAs($user)
         ->get($host.route('invoices.show', [$workspace, $invoice], false))
         ->assertOk()
         ->assertSee('Send to Mail')
         ->assertSee('bi bi-envelope', false)
-        ->assertSee('Send to WhatsApp');
+        ->assertSee('Send to WhatsApp')
+        ->assertSee('Send by SMS');
 });
 
 test('workspace user can open a secure invoice share message in WhatsApp', function (): void {

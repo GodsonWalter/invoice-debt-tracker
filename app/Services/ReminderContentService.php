@@ -16,6 +16,15 @@ class ReminderContentService
     public function render(Invoice $invoice, ReminderSchedule $schedule): array
     {
         $type = EmailTemplate::typeForReminderSchedule($schedule);
+
+        return $this->renderForType($invoice, $type);
+    }
+
+    /**
+     * @return array{subject:string, body:string, type:string, label:string}
+     */
+    public function renderForType(Invoice $invoice, string $type): array
+    {
         $label = match ($type) {
             EmailTemplate::TYPE_DUE_TODAY => 'Due Today',
             EmailTemplate::TYPE_OVERDUE => 'Overdue',
